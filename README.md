@@ -38,9 +38,14 @@ Everything runs locally — files never leave your PC, and no data is collected.
 
 Details: [docs/known-limitations.md](docs/known-limitations.md).
 
-## Requirements
+## Install
 
-Windows 11 (x64 or arm64). The published build is self-contained — no .NET runtime installation needed.
+Requires Windows 11 (x64 or arm64). Either way the app is self-contained — no .NET runtime installation needed.
+
+- **Microsoft Store (recommended):** [PDF Image Remover for RAG](https://apps.microsoft.com/store/detail/9N3M42716P8K) — signed package, automatic updates.
+- **Direct download:** grab the zip for your architecture from [Releases](https://github.com/Nakanokappei/pdf-image-remover-for-rag/releases) (x64 for Intel/AMD, arm64 for Windows on ARM), extract it anywhere, and run `PdfImageRemoverForRag.exe`.
+  - The zip binaries are not code-signed, so Windows SmartScreen may warn on first run (More info → Run anyway). The Store version carries no such warning.
+  - Only the zip version accepts PDFs dropped onto the .exe icon — the app deliberately registers no `.pdf` file association, so the Store package has no way to receive them.
 
 ## Build from source
 

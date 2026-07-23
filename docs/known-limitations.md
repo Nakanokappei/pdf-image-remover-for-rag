@@ -1,106 +1,114 @@
-# 既知の制限（PdfImageRemoverForRag）
+# Known Limitations (PDF Image Remover for RAG)
 
-本バージョン（技術検証・最小 UI 版）の制限事項。README と併せて参照。
+Limitations of the current version. Read together with the README.
 
-## PDF 構造に関する制限
+## PDF structure
 
-| 制限 | 挙動 |
+| Limitation | Behavior |
 | --- | --- |
-| **Form XObject 内の画像** | 一覧には表示されるが「削除不可」となりチェックできない。共有 Form の書き換えは他ページへ影響するため安全側に倒している（仕様書 §14.3）。 |
-| **インライン画像（`BI`〜`EI`）** | 対象外。Image XObject のみを扱う（仕様書 §6）。 |
-| **ベクター図形・パスで描かれたロゴ・罫線・テキスト** | 対象外（仕様書 §6）。 |
-| **スキャン PDF のページ全体画像** | 削除は可能だが「全頁画像?」警告を表示。削除するとページの表示内容がすべて失われる。画像内部の部分削除（ロゴだけ消す等）は非対応（仕様書 §7）。 |
-| **暗号化 PDF** | パスワード入力 UI がないため開けない。エラーダイアログで案内する。 |
-| **JPEG（/DCTDecode）のサムネイル** | 対応済み。PdfPig の `TryGetPng` は JPEG に対して常に false を返すため（[公式 Wiki](https://github.com/UglyToad/PdfPig/wiki/Images) 記載の仕様）、raw JPEG バイトをそのまま表示用に使うパススルーで解決している。 |
-| **JPEG2000（/JPXDecode）・CCITT・JBIG2 のサムネイル** | 列挙・削除は可能だが、サムネイル生成は非対応（代替アイコン表示）。 |
+| **Images inside Form XObjects** | Listed, but marked "not removable" and cannot be checked. Rewriting a shared Form could affect other pages, so the tool errs on the safe side. |
+| **Inline images (`BI`…`EI`)** | Not handled. Only Image XObjects are processed. |
+| **Logos, rules, or text drawn as vector paths** | Handled as *shapes*, not as images or text. |
+| **Full-page images in scanned PDFs** | Removable, but flagged with a warning. Deleting one removes everything visible on that page. Partial removal inside an image (e.g. erasing just a logo) is not supported. |
+| **Encrypted PDFs** | Cannot be opened — there is no password prompt. An error dialog explains this. |
+| **JPEG (`/DCTDecode`) thumbnails** | Supported. PdfPig's `TryGetPng` always returns false for JPEG (a documented limitation), so the raw JPEG bytes are passed through for display. |
+| **JPEG 2000 (`/JPXDecode`), CCITT, and JBIG2 thumbnails** | Listing and removal work, but no thumbnail is produced (a placeholder icon is shown). |
 
-## 保存 PDF に関する制限
+## Saved PDFs
 
-| 制限 | 説明 |
+| Limitation | Description |
 | --- | --- |
-| **電子署名** | 画像削除により既存の電子署名は無効になる。署名付き PDF への対応は保証しない。 |
-| **PDF/A 準拠** | 編集後も PDF/A 準拠が維持される保証はない。 |
-| **描画命令の除去方式** | 対象画像の `Do` 命令のみを除去し、周辺の `q`/`cm`/`Q` は残す（無害な no-op になる）。画像オブジェクト本体が /Resources に残る場合があるが、再解析時は使用箇所 0 として表示されない。 |
-| **保存後の目視確認** | 自動検証は簡易検証（開ける・ページ数一致・対象消失・非対象残存）のみ。視覚的な最終確認はユーザーの目視に委ねる。 |
+| **Digital signatures** | Removing content invalidates any existing signature. Signed PDFs are not supported in any guaranteed way. |
+| **PDF/A conformance** | Not guaranteed to survive editing. |
+| **How draw calls are removed** | Only the target image's `Do` operator is removed; the surrounding `q`/`cm`/`Q` operators remain as harmless no-ops. The image object itself may remain in `/Resources`, but with zero usages it no longer appears when the file is re-analyzed. |
+| **Visual confirmation** | The automatic post-save verification is basic (the file opens, page count matches, removed objects are gone, retained objects remain). Final visual confirmation is left to the user. |
 
-## テキストオブジェクト削除の制限
+## Text removal
 
-| 制限 | 説明 |
+| Limitation | Description |
 | --- | --- |
-| **対象** | content stream 直下の `Tj`/`TJ`/`'`/`"` で描画される文字列のうち、**2文字以上**かつ**同一ファイル内で2回以上**登場するもの（ヘッダー・フッター・透かし等の繰り返しノイズ）。 |
-| **「2文字以上」の判定** | フォントの `/ToUnicode` CMap でデコードした**実際の文字数**で判定する。Identity-H（CID）の日本語なども正しくデコードされるため、閾値は文字数どおりに機能する。ToUnicode を持たないフォントは生値をそのまま使用（WinAnsi 等は元から可読）。 |
-| **文字化け対応** | 対応済み。日本語などの合成フォント（Type0 / Identity-H）は 2 バイトコード列で格納されるが、`/ToUnicode` CMap を解釈してデコードするため、一覧・サムネイル・削除キーすべてで正しく表示・照合される。ToUnicode CMap が存在しないフォントはデコードできず、生値のまま扱う（照合・削除は機能するが表示は化ける可能性）。 |
-| **Form XObject 内のテキスト** | 検出・削除の対象外（共有 Form を書き換えないため。画像と同じ安全方針）。 |
-| **同一値の巻き込み** | 同じ表示文字列でフォント違いの別テキストがある場合、値一致で両方削除される可能性（稀）。 |
-| **レイアウト** | テキスト描画命令のみ除去し、位置指定命令（Td/Tm/Tf）は残す。無害な no-op になるが、相対配置に強く依存した PDF では後続位置がずれる可能性がある。 |
-| **保存後検証** | テキスト削除の自動検証は簡易（保存後 PDF が開けてページ数一致）。厳密な「テキストが消えたか」の検証は単体テストで担保。 |
+| **Scope** | Strings drawn by `Tj`/`TJ`/`'`/`"` directly in the page content stream, **2+ characters** long and shown **2+ times within one file** (repeated noise: headers, footers, watermarks). |
+| **How "2+ characters" is measured** | On the **actual decoded characters**, using the font's `/ToUnicode` CMap. Identity-H (CID) text such as Japanese decodes correctly, so the threshold behaves as expected. Fonts without a ToUnicode map are matched on raw values (WinAnsi and similar are readable as-is). |
+| **Garbled text** | Composite fonts (Type0 / Identity-H) store 2-byte code sequences; these are decoded via the `/ToUnicode` CMap, so the list, thumbnails, and removal keys all show and match real characters. Fonts with no ToUnicode CMap cannot be decoded and are handled on raw values (matching and removal still work, but the display may be garbled). |
+| **Text inside Form XObjects** | Not detected and not removed (shared Forms are never rewritten — the same safety policy as for images). |
+| **Same-value collisions** | Two different text runs showing the same string in different fonts may both be removed (rare). |
+| **Layout** | Only the text-showing operators are removed; positioning operators (`Td`/`Tm`/`Tf`) remain as harmless no-ops. PDFs that depend heavily on relative positioning could see subsequent text shift. |
+| **Post-save verification** | For text, the automatic check is basic (the saved PDF opens and the page count matches). Strict "is the text gone" verification is covered by the unit tests. |
 
-## 図形（ベクター）オブジェクト削除の制限
+## Shape (vector) removal
 
-| 制限 | 説明 |
+| Limitation | Description |
 | --- | --- |
-| **対象** | content stream 直下のパス構築演算子（m/l/c/v/y/re/h）+ 描画演算子（S/s/f/F/f*/B/b/n 等）で描かれるベクター図形（線・矩形・曲線）。**回数制限なし**（画像と同様、描画されていればすべて一覧に出す。ユーザーが選んで削除）。同じ形状が繰り返される場合は1グループに集約され使用回数が加算される。 |
-| **同一判定** | **形状・線幅・色**で判定（**位置は無視**）。パスの座標を CTM 変換後、バウンディングボックスの原点基準に平行移動して相対化し、描画演算子・線幅（w）・stroke/fill 色（RG/rg/G/g/K/k）を加えたものをシグネチャとする。位置が違っても同じ形・同じ線幅・同じ色なら1グループに集約。線幅や色が違えば別グループ。 |
-| **クリップ付きパス** | クリッピング（W/W*）を伴うパスは削除対象外（他コンテンツのクリップに影響するため）。 |
-| **Form XObject 内の図形** | 検出・削除の対象外（共有 Form を書き換えないため）。 |
-| **サムネイル** | 図形の実際の形状と**色**を描画して表示する（バウンディングボックスに合わせて縮小、線/塗りと色を再現）。CMYK・グレースケール等の色空間は RGB に変換して表示する。ライトグレーより明るい図形は背景を黒にして視認できるようにする。 |
-| **副作用** | パス構築〜描画演算子のみ除去し、直前の色・線幅設定（w/rg/RG 等）は残す。後続描画が無ければ無害だが、稀に残った状態設定が他の描画に影響する可能性がある。 |
-| **粒度** | 「1つの図形」＝1回のパス描画（構築〜描画）。複数パスからなるロゴ等はパスごとに別オブジェクトとして扱われる。 |
+| **Scope** | Vector shapes (lines, rectangles, curves) drawn by path-construction operators (`m`/`l`/`c`/`v`/`y`/`re`/`h`) plus a painting operator (`S`/`s`/`f`/`F`/`f*`/`B`/`b`/`n`, …) directly in the page content stream. **No occurrence-count filter** — like images, every drawn shape is listed and the user picks what to remove. Repeats of the same shape collapse into one group with a summed usage count. |
+| **Identity** | **Shape + line width + color** (**position is ignored**). Path points are CTM-mapped, then translated so the bounding box starts at the origin; the painting operator, line width (`w`), and stroke/fill color (`RG`/`rg`/`G`/`g`/`K`/`k`) complete the signature. The same shape at different positions is one group; a different width or color splits it. |
+| **Clipping paths** | Paths that also set a clip (`W`/`W*`) are never removed (removing them could reshape unrelated clipped content). |
+| **Shapes inside Form XObjects** | Not detected and not removed (shared Forms are never rewritten). |
+| **Thumbnails** | The actual path is rendered in its actual color (scaled to the bounding box, stroke/fill reproduced). CMYK and grayscale colors are converted to RGB. Shapes brighter than light gray are drawn on a black background so they stay visible. |
+| **Side effects** | Only the path-construction-through-painting operators are removed; preceding state settings (`w`, `rg`, `RG`, …) remain. Harmless when nothing follows, but a leftover state setting could in rare cases affect later drawing. |
+| **Granularity** | "One shape" = one path paint (construction through painting operator). A logo composed of several paths appears as several objects. |
 
-## 機能面の制限（今回のスコープ外 — 仕様書 §26）
+## Features that are out of scope
 
-- ページ全体のプレビュー / 削除後プレビュー
-- 特定ページ・特定使用箇所だけの削除（グループ単位の全削除のみ）
-- 複数 PDF の一括処理
-- OCR / AI によるロゴ判定 / 類似画像検索
-- 設定画面・ダークモード・自動アップデート・インストーラー
-- コマンドラインモード
+- Whole-page preview / after-removal preview
+- Removing only specific pages or specific occurrences (removal is per group, all occurrences)
+- Batch processing of multiple PDFs from the command line
+- OCR, AI-based logo classification, similar-image search
+- Settings screen, dark mode, auto-update, installer
+- Command-line mode
 
-## プラットフォームの制限
+## Platform
 
-- 動作対象は Windows 11（x64 / ARM64）。macOS ではビルドのみ可能で起動不可。
-- Windows ARM64 での実機確認は済み。
-- 大規模 PDF は実測済み: 31MB / 176 ページ / 削除対象 2,015 件のファイルで、
-  表形式・タイル形式とも実用速度で動作することを確認した。x64 バイナリの
-  実機確認だけは未実施（発行はしているが起動を確かめていない）。
+- Runs on Windows 11 (x64 / ARM64). On macOS the solution builds, but the app cannot run.
+- Verified on real Windows 11 ARM64 hardware.
+- Large PDFs are measured: a 31 MB, 176-page file with 2,015 removable objects
+  works at practical speed in both the table and tile views. The x64 binary has
+  been published but not yet launch-tested on real hardware.
 
-## 言語の制限
+## Languages
 
-- UI は 16 言語（英・日・簡体中文・繁體中文・韓・独・仏・西・伊・葡・露・
-  インドネシア・マレー・ヒンディー・トルコ・ベトナム）。OS の表示言語に追従し、
-  **アプリ内に言語切替は無い**。未対応の言語は英語で表示される。
-- **アラビア語は非対応**。右横書きのため、フォームの `RightToLeft` 設定に加えて
-  自前描画部分（表ヘッダー・タイル・ツールバーアイコン）をすべて反転させる必要があり、
-  翻訳ではなくレイアウトの作業になる。
-- **マニュアルとストア掲載は日英のみ**。他言語のヘルプ →「オンラインマニュアル」は
-  英語版を開き、製品名も英語表記のままになる。
-- 翻訳はネイティブによるレビューを受けていない。
+- 16 UI languages (English, Japanese, Simplified Chinese, Traditional Chinese,
+  Korean, German, French, Spanish, Italian, Portuguese, Russian, Indonesian,
+  Malay, Hindi, Turkish, Vietnamese), following the OS display language.
+  **There is no in-app language switch.** Unsupported languages fall back to English.
+- **Arabic is not supported.** Right-to-left support would require not just the
+  forms' `RightToLeft` settings but mirroring all custom-painted parts (table
+  headers, tiles, toolbar icons) — a layout project, not a translation.
+- **The manual and Store listing exist in English and Japanese only.** In every
+  other language, Help → Online Manual opens the English page and the product
+  name stays in English.
+- Translations have not been reviewed by native speakers.
 
-## アクセシビリティの制限
+## Accessibility
 
-対応済みの範囲:
-キーボードのみでの全操作、アイコンボタン・☑ 列の読み上げ名、コントラスト。表形式ビュー
-（DataGridView）は Windows 標準コントロールなので、Narrator を含むすべての支援技術から
-完全にアクセシブル。
+What is covered: full keyboard-only operation, spoken names for the icon-only
+buttons and the checkbox column, and contrast. The table view (a standard
+Windows `DataGridView`) is fully accessible to every assistive technology,
+including Narrator.
 
-- **タイル形式ビューは Narrator（Windows 標準スクリーンリーダー）からは読めない。**
-  タイルは 1 個のコントロールに自前描画しており、個々のタイルを支援技術に見せるには
-  UIA フラグメント・プロバイダーの実装が要る。しかし .NET 8 の WinForms では UIA フラグメント
-  の API（`FragmentNavigate` / `RuntimeId` / `Control.SupportsUiaProviders` 等）がすべて
-  `internal` で、外部アセンブリからは実装できない（リフレクションで確認済み）。
-  - **NVDA・JAWS（MSAA 系スクリーンリーダー）では読める** — カスタム `AccessibleObject` が
-    MSAA ツリーに List + タイルごとの CheckButton を正しく公開しており、実機で確認済み。
-  - **キーボードでは完全に操作できる**（Tab で進入・矢印で移動・Space でトグル・フォーカス矩形）。
-  - **Narrator 利用者には、完全アクセシブルな表形式ビューという代替経路がある**（表示 → 表形式）。
-    タイルと表は同じ内容・同じ並び順で、機能に差はない。
-  - Narrator でタイルを読ませるには、仮想モード ListView のオーナードローに作り替える必要が
-    あり（フレームワークが UIA を提供する supported な唯一の道）、中規模の書き換えになる。
-    将来 Narrator でのタイル対応が要件になったときの独立タスクとして残す。
+- **The tile view is not readable by Narrator** (the Windows built-in screen
+  reader). The tiles are painted onto a single control, and exposing each tile
+  to UI Automation would require implementing UIA fragment providers — but in
+  .NET 8 WinForms the UIA fragment APIs (`FragmentNavigate`, `RuntimeId`,
+  `Control.SupportsUiaProviders`, …) are all `internal` and cannot be
+  implemented from an external assembly (verified via reflection).
+  - **NVDA and JAWS (MSAA-based screen readers) can read the tiles** — a custom
+    `AccessibleObject` exposes a List with one CheckButton per tile to the MSAA
+    tree, verified on real hardware.
+  - **The keyboard operates the tiles fully** (Tab to enter, arrows to move,
+    Space to toggle, visible focus rectangle).
+  - **Narrator users have a fully accessible alternative: the table view**
+    (View → Table). Both views show the same content in the same order, with
+    no difference in capability.
+  - Making the tiles Narrator-readable would require rebuilding the view as an
+    owner-drawn virtual-mode ListView (the only supported route, since the
+    framework then provides UIA) — a medium-sized rewrite, kept as a separate
+    task for if and when Narrator support becomes a requirement.
 
-## セキュリティ上の割り切り
+## Security posture
 
-- PDF が要求する動作は一切実行しない（JavaScript、Launch/URI アクション、外部参照、
-  埋め込みファイル）。構造とピクセルを読むだけ。
-- 入口で PDF の署名を検査し、宣言寸法が過大な画像はデコードしない。
-  ただしこれらを通過した入力に対する **PDFsharp / PdfPig / GDI+ 自体のバグは防げない**。
-- パスワード付き PDF は非対応（エラーとして通知する）。
+- Nothing a PDF asks for is ever executed (JavaScript, Launch/URI actions,
+  external references, embedded files). The app reads structure and pixels only.
+- Files are checked for a PDF signature at the door, and images declaring
+  implausible dimensions are not decoded. What these gates cannot prevent are
+  **bugs in PDFsharp, PdfPig, or GDI+ themselves** on input that passes them.
+- Password-protected PDFs are not supported (reported as an error).

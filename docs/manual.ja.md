@@ -181,7 +181,7 @@ English / 日本語 / 简体中文 / 繁體中文 / 한국어 / Deutsch / Franç
 - **OCR・類似画像検索・AI によるロゴ判定は行いません。**
 - `/ToUnicode` を持たないフォントのテキストは、文字が正しく表示されないことがあります。
 
-詳細: [known-limitations.md](known-limitations.md)
+詳細: [known-limitations.md](known-limitations.md)（英語）
 
 ---
 

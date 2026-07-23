@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>PdfImageRemoverForRag.Poc</RootNamespace>
+    <AssemblyName>PdfImageRemoverForRag.Poc</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The PoC drives the production Infrastructure implementations so the
+         15-item checklist exercises the same code the app will ship. PdfPig
+         is referenced directly only for the independent text-extraction
+         cross-check. -->
+    <ProjectReference Include="..\..\src\PdfImageRemoverForRag.Infrastructure\PdfImageRemoverForRag.Infrastructure.csproj" />
+    <PackageReference Include="PdfPig" />
+  </ItemGroup>
+</Project>

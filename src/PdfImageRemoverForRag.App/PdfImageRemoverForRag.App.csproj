@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <RootNamespace>PdfImageRemoverForRag.App</RootNamespace>
+    <!-- Executable/assembly base name (no .App suffix): PdfImageRemoverForRag.exe -->
+    <AssemblyName>PdfImageRemoverForRag</AssemblyName>
+
+    <!-- App icon: the .exe icon (Explorer/taskbar) and, embedded, the window
+         title-bar icon (loaded in MainForm). -->
+    <ApplicationIcon>appicon.ico</ApplicationIcon>
+
+    <!-- Product version plus a plain integer build number (no date, so it never
+         looks stale). The build number is shown in the window title + About so
+         the exact build is identifiable inside the app. Bump BuildNumber on each
+         published update. -->
+    <Version>1.0.0</Version>
+    <BuildNumber>56</BuildNumber>
+    <InformationalVersion>1.0.0+$(BuildNumber)</InformationalVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+  </ItemGroup>
+
+  <!-- Embed the icon so the window title bar can load it (see MainForm). -->
+  <ItemGroup>
+    <EmbeddedResource Include="appicon.ico">
+      <LogicalName>appicon.ico</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PdfImageRemoverForRag.Core\PdfImageRemoverForRag.Core.csproj" />
+    <ProjectReference Include="..\PdfImageRemoverForRag.Infrastructure\PdfImageRemoverForRag.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

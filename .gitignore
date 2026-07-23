@@ -1,0 +1,54 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.vscode/
+*.DotSettings
+*.dll.config
+artifacts/
+
+# macOS
+.DS_Store
+._*
+
+# Windows (the tree is shared with the Parallels VM)
+Thumbs.db
+
+# Internal working documents — kept in the shared working tree for the
+# Mac/Windows Claude Code sessions, but not published to the public repo.
+# Pre-exclusion history lives on the local backup/japanese-history branch.
+/CLAUDE.md
+/docs/handoff.md
+/docs/accessibility-review.md
+/docs/architecture.md
+/docs/build-on-macos.md
+/docs/implementation-plan.md
+/docs/msix-packaging.md
+/docs/parallels-test-result.md
+/docs/pdf-library-selection.md
+/docs/proof-of-concept-result.md
+/docs/store-certification.md
+/docs/store-listing.md
+/docs/test-on-parallels.md
+/docs/images/store-*.png
+
+# Claude Code session settings (local paths / permission history)
+.claude/
+
+# NuGet
+packages/
+*.nupkg
+
+# Generated sample PDFs — regenerable via scripts/GenerateSamples
+samples/*.pdf
+samples/cleaned/
+
+# Demo PDFs for screenshots — regenerable via scripts/generate-demo-pdfs.py.
+# Not committed: they embed a subset of MS PGothic.
+demo-pdfs/
+
+# PoC scratch output
+poc-out/
+*.log

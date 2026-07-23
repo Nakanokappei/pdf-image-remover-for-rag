@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>PdfImageRemoverForRag.Infrastructure</RootNamespace>
+    <AssemblyName>PdfImageRemoverForRag.Infrastructure</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="PdfSharp" />
+    <PackageReference Include="PdfPig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Expose internal helpers (ToUnicodeCMap) to the test project. -->
+    <InternalsVisibleTo Include="PdfImageRemoverForRag.Infrastructure.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PdfImageRemoverForRag.Core\PdfImageRemoverForRag.Core.csproj" />
+  </ItemGroup>
+</Project>

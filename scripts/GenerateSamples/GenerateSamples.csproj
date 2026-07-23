@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>PdfImageRemoverForRag.Scripts.GenerateSamples</RootNamespace>
+    <AssemblyName>PdfImageRemoverForRag.GenerateSamples</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="PdfSharp" />
+  </ItemGroup>
+</Project>

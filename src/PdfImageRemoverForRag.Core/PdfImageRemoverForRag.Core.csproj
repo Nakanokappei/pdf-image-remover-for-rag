@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>PdfImageRemoverForRag.Core</RootNamespace>
+    <AssemblyName>PdfImageRemoverForRag.Core</AssemblyName>
+    <!-- XML docs are written for the major types via triple-slash summaries.
+         GenerateDocumentationFile stays off so CS1591 does not require doc
+         comments on every public ctor. -->
+  </PropertyGroup>
+</Project>

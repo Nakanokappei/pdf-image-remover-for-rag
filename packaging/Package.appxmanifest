@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  MSIX manifest template for the Microsoft Store submission.
+
+  {ARCH} is replaced with neutral / x64 / arm64 by scripts/stage-msix.py; every
+  other value is final. Identity/Name and Identity/Publisher must match Partner
+  Center's product identity exactly, or the upload is rejected.
+
+  The app is a full-trust desktop app (Windows.FullTrustApplication), so the
+  UWP-only elements — splash screen, app-service extensions — do not apply and
+  are deliberately absent. Logo attributes name the unqualified file; MakePri
+  resolves them to the scale-* variants sitting in Assets\.
+-->
+
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap rescap">
+
+  <Identity
+    Name="KappeiNakano.PDFImageRemoverforRAG"
+    Publisher="CN=CBBEB0B6-F2F8-4A20-93BF-7BB185208944"
+    Version="1.0.2.0"
+    ProcessorArchitecture="{ARCH}" />
+
+  <Properties>
+    <DisplayName>PDF Image Remover for RAG</DisplayName>
+    <PublisherDisplayName>Kappei Nakano</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+
+  <!--
+    Windows 11 only: that is the sole configuration the app has been verified on
+    (Parallels, 300% DPI), and it is what the manual states as the requirement.
+  -->
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop"
+                        MinVersion="10.0.22000.0"
+                        MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-US" />
+    <Resource Language="ja-JP" />
+  </Resources>
+
+  <Applications>
+    <Application Id="App"
+                 Executable="PdfImageRemoverForRag.exe"
+                 EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="PDF Image Remover for RAG"
+        Description="Remove unnecessary images, repeated text, and vector shapes from PDFs before RAG ingestion."
+        BackgroundColor="#F2F2F2"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile
+          Square71x71Logo="Assets\Square71x71Logo.png"
+          Square310x310Logo="Assets\Square310x310Logo.png"
+          Wide310x150Logo="Assets\Wide310x150Logo.png">
+          <uap:ShowNameOnTiles>
+            <uap:ShowOn Tile="square150x150Logo" />
+            <uap:ShowOn Tile="wide310x150Logo" />
+          </uap:ShowNameOnTiles>
+        </uap:DefaultTile>
+      </uap:VisualElements>
+    </Application>
+  </Applications>
+
+  <!-- runFullTrust is what lets a packaged Win32/WinForms app run at all. -->
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+
+</Package>

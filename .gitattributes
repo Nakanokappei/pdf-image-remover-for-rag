@@ -1,0 +1,15 @@
+# This repo is developed on macOS and also edited by a Claude Code instance
+# running on the Parallels Windows VM, against the SAME working tree on the
+# shared volume. Without normalisation, Windows' autocrlf would rewrite every
+# line ending and make a one-line edit look like a whole-file change.
+#
+# Normalise everything to LF in the repo AND in the working tree on both sides.
+# .NET, PowerShell 5.1 and git all read LF-only files without complaint.
+* text=auto eol=lf
+
+# Binaries git must never touch.
+*.png  binary
+*.ico  binary
+*.pdf  binary
+*.af   binary
+*.icon binary

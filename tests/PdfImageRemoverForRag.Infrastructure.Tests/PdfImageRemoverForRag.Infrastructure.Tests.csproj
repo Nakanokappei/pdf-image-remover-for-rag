@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>PdfImageRemoverForRag.Infrastructure.Tests</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="coverlet.collector" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\PdfImageRemoverForRag.Core\PdfImageRemoverForRag.Core.csproj" />
+    <ProjectReference Include="..\..\src\PdfImageRemoverForRag.Infrastructure\PdfImageRemoverForRag.Infrastructure.csproj" />
+    <!-- Sample-PDF fixture reuses the same generator as the console script. -->
+    <ProjectReference Include="..\..\scripts\GenerateSamples\GenerateSamples.csproj" />
+  </ItemGroup>
+</Project>

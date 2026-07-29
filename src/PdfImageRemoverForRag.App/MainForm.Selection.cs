@@ -180,9 +180,18 @@ internal sealed partial class MainForm
 
     void OnGridCellMouseDown(object? sender, DataGridViewCellMouseEventArgs e)
     {
+        if (e.RowIndex < 0) return;
+
+        // Right-click shows the row context menu on the row under the pointer,
+        // the same menu the tile view shows.
+        if (e.Button == MouseButtons.Right)
+        {
+            ShowRowContextMenu(e.RowIndex);
+            return;
+        }
+
         // Track the range anchor: the last row clicked without Shift becomes the
         // current row and the anchor for a subsequent Shift+click.
-        if (e.RowIndex < 0) return;
         if ((ModifierKeys & Keys.Shift) == 0) _checkAnchorRowIndex = e.RowIndex;
     }
 
@@ -269,15 +278,20 @@ internal sealed partial class MainForm
 
     // --- row/tile context menu (使用箇所を表示…) --------------------------------
 
-    /// <summary>Capture the right-clicked grid row's group and show the menu.</summary>
-    void OnGridContextMenuNeeded(object? sender, DataGridViewCellContextMenuStripNeededEventArgs e)
+    /// <summary>
+    /// Capture the right-clicked grid row's group and show the menu at the
+    /// pointer.
+    ///
+    /// This is driven from the grid's mouse-down rather than from
+    /// <c>CellContextMenuStripNeeded</c>: that event only fires for a grid with
+    /// a DataSource or in virtual mode, and this one is neither, so the table
+    /// view had no context menu at all while the tile view did.
+    /// </summary>
+    void ShowRowContextMenu(int rowIndex)
     {
-        if (e.RowIndex < 0 || _imageListGrid.Rows[e.RowIndex].Tag is not CrossFileImageGroup group)
-        {
-            return;
-        }
+        if (_imageListGrid.Rows[rowIndex].Tag is not CrossFileImageGroup group) return;
         _contextGroup = group;
-        e.ContextMenuStrip = _rowContextMenu;
+        _rowContextMenu.Show(_imageListGrid, _imageListGrid.PointToClient(Cursor.Position));
     }
 
     /// <summary>Capture the right-clicked tile's group and show the menu there.</summary>

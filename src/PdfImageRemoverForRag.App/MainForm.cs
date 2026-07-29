@@ -265,7 +265,6 @@ internal sealed partial class MainForm : Form
 
         _usageLocationsMenuItem.Click += OnUsageLocationsClicked;
         _rowContextMenu.Items.Add(_usageLocationsMenuItem);
-        _imageListGrid.CellContextMenuStripNeeded += OnGridContextMenuNeeded;
         _tileView.ToolTipFor = TileToolTipFor;
         _tileView.AccessibleNameFor = TileAccessibleNameFor;
         _thumbnailSettleTimer.Tick += OnThumbnailSettleTick;

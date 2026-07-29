@@ -247,6 +247,20 @@ internal sealed partial class MainForm
         RefreshSelectionStatus();
     }
 
+    /// <summary>
+    /// Apply a tile-view Shift+click range: set every group in the range to the
+    /// requested state. Mirrors the grid's Shift+click; both views are synced
+    /// from <see cref="_selectedHashes"/> afterwards.
+    /// </summary>
+    void OnTileRangeToggled(IReadOnlyList<CrossFileImageGroup> groups, bool select)
+    {
+        if (_syncingSelection) return;
+        foreach (var group in groups) SetSelected(group.Hash, select);
+        SyncAllViewCheckStates();
+        UpdateSelectionState();
+        RefreshSelectionStatus();
+    }
+
     void SetSelected(string hash, bool selected)
     {
         if (selected) _selectedHashes.Add(hash);

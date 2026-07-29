@@ -446,6 +446,7 @@ internal sealed partial class MainForm
                             && _thumbnails.IsUnrenderable(group.Hash);
 
         return new TileVisual(
+            Kind: group.Kind,
             Thumbnail: bitmap ?? (unrenderable ? _tilePlaceholderIcon : null),
             TextContent: text,
             IsThumbnailPending: text is null && bitmap is null && !unrenderable,

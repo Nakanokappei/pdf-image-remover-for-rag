@@ -253,6 +253,7 @@ internal sealed partial class MainForm : Form
         _imageListGrid.Scroll += (_, _) => ScheduleThumbnailLoad();
         _tileView.ViewportChanged += (_, _) => ScheduleThumbnailLoad();
         _tileView.TileToggled += OnTileToggled;
+        _tileView.RangeToggleRequested += OnTileRangeToggled;
         _tileView.ToolTipFor = TileToolTipFor;
         _tileView.AccessibleNameFor = TileAccessibleNameFor;
         _thumbnailSettleTimer.Tick += OnThumbnailSettleTick;

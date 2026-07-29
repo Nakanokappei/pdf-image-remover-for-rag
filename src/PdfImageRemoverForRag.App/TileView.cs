@@ -31,8 +31,19 @@ internal sealed class TileView : Panel
     // The keyboard/accessibility cursor: which tile has focus. -1 when none.
     int _focusedTileIndex = -1;
 
+    // Anchor for Shift+click range selection: the last tile clicked WITHOUT
+    // Shift (or toggled with Space). Mirrors the grid's _checkAnchorRowIndex.
+    int _selectionAnchorIndex = -1;
+
     /// <summary>Raised when a tile is clicked, with the group it represents.</summary>
     public event EventHandler<CrossFileImageGroup>? TileToggled;
+
+    /// <summary>
+    /// Raised on a Shift+click range selection: every safely-removable group
+    /// between the anchor and the clicked tile is set to <c>Select</c>
+    /// (checked) or cleared. Mirrors the table's Shift+click behaviour.
+    /// </summary>
+    public event Action<IReadOnlyList<CrossFileImageGroup>, bool>? RangeToggleRequested;
 
     /// <summary>
     /// Raised whenever the visible range may have changed. The wheel does not
@@ -85,6 +96,7 @@ internal sealed class TileView : Panel
         _items = items;
         _hoveredIndex = -1;
         _focusedTileIndex = -1;
+        _selectionAnchorIndex = -1;
         UpdateScrollRange();
         // A rebuild replaces everything, so the old offset means nothing — and
         // when the new set is shorter it points past the end, which showed as
@@ -180,7 +192,32 @@ internal sealed class TileView : Panel
         // the tile the user just clicked.
         Focus();
         SetFocusedTile(index);
-        ToggleTile(index);
+
+        // Shift+click checks (or unchecks) the whole range from the anchor to
+        // the clicked tile — same as the table. The new state is the opposite
+        // of the clicked tile's current state; only safely-removable tiles in
+        // the range are affected. A plain click sets the anchor and toggles.
+        bool shift = (ModifierKeys & Keys.Shift) != 0
+                     && _selectionAnchorIndex >= 0
+                     && _selectionAnchorIndex < _items.Count;
+        if (shift)
+        {
+            bool newState = !TileIsChecked(index);
+            int from = Math.Min(_selectionAnchorIndex, index);
+            int to = Math.Max(_selectionAnchorIndex, index);
+            var range = new List<CrossFileImageGroup>();
+            for (int i = from; i <= to; i++)
+            {
+                if (_items[i].IsSafelyRemovable) range.Add(_items[i]);
+            }
+            RangeToggleRequested?.Invoke(range, newState);
+            Invalidate();
+        }
+        else
+        {
+            _selectionAnchorIndex = index;
+            ToggleTile(index);
+        }
     }
 
     protected override void OnMouseMove(MouseEventArgs e)
@@ -257,7 +294,7 @@ internal sealed class TileView : Panel
             case Keys.End: SetFocusedTile(_items.Count - 1); break;
             case Keys.PageUp: SetFocusedTile(i - (columns * pageRows)); break;
             case Keys.PageDown: SetFocusedTile(i + (columns * pageRows)); break;
-            case Keys.Space: ToggleTile(i); break;
+            case Keys.Space: _selectionAnchorIndex = i; ToggleTile(i); break;
             default: return;
         }
         e.Handled = true;

@@ -1,10 +1,12 @@
 using System.Drawing.Drawing2D;
+using PdfImageRemoverForRag.Core.Models;
 
 namespace PdfImageRemoverForRag.App;
 
 /// <summary>
 /// Everything one tile looks like, with nothing about where it lives.
 /// </summary>
+/// <param name="Kind">Image / Text / Shape — drawn as a small icon by the checkbox.</param>
 /// <param name="Thumbnail">The picture, or null when there is none to show.</param>
 /// <param name="TextContent">For text objects: the string, drawn rather than rasterized.</param>
 /// <param name="IsThumbnailPending">The picture is still being produced; say so.</param>
@@ -12,6 +14,7 @@ namespace PdfImageRemoverForRag.App;
 /// <param name="IsCheckable">False for unsafe groups (§14.3) — drawn muted.</param>
 /// <param name="UsageCount">Shown in the top-right badge.</param>
 internal readonly record struct TileVisual(
+    RemovableKind Kind,
     Image? Thumbnail,
     string? TextContent,
     bool IsThumbnailPending,
@@ -42,6 +45,11 @@ internal static class TilePainter
     const int CheckBoxSize = 16;
     const int CheckBoxInset = 6;
     const int BadgeInset = 5;
+    // The kind icon sits to the LEFT of the checkbox in the top-left corner,
+    // so images and shapes (which both show a thumbnail) and blank text tiles
+    // can still be told apart at a glance.
+    const int KindIconSize = 16;
+    const int KindIconGap = 4;
 
     // Under a high-contrast theme every fixed color painted here would risk
     // vanishing against the theme's background, so each meaningful color
@@ -111,18 +119,77 @@ internal static class TilePainter
             g.FillRectangle(muteBrush, bounds);
         }
 
+        DrawKindIcon(g, bounds, tile, dip);
         DrawSelectionCheckBox(g, bounds, tile, dip);
         DrawUsageBadge(g, bounds, tile, baseFont, dip);
+    }
+
+    static void DrawKindIcon(
+        Graphics g, Rectangle bounds, TileVisual tile, Func<int, int> dip)
+    {
+        // Kind marker in the top-left corner, to the left of the checkbox.
+        int size = dip(KindIconSize);
+        var box = new Rectangle(
+            bounds.Left + dip(CheckBoxInset), bounds.Top + dip(CheckBoxInset), size, size);
+
+        // Same translucent backing as the checkbox so the glyph stays legible
+        // over a thumbnail.
+        using (var backing = new SolidBrush(Color.FromArgb(210, SystemColors.Window)))
+        {
+            g.FillRectangle(backing, box.X - 1, box.Y - 1, size + 2, size + 2);
+        }
+
+        var color = HighContrast ? SystemColors.WindowText : Color.FromArgb(0x44, 0x44, 0x44);
+        var saved = g.SmoothingMode;
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        // Small inner box so nothing touches the backing's edge.
+        var inner = Rectangle.Inflate(box, -dip(2), -dip(2));
+        using var pen = new Pen(color, Math.Max(1f, dip(2) * 0.85f));
+        using var brush = new SolidBrush(color);
+        switch (tile.Kind)
+        {
+            case RemovableKind.Text:
+                // A capital "T": top bar + centre stem.
+                int barY = inner.Top + inner.Height / 6;
+                int cx = inner.Left + inner.Width / 2;
+                g.DrawLine(pen, inner.Left, barY, inner.Right, barY);
+                g.DrawLine(pen, cx, barY, cx, inner.Bottom);
+                break;
+            case RemovableKind.Shape:
+                // A triangle outline.
+                g.DrawPolygon(pen, new[]
+                {
+                    new Point(inner.Left + inner.Width / 2, inner.Top),
+                    new Point(inner.Left, inner.Bottom),
+                    new Point(inner.Right, inner.Bottom),
+                });
+                break;
+            default:
+                // A framed picture with a sun and a mountain ridge.
+                g.DrawRectangle(pen, inner);
+                int r = Math.Max(2, inner.Width / 5);
+                g.FillEllipse(brush, inner.Left + inner.Width / 6, inner.Top + inner.Height / 6, r, r);
+                g.DrawLines(pen, new[]
+                {
+                    new Point(inner.Left, inner.Bottom - inner.Height / 5),
+                    new Point(inner.Left + inner.Width / 2, inner.Top + inner.Height / 2),
+                    new Point(inner.Right, inner.Bottom - inner.Height / 5),
+                });
+                break;
+        }
+        g.SmoothingMode = saved;
     }
 
     static void DrawSelectionCheckBox(
         Graphics g, Rectangle bounds, TileVisual tile, Func<int, int> dip)
     {
-        // Top-left checkbox mirroring the pressed/checked state so the tile's
-        // selection reads at a glance (the whole tile still toggles on click).
-        // Unsafe tiles show a grayed, unchecked box to signal "can't remove".
+        // Checkbox just to the right of the kind icon, mirroring the
+        // pressed/checked state so the tile's selection reads at a glance (the
+        // whole tile still toggles on click). Unsafe tiles show a grayed,
+        // unchecked box to signal "can't remove".
         int glyphSize = dip(CheckBoxSize);
-        var origin = new Point(bounds.Left + dip(CheckBoxInset), bounds.Top + dip(CheckBoxInset));
+        int x = bounds.Left + dip(CheckBoxInset) + dip(KindIconSize) + dip(KindIconGap);
+        var origin = new Point(x, bounds.Top + dip(CheckBoxInset));
 
         // A translucent backing keeps the box legible over both the window
         // background and the pressed highlight wash (theme Window color, so it

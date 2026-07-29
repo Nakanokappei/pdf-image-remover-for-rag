@@ -36,9 +36,20 @@ internal static class ImageListRow
     /// The string drawn in the thumbnail cell/tile for text groups, or null
     /// for images and shapes (which use a real bitmap). Only text is rendered
     /// as text.
+    ///
+    /// A string that is entirely whitespace — full-width (U+3000) or ordinary
+    /// spaces — would paint as an empty cell/tile, making the row look blank
+    /// and impossible to tell apart from a rendering failure. Such a value is
+    /// wrapped in quotes so the whitespace is visible as content. The group's
+    /// real <see cref="CrossFileImageGroup.TextValue"/> (the removal key and
+    /// the tooltip) is unchanged — only what is drawn.
     /// </summary>
-    public static string? ThumbnailText(CrossFileImageGroup group) =>
-        group.Kind == RemovableKind.Text ? group.TextValue ?? string.Empty : null;
+    public static string? ThumbnailText(CrossFileImageGroup group)
+    {
+        if (group.Kind != RemovableKind.Text) return null;
+        var value = group.TextValue ?? string.Empty;
+        return string.IsNullOrWhiteSpace(value) ? $"\"{value}\"" : value;
+    }
 
     /// <summary>タイプ cell: image / text / shape, localized.</summary>
     public static string TypeLabel(CrossFileImageGroup group) => group.Kind switch

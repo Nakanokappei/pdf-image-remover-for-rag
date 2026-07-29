@@ -149,20 +149,26 @@ internal static class TilePainter
         switch (tile.Kind)
         {
             case RemovableKind.Text:
-                // A capital "T": top bar + centre stem.
-                int barY = inner.Top + inner.Height / 6;
-                int cx = inner.Left + inner.Width / 2;
-                g.DrawLine(pen, inner.Left, barY, inner.Right, barY);
-                g.DrawLine(pen, cx, barY, cx, inner.Bottom);
+                // Paragraph rules: four lines, the last one short. A capital "T"
+                // was tried first and read as a table or a heading marker, while
+                // the rules are the mark editors use for a block of text.
+                float rulePitch = inner.Height / 3.4f;
+                for (int rule = 0; rule < 4; rule++)
+                {
+                    float ruleY = inner.Top + (rule * rulePitch);
+                    float ruleWidth = rule == 3 ? inner.Width * 0.55f : inner.Width;
+                    g.DrawLine(pen, inner.Left, ruleY, inner.Left + ruleWidth, ruleY);
+                }
                 break;
             case RemovableKind.Shape:
-                // A triangle outline.
-                g.DrawPolygon(pen, new[]
-                {
-                    new Point(inner.Left + inner.Width / 2, inner.Top),
-                    new Point(inner.Left, inner.Bottom),
-                    new Point(inner.Right, inner.Bottom),
-                });
+                // A square overlapped by a circle. A lone triangle read as a
+                // warning sign; three overlapping primitives turn into a blob at
+                // 16 px, so two are drawn.
+                g.DrawRectangle(pen, inner.Left, inner.Top,
+                    inner.Width * 0.62f, inner.Height * 0.62f);
+                g.DrawEllipse(pen,
+                    inner.Left + (inner.Width * 0.34f), inner.Top + (inner.Height * 0.34f),
+                    inner.Width * 0.64f, inner.Height * 0.64f);
                 break;
             default:
                 // A framed picture with a sun and a mountain ridge.

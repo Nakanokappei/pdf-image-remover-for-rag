@@ -125,6 +125,7 @@ internal sealed class HindiStrings : IStrings
     public string AboutAppLicense => "MIT लाइसेंस के अंतर्गत जारी।";
     public string AboutThirdPartyLicense => "लाइब्रेरी: PDFsharp (MIT), PdfPig (Apache-2.0)";
     public string AboutLicenseLink => "लाइसेंस जानकारी";
+    public string ContextMenuUsageLocations => "उपयोग स्थान दिखाएँ(&U)…";
 
     public string ErrorSameAsSource =>
         "स्रोत PDF पर सहेजा नहीं जा सकता। कोई दूसरा नाम चुनें।";

@@ -1,7 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <!-- Windows 10 SDK TFM (not plain net8.0-windows) so the WinRT projections
+         for Windows.Data.Pdf are available — the usage-locations window renders
+         full PDF pages with the OS's own PDF renderer, so no native PDFium/Skia
+         binary has to be bundled. 19041 = Windows 10 2004, well below Win11. -->
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
     <UseWindowsForms>true</UseWindowsForms>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <Nullable>enable</Nullable>
@@ -21,7 +26,7 @@
          the exact build is identifiable inside the app. Bump BuildNumber on each
          published update. -->
     <Version>1.0.0</Version>
-    <BuildNumber>56</BuildNumber>
+    <BuildNumber>57</BuildNumber>
     <InformationalVersion>1.0.0+$(BuildNumber)</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>

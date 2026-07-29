@@ -129,6 +129,7 @@ internal sealed class VietnameseStrings : IStrings
     public string AboutAppLicense => "Phát hành theo Giấy phép MIT.";
     public string AboutThirdPartyLicense => "Thư viện: PDFsharp (MIT), PdfPig (Apache-2.0)";
     public string AboutLicenseLink => "Thông tin giấy phép";
+    public string ContextMenuUsageLocations => "Hiển thị &Vị trí Sử dụng…";
 
     public string ErrorSameAsSource =>
         "Không thể lưu đè lên tệp PDF nguồn. Vui lòng chọn tên khác.";

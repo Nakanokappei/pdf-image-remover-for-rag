@@ -127,6 +127,7 @@ internal sealed class GermanStrings : IStrings
     public string AboutAppLicense => "Veröffentlicht unter der MIT-Lizenz.";
     public string AboutThirdPartyLicense => "Bibliotheken: PDFsharp (MIT), PdfPig (Apache-2.0)";
     public string AboutLicenseLink => "Lizenzinformationen";
+    public string ContextMenuUsageLocations => "&Verwendungsorte anzeigen…";
 
     public string ErrorSameAsSource =>
         "Die Quell-PDF kann nicht überschrieben werden. Wählen Sie einen anderen Namen.";

@@ -482,6 +482,56 @@ internal sealed partial class MainForm
     }
 
     // =======================================================================
+    // Usage-locations window (right-click 使用箇所を表示…)
+    // =======================================================================
+
+    /// <summary>
+    /// Open the usage-locations window for one object: every file and page it
+    /// is drawn on, with the object's location outlined on a full-page
+    /// thumbnail. The data comes straight from the group's per-file
+    /// occurrences — no document is re-opened here (the window renders pages
+    /// itself, on demand).
+    /// </summary>
+    void OpenUsageLocations(CrossFileImageGroup group)
+    {
+        using var dialog = new UsageLocationsDialog(UsageWindowTitle(group), BuildUsageRows(group));
+        dialog.ShowDialog(this);
+    }
+
+    /// <summary>
+    /// One row per (file, page): the object's bounding boxes on that page,
+    /// ordered by file (open order) then page. Text and shape occurrences carry
+    /// no coordinates, so their rows have no boxes — the page is still shown.
+    /// </summary>
+    static IReadOnlyList<UsageRow> BuildUsageRows(CrossFileImageGroup group)
+    {
+        var rows = new List<UsageRow>();
+        foreach (var file in group.FileOccurrences)
+        {
+            var name = Path.GetFileNameWithoutExtension(file.FilePath);
+            foreach (var pageGroup in file.Occurrences.GroupBy(o => o.PageNumber).OrderBy(p => p.Key))
+            {
+                var boxes = pageGroup
+                    .Where(o => o.Width > 0 && o.Height > 0)
+                    .Select(o => new RectangleF((float)o.X, (float)o.Y, (float)o.Width, (float)o.Height))
+                    .ToArray();
+                rows.Add(new UsageRow(file.FilePath, name, pageGroup.Key, boxes));
+            }
+        }
+        return rows;
+    }
+
+    /// <summary>Window title: the clean menu caption plus a short object label.</summary>
+    static string UsageWindowTitle(CrossFileImageGroup group)
+    {
+        var caption = L10n.ContextMenuUsageLocations.Replace("&", string.Empty).TrimEnd('…', '.');
+        var label = group.Kind == RemovableKind.Text
+            ? ImageListRow.ThumbnailText(group) ?? group.GroupId
+            : $"{ImageListRow.TypeLabel(group)} {group.GroupId}";
+        return $"{caption} — {label}";
+    }
+
+    // =======================================================================
     // View switching (表示 menu)
     // =======================================================================
 

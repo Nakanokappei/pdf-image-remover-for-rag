@@ -131,6 +131,7 @@ internal sealed class IndonesianMalayStrings : IStrings
     public string AboutAppLicense => "Dirilis di bawah Lisensi MIT.";
     public string AboutThirdPartyLicense => "Pustaka: PDFsharp (MIT), PdfPig (Apache-2.0)";
     public string AboutLicenseLink => "Informasi lisensi";
+    public string ContextMenuUsageLocations => "Tampilkan &Lokasi Penggunaan…";
 
     public string ErrorSameAsSource =>
         "Tidak dapat menyimpan dengan menimpa PDF sumber. Pilih nama lain.";

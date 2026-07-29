@@ -103,6 +103,12 @@ internal static class L10n
     /// <summary>Prefix shown when more than one file is being opened.</summary>
     public static string ProgressFileCounter(int index, int count) => $"[{index}/{count}] ";
 
+    /// <summary>
+    /// Page label in the usage-locations window ("p.5"). The "p." abbreviation
+    /// is conventional across languages, so it stays off IStrings.
+    /// </summary>
+    public static string UsagePageLabel(int pageNumber) => $"p.{pageNumber}";
+
     // --- window / menus ----------------------------------------------------
 
     public static string AppTitle => S.AppTitle;
@@ -200,6 +206,7 @@ internal static class L10n
     public static string AboutAppLicense => S.AboutAppLicense;
     public static string AboutThirdPartyLicense => S.AboutThirdPartyLicense;
     public static string AboutLicenseLink => S.AboutLicenseLink;
+    public static string ContextMenuUsageLocations => S.ContextMenuUsageLocations;
 
     // --- workflow messages -------------------------------------------------
 

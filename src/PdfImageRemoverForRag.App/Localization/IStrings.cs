@@ -171,6 +171,13 @@ internal interface IStrings
     string AboutThirdPartyLicense { get; }
     string AboutLicenseLink { get; }
 
+    /// <summary>
+    /// Right-click menu item on a row/tile, and the title of the window it
+    /// opens, which shows every file + page where the object is used with a
+    /// full-page thumbnail. Carries an access key like the menu captions.
+    /// </summary>
+    string ContextMenuUsageLocations { get; }
+
     // --- messages raised by the workflow (spec §17) ------------------------
 
     string ErrorSameAsSource { get; }

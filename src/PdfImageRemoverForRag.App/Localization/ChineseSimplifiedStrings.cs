@@ -121,6 +121,7 @@ internal sealed class ChineseSimplifiedStrings : IStrings
     public string AboutAppLicense => "本应用基于 MIT 许可证发布。";
     public string AboutThirdPartyLicense => "使用的库：PDFsharp (MIT)、PdfPig (Apache-2.0)";
     public string AboutLicenseLink => "许可证信息";
+    public string ContextMenuUsageLocations => "显示使用位置(&U)…";
 
     public string ErrorSameAsSource =>
         "无法覆盖源 PDF 进行保存。请指定其他文件名。";

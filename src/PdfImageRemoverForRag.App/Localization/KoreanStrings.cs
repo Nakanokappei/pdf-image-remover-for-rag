@@ -120,6 +120,7 @@ internal sealed class KoreanStrings : IStrings
     public string AboutAppLicense => "MIT 라이선스로 배포됩니다.";
     public string AboutThirdPartyLicense => "사용 라이브러리: PDFsharp (MIT), PdfPig (Apache-2.0)";
     public string AboutLicenseLink => "라이선스 정보";
+    public string ContextMenuUsageLocations => "사용 위치 표시(&U)…";
 
     public string ErrorSameAsSource =>
         "원본 PDF에 덮어쓸 수 없습니다. 다른 이름을 지정하십시오.";

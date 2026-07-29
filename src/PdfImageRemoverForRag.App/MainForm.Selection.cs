@@ -267,6 +267,31 @@ internal sealed partial class MainForm
         else _selectedHashes.Remove(hash);
     }
 
+    // --- row/tile context menu (使用箇所を表示…) --------------------------------
+
+    /// <summary>Capture the right-clicked grid row's group and show the menu.</summary>
+    void OnGridContextMenuNeeded(object? sender, DataGridViewCellContextMenuStripNeededEventArgs e)
+    {
+        if (e.RowIndex < 0 || _imageListGrid.Rows[e.RowIndex].Tag is not CrossFileImageGroup group)
+        {
+            return;
+        }
+        _contextGroup = group;
+        e.ContextMenuStrip = _rowContextMenu;
+    }
+
+    /// <summary>Capture the right-clicked tile's group and show the menu there.</summary>
+    void OnTileContextRequested(CrossFileImageGroup group, Point location)
+    {
+        _contextGroup = group;
+        _rowContextMenu.Show(_tileView, location);
+    }
+
+    void OnUsageLocationsClicked(object? sender, EventArgs e)
+    {
+        if (_contextGroup is { } group) OpenUsageLocations(group);
+    }
+
     void SyncGridRowCheckState(string hash, bool isChecked)
     {
         _syncingSelection = true;

@@ -54,6 +54,7 @@ internal sealed partial class MainForm
             _clearSelectionIcon.Dispose();
             _glyphHeaderFont?.Dispose();
             _thumbnailSettleTimer.Dispose();
+            _rowContextMenu.Dispose();
         }
     }
 }

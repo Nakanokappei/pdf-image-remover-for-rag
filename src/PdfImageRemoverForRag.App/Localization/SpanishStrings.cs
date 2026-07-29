@@ -130,6 +130,7 @@ internal sealed class SpanishStrings : IStrings
     public string AboutAppLicense => "Publicado bajo la licencia MIT.";
     public string AboutThirdPartyLicense => "Bibliotecas: PDFsharp (MIT), PdfPig (Apache-2.0)";
     public string AboutLicenseLink => "Información de licencias";
+    public string ContextMenuUsageLocations => "Mostrar &ubicaciones de uso…";
 
     public string ErrorSameAsSource =>
         "No se puede guardar sobre el PDF de origen. Elija otro nombre.";

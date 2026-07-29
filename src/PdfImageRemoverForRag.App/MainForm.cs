@@ -67,6 +67,13 @@ internal sealed partial class MainForm : Form
     // one control per object, which broke down at 2,015 of them.
     readonly TileView _tileView;
 
+    // --- row/tile context menu ---------------------------------------------
+    // One item, shown from either view's right-click. The group it acts on is
+    // captured just before the menu opens.
+    readonly ContextMenuStrip _rowContextMenu = new();
+    readonly ToolStripMenuItem _usageLocationsMenuItem = new(L10n.ContextMenuUsageLocations);
+    CrossFileImageGroup? _contextGroup;
+
     // --- status bar --------------------------------------------------------
     readonly StatusStrip _statusStrip = new();
     readonly ToolStripStatusLabel _statusLabel = new() { Text = L10n.StatusOpenPrompt, Spring = true, TextAlign = ContentAlignment.MiddleLeft };
@@ -254,6 +261,11 @@ internal sealed partial class MainForm : Form
         _tileView.ViewportChanged += (_, _) => ScheduleThumbnailLoad();
         _tileView.TileToggled += OnTileToggled;
         _tileView.RangeToggleRequested += OnTileRangeToggled;
+        _tileView.TileContextRequested += OnTileContextRequested;
+
+        _usageLocationsMenuItem.Click += OnUsageLocationsClicked;
+        _rowContextMenu.Items.Add(_usageLocationsMenuItem);
+        _imageListGrid.CellContextMenuStripNeeded += OnGridContextMenuNeeded;
         _tileView.ToolTipFor = TileToolTipFor;
         _tileView.AccessibleNameFor = TileAccessibleNameFor;
         _thumbnailSettleTimer.Tick += OnThumbnailSettleTick;

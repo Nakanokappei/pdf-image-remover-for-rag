@@ -46,6 +46,12 @@ internal sealed class TileView : Panel
     public event Action<IReadOnlyList<CrossFileImageGroup>, bool>? RangeToggleRequested;
 
     /// <summary>
+    /// Raised when a tile is right-clicked, with its group and the client-space
+    /// point, so the host can show the row context menu (使用箇所を表示…).
+    /// </summary>
+    public event Action<CrossFileImageGroup, Point>? TileContextRequested;
+
+    /// <summary>
     /// Raised whenever the visible range may have changed. The wheel does not
     /// raise Scroll, so both paths funnel through here and the thumbnail loader
     /// only has to listen once.
@@ -183,6 +189,21 @@ internal sealed class TileView : Panel
     protected override void OnMouseUp(MouseEventArgs e)
     {
         base.OnMouseUp(e);
+
+        // Right-click asks the host to show the row context menu on the tile
+        // under the cursor.
+        if (e.Button == MouseButtons.Right)
+        {
+            int hit = IndexAt(e.Location);
+            if (hit >= 0)
+            {
+                Focus();
+                SetFocusedTile(hit);
+                TileContextRequested?.Invoke(_items[hit], e.Location);
+            }
+            return;
+        }
+
         if (e.Button != MouseButtons.Left) return;
 
         int index = IndexAt(e.Location);

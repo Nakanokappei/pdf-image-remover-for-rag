@@ -133,6 +133,7 @@ internal sealed class TurkishStrings : IStrings
     public string AboutAppLicense => "MIT Lisansı ile yayımlanmıştır.";
     public string AboutThirdPartyLicense => "Kitaplıklar: PDFsharp (MIT), PdfPig (Apache-2.0)";
     public string AboutLicenseLink => "Lisans bilgileri";
+    public string ContextMenuUsageLocations => "&Kullanım Konumlarını Göster…";
 
     public string ErrorSameAsSource =>
         "Kaynak PDF'in üzerine kaydedilemez. Farklı bir ad seçin.";

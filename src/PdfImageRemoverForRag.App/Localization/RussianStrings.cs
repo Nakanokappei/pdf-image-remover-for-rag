@@ -134,6 +134,7 @@ internal sealed class RussianStrings : IStrings
     public string AboutAppLicense => "Распространяется по лицензии MIT.";
     public string AboutThirdPartyLicense => "Библиотеки: PDFsharp (MIT), PdfPig (Apache-2.0)";
     public string AboutLicenseLink => "Сведения о лицензиях";
+    public string ContextMenuUsageLocations => "Показать &места использования…";
 
     public string ErrorSameAsSource =>
         "Нельзя сохранить поверх исходного PDF. Выберите другое имя.";

@@ -123,6 +123,7 @@ internal sealed class EnglishStrings : IStrings
     public string AboutAppLicense => "Released under the MIT License.";
     public string AboutThirdPartyLicense => "Libraries: PDFsharp (MIT), PdfPig (Apache-2.0)";
     public string AboutLicenseLink => "License information";
+    public string ContextMenuUsageLocations => "Show &Usage Locations…";
 
     public string ErrorSameAsSource =>
         "Cannot save over the source PDF. Choose a different name.";

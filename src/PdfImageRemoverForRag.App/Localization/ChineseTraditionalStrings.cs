@@ -123,6 +123,7 @@ internal sealed class ChineseTraditionalStrings : IStrings
     public string AboutAppLicense => "本應用程式以 MIT 授權條款發行。";
     public string AboutThirdPartyLicense => "使用的程式庫：PDFsharp (MIT)、PdfPig (Apache-2.0)";
     public string AboutLicenseLink => "授權資訊";
+    public string ContextMenuUsageLocations => "顯示使用位置(&U)…";
 
     public string ErrorSameAsSource =>
         "無法覆寫來源 PDF。請指定其他檔案名稱。";

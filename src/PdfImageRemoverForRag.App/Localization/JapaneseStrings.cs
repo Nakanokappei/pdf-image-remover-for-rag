@@ -119,6 +119,7 @@ internal sealed class JapaneseStrings : IStrings
     public string AboutAppLicense => "本アプリは MIT ライセンスで公開されています。";
     public string AboutThirdPartyLicense => "利用ライブラリ: PDFsharp (MIT) / PdfPig (Apache-2.0)";
     public string AboutLicenseLink => "ライセンス情報";
+    public string ContextMenuUsageLocations => "使用箇所を表示(&U)…";
 
     public string ErrorSameAsSource =>
         "元 PDF と同じパスへの保存はできません。別名を指定してください。";

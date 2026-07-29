@@ -50,9 +50,16 @@ internal sealed class PdfPageRenderer
             // Page size in PDF points, from the media box (falling back to the
             // reported size). Image occurrences carry point-space coordinates,
             // so this is the unit the caller maps its boxes with.
+            //
+            // Windows.Data.Pdf reports both in device-independent pixels
+            // (96/inch), NOT in PDF points (72/inch) — measured on A4, which it
+            // reports as 793.7 x 1122.5. Without this conversion every location
+            // box lands at 3/4 of its distance from the page's bottom-left, which
+            // on an A4 header logo put the outline a quarter of a page too low.
+            const double PointsPerDip = 72.0 / 96.0;
             var media = page.Dimensions.MediaBox;
-            double pageWidth = media.Width > 0 ? media.Width : page.Size.Width;
-            double pageHeight = media.Height > 0 ? media.Height : page.Size.Height;
+            double pageWidth = (media.Width > 0 ? media.Width : page.Size.Width) * PointsPerDip;
+            double pageHeight = (media.Height > 0 ? media.Height : page.Size.Height) * PointsPerDip;
 
             var options = new PdfPageRenderOptions { DestinationWidth = (uint)Math.Max(1, targetWidthPixels) };
             using var stream = new InMemoryRandomAccessStream();

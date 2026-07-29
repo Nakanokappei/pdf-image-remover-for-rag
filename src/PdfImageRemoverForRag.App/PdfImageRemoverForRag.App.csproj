@@ -26,7 +26,7 @@
          the exact build is identifiable inside the app. Bump BuildNumber on each
          published update. -->
     <Version>1.0.0</Version>
-    <BuildNumber>60</BuildNumber>
+    <BuildNumber>61</BuildNumber>
     <InformationalVersion>1.0.0+$(BuildNumber)</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>

@@ -80,7 +80,15 @@ public sealed class ImageGroupBuilder
             Compression: first.Compression,
             EstimatedSize: bucket.Sum(d => d.StreamByteCount),
             IsImageMask: first.IsImageMask,
-            IsPossibleFullPageImage: _fullPageDetector.AnyIsPossibleFullPage(occurrences),
+            // Images only. The warning this drives says the page will go blank
+            // because it is probably a scan, which is a statement about a
+            // picture; a full-page background rectangle or a page-wide
+            // watermark string is neither a scan nor a hazard of that kind.
+            // Text and shape occurrences carry rectangles too (the usage
+            // window outlines them), so without this the warning would start
+            // appearing on them.
+            IsPossibleFullPageImage: first.Kind == RemovableKind.Image
+                && _fullPageDetector.AnyIsPossibleFullPage(occurrences),
             IsSafelyRemovable: unsafeDiscovery is null,
             WarningMessage: unsafeDiscovery?.UnsafeReason,
             ThumbnailBytes: bucket.Select(d => d.ThumbnailBytes).FirstOrDefault(t => t is not null),

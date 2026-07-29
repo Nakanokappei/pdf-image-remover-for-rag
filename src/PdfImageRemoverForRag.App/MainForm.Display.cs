@@ -500,8 +500,9 @@ internal sealed partial class MainForm
 
     /// <summary>
     /// One row per (file, page): the object's bounding boxes on that page,
-    /// ordered by file (open order) then page. Text and shape occurrences carry
-    /// no coordinates, so their rows have no boxes — the page is still shown.
+    /// ordered by file (open order) then page. All three kinds carry
+    /// coordinates, so a string shown three times on a page outlines three
+    /// places, the same as an image drawn three times.
     /// </summary>
     static IReadOnlyList<UsageRow> BuildUsageRows(CrossFileImageGroup group)
     {
@@ -511,8 +512,12 @@ internal sealed partial class MainForm
             var name = Path.GetFileNameWithoutExtension(file.FilePath);
             foreach (var pageGroup in file.Occurrences.GroupBy(o => o.PageNumber).OrderBy(p => p.Key))
             {
+                // A rule is a path of zero height ("495x0 pt" in the object
+                // list), so an occurrence only has to extend in ONE direction
+                // to be worth outlining; the window gives such a box a visible
+                // thickness when it draws it.
                 var boxes = pageGroup
-                    .Where(o => o.Width > 0 && o.Height > 0)
+                    .Where(o => o.Width > 0 || o.Height > 0)
                     .Select(o => new RectangleF((float)o.X, (float)o.Y, (float)o.Width, (float)o.Height))
                     .ToArray();
                 rows.Add(new UsageRow(file.FilePath, name, pageGroup.Key, boxes));

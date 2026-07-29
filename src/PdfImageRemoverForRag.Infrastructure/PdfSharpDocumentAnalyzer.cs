@@ -100,9 +100,9 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
             using var doc = PdfReader.Open(path, PdfDocumentOpenMode.Import);
             var accumulators = new Dictionary<string, DiscoveryAccumulator>(StringComparer.Ordinal);
             var pageDims = new List<PageDimensions>(doc.PageCount);
-            // Text value → the pages it is shown on (one entry per showing).
-            var textPagesByValue = new Dictionary<string, List<int>>(StringComparer.Ordinal);
-            // Shape signature → the pages it is drawn on + one bounding box.
+            // Text value → where it is shown (one entry per showing).
+            var textPlacementsByValue = new Dictionary<string, List<Placement>>(StringComparer.Ordinal);
+            // Shape signature → where it is drawn + one bounding box for the size.
             var shapesBySignature = new Dictionary<string, ShapeAccumulator>(StringComparer.Ordinal);
 
             for (int i = 0; i < doc.PageCount; i++)
@@ -126,16 +126,20 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
                 // font's ToUnicode map). The "2+ occurrences" filter is applied
                 // after the sweep so a header repeated once per page qualifies
                 // while a one-off line does not.
+                // Each showing also carries the rectangle it covers, so the
+                // usage-locations window can outline a string on the page the
+                // same way it outlines an image.
                 var textDecoder = new PdfTextDecoder(page.Resources);
-                foreach (var text in ContentStreamWalker.FindShownTexts(sequence, textDecoder))
+                var textMetrics = new PdfFontMetrics(page.Resources);
+                foreach (var text in ContentStreamWalker.FindTexts(sequence, textDecoder, textMetrics))
                 {
-                    if (text.Length < MinTextLength) continue;
-                    if (!textPagesByValue.TryGetValue(text, out var pages))
+                    if (text.Value.Length < MinTextLength) continue;
+                    if (!textPlacementsByValue.TryGetValue(text.Value, out var placements))
                     {
-                        pages = new List<int>();
-                        textPagesByValue[text] = pages;
+                        placements = new List<Placement>();
+                        textPlacementsByValue[text.Value] = placements;
                     }
-                    pages.Add(pageNumber);
+                    placements.Add(new Placement(pageNumber, text.X, text.Y, text.Width, text.Height));
                 }
 
                 // Vector shapes: record every paintable path, grouped by the
@@ -147,7 +151,8 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
                         acc = new ShapeAccumulator(shape.Width, shape.Height, shape.Geometry);
                         shapesBySignature[shape.Signature] = acc;
                     }
-                    acc.Pages.Add(pageNumber);
+                    acc.Placements.Add(
+                        new Placement(pageNumber, shape.X, shape.Y, shape.Width, shape.Height));
                 }
 
                 // Direct image XObjects — every Do call for that name becomes an occurrence.
@@ -202,10 +207,10 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
             // Text discoveries: only strings shown 2+ times within this file
             // (the repeated-noise case the feature targets). Each showing is
             // an occurrence so the usage count and pages match the images.
-            foreach (var (value, pages) in textPagesByValue)
+            foreach (var (value, placements) in textPlacementsByValue)
             {
-                if (pages.Count < MinTextOccurrences) continue;
-                discoveries.Add(BuildTextDiscovery(value, pages));
+                if (placements.Count < MinTextOccurrences) continue;
+                discoveries.Add(BuildTextDiscovery(value, placements));
             }
 
             // Shape discoveries: every drawn path (no occurrence-count filter,
@@ -237,6 +242,13 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
     /// <summary>Minimum showings within one file before a text is treated as noise.</summary>
     const int MinTextOccurrences = 2;
 
+    /// <summary>
+    /// One place an object was drawn: the page and the rectangle it covers, in
+    /// points. Text and shapes group position-independently, so the placements
+    /// are collected alongside the group key rather than being part of it.
+    /// </summary>
+    sealed record Placement(int PageNumber, double X, double Y, double Width, double Height);
+
     /// <summary>Mutable staging for a shape during the sweep.</summary>
     sealed class ShapeAccumulator
     {
@@ -247,7 +259,7 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
             Geometry = geometry;
         }
 
-        public List<int> Pages { get; } = new();
+        public List<Placement> Placements { get; } = new();
         public double Width { get; }
         public double Height { get; }
         public ShapeGeometry Geometry { get; }
@@ -261,9 +273,7 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
     /// </summary>
     static ImageDiscovery BuildShapeDiscovery(string signature, ShapeAccumulator acc)
     {
-        var occurrences = acc.Pages
-            .Select(page => new PdfImageOccurrence(page, string.Empty, string.Empty, 0, 0, 0, 0))
-            .ToArray();
+        var occurrences = acc.Placements.Select(ToOccurrence).ToArray();
         return new ImageDiscovery(
             ObjectId: string.Empty,
             StreamHash: "SHAPE:" + StreamHasher.Sha256Hex(System.Text.Encoding.UTF8.GetBytes(signature)),
@@ -284,15 +294,21 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
     }
 
     /// <summary>
+    /// A placement as an occurrence. Text and shapes have no indirect object or
+    /// resource name — those identify an Image XObject — so the id and name are
+    /// empty and the rectangle carries the information.
+    /// </summary>
+    static PdfImageOccurrence ToOccurrence(Placement p) =>
+        new(p.PageNumber, string.Empty, string.Empty, p.X, p.Y, p.Width, p.Height);
+
+    /// <summary>
     /// Build a text discovery. The stream hash is derived from the string so
     /// it groups by value and never collides with an image's raw-stream hash;
-    /// occurrences carry only the page number (no on-page rectangle).
+    /// each occurrence carries the rectangle that showing covers.
     /// </summary>
-    static ImageDiscovery BuildTextDiscovery(string value, IReadOnlyList<int> pages)
+    static ImageDiscovery BuildTextDiscovery(string value, IReadOnlyList<Placement> placements)
     {
-        var occurrences = pages
-            .Select(page => new PdfImageOccurrence(page, string.Empty, string.Empty, 0, 0, 0, 0))
-            .ToArray();
+        var occurrences = placements.Select(ToOccurrence).ToArray();
         return new ImageDiscovery(
             ObjectId: string.Empty,
             StreamHash: "TEXT:" + StreamHasher.Sha256Hex(System.Text.Encoding.UTF8.GetBytes(value)),

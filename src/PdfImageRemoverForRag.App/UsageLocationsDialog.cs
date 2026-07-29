@@ -5,9 +5,9 @@ namespace PdfImageRemoverForRag.App;
 
 /// <summary>
 /// One place an object is used: a file, a page in it, and the object's
-/// bounding boxes on that page in PDF points (empty for text and shapes, whose
-/// positions the analyzer does not track — the row still shows which file and
-/// page, just without a location outline).
+/// bounding boxes on that page in PDF points. Images, text and shapes all
+/// carry rectangles; a row without any (an object whose geometry could not be
+/// resolved) still shows which file and page, just without an outline.
 /// </summary>
 internal sealed record UsageRow(
     string FilePath,
@@ -287,9 +287,14 @@ internal sealed class UsageLocationsDialog : Form
                 ? SystemColors.Highlight : Color.FromArgb(0x1E, 0x90, 0xFF);
             var saved = g.SmoothingMode;
             g.SmoothingMode = SmoothingMode.AntiAlias;
-            using var pen = new Pen(color, Math.Max(1f, Dip(2)));
             foreach (var box in boxes)
             {
+                // A single line of text is only a few pixels tall on a page
+                // thumbnail, and a 2 px outline drawn on both sides of it fills
+                // the box solid — hiding the very thing being pointed at. Thin
+                // boxes get a thinner pen.
+                float width = Math.Clamp(Math.Min(box.Width, box.Height) / 5f, 1f, Dip(2));
+                using var pen = new Pen(color, width);
                 g.DrawRectangle(pen, box.X, box.Y, box.Width, box.Height);
             }
             g.SmoothingMode = saved;
@@ -299,7 +304,7 @@ internal sealed class UsageLocationsDialog : Form
         /// The row's bounding boxes as display rectangles, clipped to the page.
         /// PDF origin is bottom-left, so Y is flipped into the displayed rect.
         /// </summary>
-        static IReadOnlyList<RectangleF> LocationRects(Rectangle disp, RenderedPage page, UsageRow row)
+        IReadOnlyList<RectangleF> LocationRects(Rectangle disp, RenderedPage page, UsageRow row)
         {
             if (row.BoxesInPoints.Count == 0 || page.PageWidthPoints <= 0 || page.PageHeightPoints <= 0)
             {
@@ -308,6 +313,10 @@ internal sealed class UsageLocationsDialog : Form
 
             double sx = disp.Width / page.PageWidthPoints;
             double sy = disp.Height / page.PageHeightPoints;
+            // Rules have no thickness and a line of text is a couple of pixels
+            // tall on a page thumbnail; a box thinner than this could not be
+            // seen at all, so it is grown symmetrically.
+            float minimum = Dip(4);
             var rects = new List<RectangleF>(row.BoxesInPoints.Count);
             foreach (var box in row.BoxesInPoints)
             {
@@ -316,7 +325,8 @@ internal sealed class UsageLocationsDialog : Form
                     disp.Y + (float)((page.PageHeightPoints - (box.Y + box.Height)) * sy),
                     (float)(box.Width * sx),
                     (float)(box.Height * sy));
-                if (rect.Width < 1 || rect.Height < 1) continue;
+                if (rect.Width < minimum) rect.Inflate((minimum - rect.Width) / 2, 0);
+                if (rect.Height < minimum) rect.Inflate(0, (minimum - rect.Height) / 2);
                 // An occurrence drawn partly off the page must not make the
                 // repaint read outside the bitmap.
                 rect.Intersect(disp);

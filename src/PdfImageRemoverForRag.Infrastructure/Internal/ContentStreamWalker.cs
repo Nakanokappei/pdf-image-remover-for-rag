@@ -384,6 +384,227 @@ internal static class ContentStreamWalker
     }
 
     /// <summary>
+    /// One shown string with the rectangle it covers on the page, in points
+    /// with the origin at the page's bottom-left — the same space image
+    /// occurrences use. <see cref="Index"/> is the operator's position in the
+    /// sequence, which is what lets one instance be removed while identical
+    /// strings elsewhere stay.
+    /// </summary>
+    public sealed record TextHit(
+        string Value, double X, double Y, double Width, double Height, int Index);
+
+    /// <summary>Fraction of the font size a glyph box rises above the baseline.</summary>
+    const double AscenderFraction = 0.85;
+
+    /// <summary>Fraction of the font size a glyph box drops below the baseline.</summary>
+    const double DescenderFraction = 0.25;
+
+    /// <summary>
+    /// Find every shown string together with its rectangle on the page.
+    ///
+    /// This runs the text state machine of PDF §9.4: the text matrix and line
+    /// matrix (BT/Td/TD/T*/Tm), the font and size (Tf), and the spacing
+    /// parameters that change how far a string advances (Tc, Tw, Tz, TL, Ts).
+    /// The width of the string itself comes from <paramref name="metrics"/>;
+    /// the height is the font size, from a nominal descender to a nominal
+    /// ascender, because the real per-glyph extents are not worth reading the
+    /// font programs for.
+    ///
+    /// Only overlap detection needs the rectangles — plain removal matches on
+    /// the string value alone.
+    /// </summary>
+    public static List<TextHit> FindTexts(
+        CSequence sequence, PdfTextDecoder decoder, PdfFontMetrics metrics)
+    {
+        var hits = new List<TextHit>();
+        var ctm = new TransformStack();
+
+        // Text state. Everything except the matrices survives BT/ET.
+        var textMatrix = AffineMatrix.Identity;
+        var lineMatrix = AffineMatrix.Identity;
+        string? font = null;
+        double fontSize = 0, charSpacing = 0, wordSpacing = 0, leading = 0, rise = 0;
+        double horizontalScale = 1.0;
+
+        for (int i = 0; i < sequence.Count; i++)
+        {
+            if (sequence[i] is not COperator op) continue;
+            var name = op.OpCode.Name;
+
+            switch (name)
+            {
+                case "q": ctm.Push(); break;
+                case "Q": ctm.Pop(); break;
+                case "cm":
+                    if (op.Operands.Count == 6)
+                    {
+                        ctm.Concat(new AffineMatrix(
+                            Num(op.Operands[0]), Num(op.Operands[1]),
+                            Num(op.Operands[2]), Num(op.Operands[3]),
+                            Num(op.Operands[4]), Num(op.Operands[5])));
+                    }
+                    break;
+
+                case "BT":
+                    textMatrix = lineMatrix = AffineMatrix.Identity;
+                    break;
+
+                case "Tf":
+                    if (op.Operands.Count >= 2 && op.Operands[0] is CName fontName)
+                    {
+                        font = fontName.Name;
+                        fontSize = Num(op.Operands[1]);
+                    }
+                    break;
+
+                case "Tc": if (op.Operands.Count >= 1) charSpacing = Num(op.Operands[0]); break;
+                case "Tw": if (op.Operands.Count >= 1) wordSpacing = Num(op.Operands[0]); break;
+                case "TL": if (op.Operands.Count >= 1) leading = Num(op.Operands[0]); break;
+                case "Ts": if (op.Operands.Count >= 1) rise = Num(op.Operands[0]); break;
+                case "Tz": if (op.Operands.Count >= 1) horizontalScale = Num(op.Operands[0]) / 100.0; break;
+
+                case "Tm":
+                    if (op.Operands.Count == 6)
+                    {
+                        textMatrix = lineMatrix = new AffineMatrix(
+                            Num(op.Operands[0]), Num(op.Operands[1]),
+                            Num(op.Operands[2]), Num(op.Operands[3]),
+                            Num(op.Operands[4]), Num(op.Operands[5]));
+                    }
+                    break;
+
+                case "Td":
+                    if (op.Operands.Count >= 2)
+                    {
+                        textMatrix = lineMatrix = NextLine(
+                            lineMatrix, Num(op.Operands[0]), Num(op.Operands[1]));
+                    }
+                    break;
+
+                case "TD":
+                    if (op.Operands.Count >= 2)
+                    {
+                        leading = -Num(op.Operands[1]);
+                        textMatrix = lineMatrix = NextLine(
+                            lineMatrix, Num(op.Operands[0]), Num(op.Operands[1]));
+                    }
+                    break;
+
+                case "T*":
+                    textMatrix = lineMatrix = NextLine(lineMatrix, 0, -leading);
+                    break;
+
+                default:
+                    if (name is not ("Tj" or "TJ" or "'" or "\"")) break;
+
+                    // The quote operators move to the next line first, and the
+                    // double quote also sets the two spacing parameters.
+                    if (name is "'" or "\"")
+                    {
+                        if (name == "\"" && op.Operands.Count >= 3)
+                        {
+                            wordSpacing = Num(op.Operands[0]);
+                            charSpacing = Num(op.Operands[1]);
+                        }
+                        textMatrix = lineMatrix = NextLine(lineMatrix, 0, -leading);
+                    }
+
+                    if (!TryGetShownText(op, decoder, font, out var value)) break;
+
+                    var state = new TextState(
+                        fontSize, charSpacing, wordSpacing, horizontalScale, rise);
+                    double advance = AdvanceOf(op, font, metrics, state);
+                    hits.Add(BuildTextHit(value, textMatrix.Multiply(ctm.Current), state, advance, i));
+                    textMatrix = new AffineMatrix(1, 0, 0, 1, advance, 0).Multiply(textMatrix);
+                    break;
+            }
+        }
+        return hits;
+    }
+
+    /// <summary>Text-state values that affect where a string lands and how wide it is.</summary>
+    readonly record struct TextState(
+        double FontSize, double CharSpacing, double WordSpacing, double HorizontalScale, double Rise);
+
+    /// <summary>Move the line matrix down/along by (tx, ty), as Td does.</summary>
+    static AffineMatrix NextLine(AffineMatrix lineMatrix, double tx, double ty) =>
+        new AffineMatrix(1, 0, 0, 1, tx, ty).Multiply(lineMatrix);
+
+    /// <summary>
+    /// How far the text cursor moves when this operator is shown, in unscaled
+    /// text space. A TJ array's numbers move the cursor back (or forward) by
+    /// thousandths of the font size and are part of the run's width.
+    /// </summary>
+    static double AdvanceOf(COperator op, string? font, PdfFontMetrics metrics, TextState state)
+    {
+        double advance = 0;
+        if (op.OpCode.Name == "TJ")
+        {
+            if (op.Operands.Count >= 1 && op.Operands[^1] is CArray array)
+            {
+                foreach (var element in array)
+                {
+                    if (element is CString piece) advance += RunAdvance(piece.Value, font, metrics, state);
+                    else advance -= Num(element) / 1000.0 * state.FontSize * state.HorizontalScale;
+                }
+            }
+            return advance;
+        }
+
+        if (op.Operands.Count >= 1 && op.Operands[^1] is CString cs)
+        {
+            advance = RunAdvance(cs.Value, font, metrics, state);
+        }
+        return advance;
+    }
+
+    /// <summary>
+    /// Advance of one string: the glyphs' widths plus character spacing, plus
+    /// word spacing on every single-byte space, all scaled horizontally.
+    /// </summary>
+    static double RunAdvance(string raw, string? font, PdfFontMetrics metrics, TextState state)
+    {
+        double glyphs = metrics.MeasureWidth(font, raw) / 1000.0 * state.FontSize;
+
+        // Character spacing applies once per code, and a composite font spends
+        // two bytes on each.
+        int codeCount = metrics.IsComposite(font) ? raw.Length / 2 : raw.Length;
+        double spacing = state.CharSpacing * codeCount;
+
+        // Word spacing applies to byte 32 only, and (per the spec) never to a
+        // 2-byte composite code.
+        if (!metrics.IsComposite(font) && state.WordSpacing != 0)
+        {
+            foreach (var c in raw)
+            {
+                if (c == ' ') spacing += state.WordSpacing;
+            }
+        }
+        return (glyphs + spacing) * state.HorizontalScale;
+    }
+
+    /// <summary>
+    /// Map the run's box — baseline to ascender/descender, zero to its advance —
+    /// through the text and current transformation matrices into page space.
+    /// </summary>
+    static TextHit BuildTextHit(
+        string value, AffineMatrix toPage, TextState state, double advance, int index)
+    {
+        double top = state.Rise + (state.FontSize * AscenderFraction);
+        double bottom = state.Rise - (state.FontSize * DescenderFraction);
+        var corners = new[]
+        {
+            toPage.Apply(0, bottom),
+            toPage.Apply(advance, bottom),
+            toPage.Apply(0, top),
+            toPage.Apply(advance, top),
+        };
+        double minX = corners.Min(p => p.X), maxX = corners.Max(p => p.X);
+        double minY = corners.Min(p => p.Y), maxY = corners.Max(p => p.Y);
+        return new TextHit(value, minX, minY, maxX - minX, maxY - minY, index);
+    }
+
+    /// <summary>
     /// Remove every text-showing operator whose decoded string is in
     /// <paramref name="textValues"/>. Surrounding text-positioning operators
     /// (Td/Tm/Tf) are left in place — without the show operator they simply

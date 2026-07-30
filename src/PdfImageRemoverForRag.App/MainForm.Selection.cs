@@ -210,8 +210,56 @@ internal sealed partial class MainForm
         bool shift = (ModifierKeys & Keys.Shift) != 0
                      && _checkAnchorRowIndex >= 0
                      && _checkAnchorRowIndex < _imageListGrid.Rows.Count;
-        int from = shift ? Math.Min(_checkAnchorRowIndex, e.RowIndex) : e.RowIndex;
-        int to = shift ? Math.Max(_checkAnchorRowIndex, e.RowIndex) : e.RowIndex;
+        ToggleDeleteRange(shift ? _checkAnchorRowIndex : e.RowIndex, e.RowIndex, newState);
+    }
+
+    /// <summary>
+    /// Space toggles the current row's ☑; Shift+Space extends from the anchor
+    /// row, the same as Shift+click.
+    ///
+    /// Without this the column is reachable by keyboard but not operable by it.
+    /// Its cells are <c>ReadOnly</c> so that the built-in glyph-only toggle stays
+    /// out of the way of the whole-cell hit area the mouse handler provides — and
+    /// a read-only checkbox cell ignores the space bar, so nothing happened at
+    /// all. The tile view has answered Space since it was written; this is the
+    /// table catching up.
+    ///
+    /// It acts on the row rather than on the ☑ cell alone, so arrowing down the
+    /// list and pressing space works whichever column the cursor is in. Nothing
+    /// else in this grid uses the space bar.
+    /// </summary>
+    void OnGridKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.KeyCode != Keys.Space || e.Control || e.Alt) return;
+
+        int rowIndex = _imageListGrid.CurrentCell?.RowIndex ?? -1;
+        if (rowIndex < 0 || rowIndex >= _imageListGrid.Rows.Count) return;
+        if (_imageListGrid.Rows[rowIndex].Cells[_deleteColumn.Index].Value is not { } current) return;
+
+        // Plain Space is also what sets the anchor, mirroring a click without
+        // Shift — so Shift+Space always extends from the last row deliberately
+        // toggled, whether that was done with the mouse or the keyboard.
+        bool shift = e.Shift
+                     && _checkAnchorRowIndex >= 0
+                     && _checkAnchorRowIndex < _imageListGrid.Rows.Count;
+        if (!shift) _checkAnchorRowIndex = rowIndex;
+
+        ToggleDeleteRange(shift ? _checkAnchorRowIndex : rowIndex, rowIndex, current is not true);
+        // Handled AND suppressed: the grid hands an unhandled key on to the
+        // current cell, and the character would otherwise ring the buffer.
+        e.Handled = true;
+        e.SuppressKeyPress = true;
+    }
+
+    /// <summary>
+    /// Set every safely-removable row between the two indices (inclusive, in
+    /// either order) to <paramref name="newState"/>. The mouse and the keyboard
+    /// both come through here so the two cannot drift apart.
+    /// </summary>
+    void ToggleDeleteRange(int anchorRow, int currentRow, bool newState)
+    {
+        int from = Math.Min(anchorRow, currentRow);
+        int to = Math.Max(anchorRow, currentRow);
 
         _syncingSelection = true;
         try

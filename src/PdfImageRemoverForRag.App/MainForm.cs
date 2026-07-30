@@ -265,6 +265,8 @@ internal sealed partial class MainForm : Form
         // events (the built-in glyph-only toggle is disabled by ReadOnly cells).
         _imageListGrid.CellMouseDown += OnGridCellMouseDown;
         _imageListGrid.CellMouseUp += OnGridCellMouseUp;
+        // …and by the space bar, which a read-only checkbox cell would ignore.
+        _imageListGrid.KeyDown += OnGridKeyDown;
         // Scrolling either view restarts the settle timer; the tick is where
         // the viewport's bitmaps are actually fetched.
         _imageListGrid.Scroll += (_, _) => ScheduleThumbnailLoad();

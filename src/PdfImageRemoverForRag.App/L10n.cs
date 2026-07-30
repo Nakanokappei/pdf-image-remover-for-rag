@@ -208,6 +208,16 @@ internal static class L10n
     public static string AboutLicenseLink => S.AboutLicenseLink;
     public static string ContextMenuUsageLocations => S.ContextMenuUsageLocations;
 
+    // --- flatten / delete tabs ---------------------------------------------
+
+    public static string TabFlatten => S.TabFlatten;
+    public static string TabDelete => S.TabDelete;
+    public static string FlattenDescription => S.FlattenDescription;
+    public static string FlattenUnitLabel(int number) => S.FlattenUnitLabel(number);
+    public static string FlattenNoOverlaps => S.FlattenNoOverlaps;
+    public static string StatusFlattenSelection(int objectCount) => S.StatusFlattenSelection(objectCount);
+    public static string AccessibleFlattenPreview => S.AccessibleFlattenPreview;
+
     // --- workflow messages -------------------------------------------------
 
     public static string ErrorSameAsSource => S.ErrorSameAsSource;

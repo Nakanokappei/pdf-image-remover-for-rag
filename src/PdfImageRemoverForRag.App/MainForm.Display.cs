@@ -26,6 +26,10 @@ internal sealed partial class MainForm
         // filter, so toggling the filter never re-decodes bitmaps.
         RefreshThumbnailImages(groups);
         RebuildDisplay();
+        // The flatten tab reads the documents directly (overlap regions are
+        // per page, not merged across files like the object groups), so it is
+        // rebuilt from the same event rather than from the group list.
+        _flattenPanel.SetDocuments(_workflow.OpenDocuments);
     }
 
     /// <summary>

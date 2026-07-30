@@ -132,6 +132,18 @@ internal sealed class SpanishStrings : IStrings
     public string AboutLicenseLink => "Información de licencias";
     public string ContextMenuUsageLocations => "Mostrar &ubicaciones de uso…";
 
+    public string TabFlatten => "Acoplar";
+    public string TabDelete => "Eliminar";
+
+    public string FlattenDescription =>
+        "Funde los objetos superpuestos en una sola imagen. La página se ve igual, "
+        + "pero el texto que contiene deja de ser texto.";
+
+    public string FlattenUnitLabel(int number) => $"Unidad {number}";
+    public string FlattenNoOverlaps => "No se encontraron objetos superpuestos.";
+    public string StatusFlattenSelection(int objectCount) => $"{objectCount} objeto(s) para acoplar";
+    public string AccessibleFlattenPreview => "Vista previa";
+
     public string ErrorSameAsSource =>
         "No se puede guardar sobre el PDF de origen. Elija otro nombre.";
 

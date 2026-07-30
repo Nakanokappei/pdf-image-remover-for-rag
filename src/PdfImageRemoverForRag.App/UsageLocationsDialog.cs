@@ -94,32 +94,6 @@ internal sealed class UsageLocationsDialog : Form
         const int RowPadding = 12;
         const int TextGap = 16;
 
-        // Everything outside the object's own rectangle is drawn desaturated and
-        // darkened, so the one place the object is drawn keeps its colour and
-        // the eye lands on it. Row = input channel, column = output channel;
-        // the luminance weights are the usual 0.3086/0.6094/0.0820, mixed
-        // toward grey by KeptSaturation and then scaled by Dimming.
-        const float KeptSaturation = 0.12f;
-        const float Dimming = 0.7f;
-        static readonly ImageAttributes DimAttributes = BuildDimAttributes();
-
-        static ImageAttributes BuildDimAttributes()
-        {
-            const float lr = 0.3086f, lg = 0.6094f, lb = 0.0820f;
-            const float s = KeptSaturation, k = Dimming;
-            var matrix = new ColorMatrix(new[]
-            {
-                new[] { (((1 - s) * lr) + s) * k, (1 - s) * lr * k,             (1 - s) * lr * k,             0f, 0f },
-                new[] { (1 - s) * lg * k,         (((1 - s) * lg) + s) * k,     (1 - s) * lg * k,             0f, 0f },
-                new[] { (1 - s) * lb * k,         (1 - s) * lb * k,             (((1 - s) * lb) + s) * k,     0f, 0f },
-                new[] { 0f, 0f, 0f, 1f, 0f },
-                new[] { 0f, 0f, 0f, 0f, 1f },
-            });
-            var attributes = new ImageAttributes();
-            attributes.SetColorMatrix(matrix);
-            return attributes;
-        }
-
         readonly IReadOnlyList<UsageRow> _rows;
         readonly PdfPageRenderer _renderer = new();
         // Rendered pages keyed by row index. Bounded to the viewport: entries
@@ -199,12 +173,13 @@ internal sealed class UsageLocationsDialog : Form
             {
                 var disp = FitInside(page.Bitmap.Size, thumbBox);
                 g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                DrawPage(g, disp, page, row);
+                var boxes = LocationRects(disp, page, row);
+                PageHighlightPainter.DrawPage(g, page.Bitmap, disp, boxes);
                 using (var frame = new Pen(SystemColors.ControlDark))
                 {
                     g.DrawRectangle(frame, disp.X, disp.Y, disp.Width - 1, disp.Height - 1);
                 }
-                DrawLocationBoxes(g, disp, page, row);
+                PageHighlightPainter.DrawOutlines(g, boxes, Dip(2));
             }
             else
             {
@@ -245,95 +220,11 @@ internal sealed class UsageLocationsDialog : Form
         }
 
         /// <summary>
-        /// Draw the page: dimmed everywhere, then the object's own rectangles
-        /// repainted at full colour. A row with no coordinates (text, shapes)
-        /// has nothing to point at, so its page is drawn normally rather than
-        /// dimmed as a whole — dimming it would only say "nothing here".
-        /// </summary>
-        void DrawPage(Graphics g, Rectangle disp, RenderedPage page, UsageRow row)
-        {
-            var boxes = LocationRects(disp, page, row);
-            if (boxes.Count == 0)
-            {
-                g.DrawImage(page.Bitmap, disp);
-                return;
-            }
-
-            g.DrawImage(page.Bitmap, disp, 0, 0, page.Bitmap.Width, page.Bitmap.Height,
-                GraphicsUnit.Pixel, DimAttributes);
-
-            // Repaint each location from the same bitmap, mapping the displayed
-            // rectangle back to source pixels.
-            double toSourceX = (double)page.Bitmap.Width / disp.Width;
-            double toSourceY = (double)page.Bitmap.Height / disp.Height;
-            foreach (var box in boxes)
-            {
-                var source = new RectangleF(
-                    (float)((box.X - disp.X) * toSourceX), (float)((box.Y - disp.Y) * toSourceY),
-                    (float)(box.Width * toSourceX), (float)(box.Height * toSourceY));
-                g.DrawImage(page.Bitmap, box, source, GraphicsUnit.Pixel);
-            }
-        }
-
-        void DrawLocationBoxes(Graphics g, Rectangle disp, RenderedPage page, UsageRow row)
-        {
-            var boxes = LocationRects(disp, page, row);
-            if (boxes.Count == 0) return;
-
-            // Light blue, or the theme's Highlight under high contrast. No
-            // translucent fill any more: the area inside the outline is the one
-            // part still in full colour, and a wash over it would undo that.
-            var color = SystemInformation.HighContrast
-                ? SystemColors.Highlight : Color.FromArgb(0x1E, 0x90, 0xFF);
-            var saved = g.SmoothingMode;
-            g.SmoothingMode = SmoothingMode.AntiAlias;
-            foreach (var box in boxes)
-            {
-                // A single line of text is only a few pixels tall on a page
-                // thumbnail, and a 2 px outline drawn on both sides of it fills
-                // the box solid — hiding the very thing being pointed at. Thin
-                // boxes get a thinner pen.
-                float width = Math.Clamp(Math.Min(box.Width, box.Height) / 5f, 1f, Dip(2));
-                using var pen = new Pen(color, width);
-                g.DrawRectangle(pen, box.X, box.Y, box.Width, box.Height);
-            }
-            g.SmoothingMode = saved;
-        }
-
-        /// <summary>
         /// The row's bounding boxes as display rectangles, clipped to the page.
-        /// PDF origin is bottom-left, so Y is flipped into the displayed rect.
         /// </summary>
-        IReadOnlyList<RectangleF> LocationRects(Rectangle disp, RenderedPage page, UsageRow row)
-        {
-            if (row.BoxesInPoints.Count == 0 || page.PageWidthPoints <= 0 || page.PageHeightPoints <= 0)
-            {
-                return Array.Empty<RectangleF>();
-            }
-
-            double sx = disp.Width / page.PageWidthPoints;
-            double sy = disp.Height / page.PageHeightPoints;
-            // Rules have no thickness and a line of text is a couple of pixels
-            // tall on a page thumbnail; a box thinner than this could not be
-            // seen at all, so it is grown symmetrically.
-            float minimum = Dip(4);
-            var rects = new List<RectangleF>(row.BoxesInPoints.Count);
-            foreach (var box in row.BoxesInPoints)
-            {
-                var rect = new RectangleF(
-                    disp.X + (float)(box.X * sx),
-                    disp.Y + (float)((page.PageHeightPoints - (box.Y + box.Height)) * sy),
-                    (float)(box.Width * sx),
-                    (float)(box.Height * sy));
-                if (rect.Width < minimum) rect.Inflate((minimum - rect.Width) / 2, 0);
-                if (rect.Height < minimum) rect.Inflate(0, (minimum - rect.Height) / 2);
-                // An occurrence drawn partly off the page must not make the
-                // repaint read outside the bitmap.
-                rect.Intersect(disp);
-                if (rect.Width >= 1 && rect.Height >= 1) rects.Add(rect);
-            }
-            return rects;
-        }
+        IReadOnlyList<RectangleF> LocationRects(Rectangle disp, RenderedPage page, UsageRow row) =>
+            PageHighlightPainter.MapToDisplay(
+                disp, page.PageWidthPoints, page.PageHeightPoints, row.BoxesInPoints, Dip(4));
 
         static Rectangle FitInside(Size imageSize, Rectangle area)
         {

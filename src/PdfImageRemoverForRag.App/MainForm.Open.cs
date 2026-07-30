@@ -29,16 +29,19 @@ internal sealed partial class MainForm
 
     /// <summary>
     /// Decide what to do with the current work before opening replaces it.
-    /// Nothing open → proceed. Objects selected for removal → offer to save
-    /// first (Yes saves then opens, No discards and opens, Cancel aborts).
-    /// Files open but nothing selected → just confirm discarding them.
+    /// Nothing open → proceed. Objects picked for removal or for flattening →
+    /// offer to save first (Yes saves then opens, No discards and opens, Cancel
+    /// aborts). Files open but nothing picked → just confirm discarding them.
     /// Returns true to proceed with the open, false to abort.
     /// </summary>
     async Task<bool> ConfirmReplaceWorkspaceAsync()
     {
         if (_workflow.OpenDocuments.Count == 0) return true;
 
-        if (_selectedHashes.Count > 0)
+        // Ticks on either tab are work worth offering to save: the flatten tree
+        // is cleared by the rebuild that follows an open, so it is lost just as
+        // surely as the object list's selection.
+        if (_selectedHashes.Count > 0 || _flattenPanel.CheckedObjectCount > 0)
         {
             var choice = MessageBox.Show(this, L10n.ConfirmSaveBeforeOpen, L10n.ConfirmTitle,
                 MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);

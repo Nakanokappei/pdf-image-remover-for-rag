@@ -62,6 +62,16 @@ internal sealed partial class MainForm : Form
     readonly DataGridViewTextBoxColumn _estimatedSizeColumn = new() { HeaderText = L10n.ColumnEstimatedSize, ReadOnly = true, AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells };
     readonly DataGridViewTextBoxColumn _warningColumn = new() { HeaderText = L10n.ColumnWarning, ReadOnly = true, AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells };
 
+    // --- tabs --------------------------------------------------------------
+    // Flattening and deleting are opposite operations — one keeps the page's
+    // appearance and empties its text layer, the other drops the appearance —
+    // and a single ☑ column cannot mean both. 削除 is the leftmost and the tab
+    // the window opens on: the object list is what the app is for.
+    readonly TabControl _tabs = new() { Dock = DockStyle.Fill };
+    readonly TabPage _deleteTab = new(L10n.TabDelete);
+    readonly TabPage _flattenTab = new(L10n.TabFlatten);
+    readonly FlattenPanel _flattenPanel = new() { Dock = DockStyle.Fill };
+
     // --- tile view ---------------------------------------------------------
     // One control that paints every tile itself. It replaced a panel holding
     // one control per object, which broke down at 2,015 of them.
@@ -262,6 +272,9 @@ internal sealed partial class MainForm : Form
         _tileView.TileToggled += OnTileToggled;
         _tileView.RangeToggleRequested += OnTileRangeToggled;
         _tileView.TileContextRequested += OnTileContextRequested;
+
+        _tabs.SelectedIndexChanged += OnTabChanged;
+        _flattenPanel.SelectionChanged += OnFlattenSelectionChanged;
 
         _usageLocationsMenuItem.Click += OnUsageLocationsClicked;
         _rowContextMenu.Items.Add(_usageLocationsMenuItem);

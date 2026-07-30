@@ -122,6 +122,18 @@ internal sealed class KoreanStrings : IStrings
     public string AboutLicenseLink => "라이선스 정보";
     public string ContextMenuUsageLocations => "사용 위치 표시(&U)…";
 
+    public string TabFlatten => "병합";
+    public string TabDelete => "삭제";
+
+    public string FlattenDescription =>
+        "겹쳐 있는 개체를 한 장의 이미지로 병합합니다. 페이지 모양은 그대로이지만 "
+        + "그 안의 텍스트는 더 이상 텍스트가 아닙니다.";
+
+    public string FlattenUnitLabel(int number) => $"병합 단위 {number}";
+    public string FlattenNoOverlaps => "겹쳐 있는 개체가 없습니다.";
+    public string StatusFlattenSelection(int objectCount) => $"개체 {objectCount}개를 병합";
+    public string AccessibleFlattenPreview => "미리 보기";
+
     public string ErrorSameAsSource =>
         "원본 PDF에 덮어쓸 수 없습니다. 다른 이름을 지정하십시오.";
 

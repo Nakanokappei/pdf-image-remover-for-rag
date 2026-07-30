@@ -136,6 +136,18 @@ internal sealed class RussianStrings : IStrings
     public string AboutLicenseLink => "Сведения о лицензиях";
     public string ContextMenuUsageLocations => "Показать &места использования…";
 
+    public string TabFlatten => "Объединить";
+    public string TabDelete => "Удалить";
+
+    public string FlattenDescription =>
+        "Сводит перекрывающиеся объекты в одно изображение. Страница выглядит так же, "
+        + "но текст внутри перестаёт быть текстом.";
+
+    public string FlattenUnitLabel(int number) => $"Группа {number}";
+    public string FlattenNoOverlaps => "Перекрывающиеся объекты не найдены.";
+    public string StatusFlattenSelection(int objectCount) => $"Объектов для объединения: {objectCount}";
+    public string AccessibleFlattenPreview => "Предварительный просмотр";
+
     public string ErrorSameAsSource =>
         "Нельзя сохранить поверх исходного PDF. Выберите другое имя.";
 

@@ -328,6 +328,15 @@ internal sealed partial class MainForm
 
     void OnSelectAllClicked(object? sender, EventArgs e)
     {
+        // The two tabs hold two independent selections, and the button acts on
+        // the one being looked at. Ticking the hidden tab's objects as well
+        // would mark work the user cannot see for an irreversible operation.
+        if (IsFlattenTab)
+        {
+            _flattenPanel.CheckAll();
+            return;   // FlattenPanel raises SelectionChanged, which refreshes both
+        }
+
         // Select only what the list currently shows: the 表示列 filter scopes
         // "select all" so hidden kinds are never silently marked for removal.
         foreach (var group in _workflow.ImageGroups
@@ -342,6 +351,12 @@ internal sealed partial class MainForm
 
     void OnClearSelectionClicked(object? sender, EventArgs e)
     {
+        if (IsFlattenTab)
+        {
+            _flattenPanel.ClearChecks();
+            return;
+        }
+
         _selectedHashes.Clear();
         SyncAllViewCheckStates();
         UpdateSelectionState();
@@ -378,14 +393,21 @@ internal sealed partial class MainForm
     void UpdateSelectionState()
     {
         bool hasDocuments = _workflow.OpenDocuments.Count > 0;
-        bool hasSelection = _selectedHashes.Count > 0;
-        bool hasSelectable = _workflow.ImageGroups.Any(
-            g => g.IsSafelyRemovable && _visibleKinds.Contains(g.Kind));
+        int flattenCount = _flattenPanel.CheckedObjectCount;
+        // One save run does both, so the button follows either selection —
+        // switching tabs must not appear to disable a save that is ready.
+        bool canSave = _selectedHashes.Count > 0 || flattenCount > 0;
+        // Select-all / clear act on the tab in front, so their enablement has
+        // to describe that tab.
+        bool hasSelectable = IsFlattenTab
+            ? _flattenPanel.HasAnyObject
+            : _workflow.ImageGroups.Any(g => g.IsSafelyRemovable && _visibleKinds.Contains(g.Kind));
+        bool hasSelected = IsFlattenTab ? flattenCount > 0 : _selectedHashes.Count > 0;
 
-        _saveMenuItem.Enabled = !_isBusy && hasSelection;
-        _saveToolButton.Enabled = !_isBusy && hasSelection;
+        _saveMenuItem.Enabled = !_isBusy && canSave;
+        _saveToolButton.Enabled = !_isBusy && canSave;
         _selectAllToolButton.Enabled = !_isBusy && hasSelectable;
-        _clearSelectionToolButton.Enabled = !_isBusy && hasSelection;
+        _clearSelectionToolButton.Enabled = !_isBusy && hasSelected;
         _closeAllMenuItem.Enabled = !_isBusy && hasDocuments;
     }
 
@@ -399,6 +421,16 @@ internal sealed partial class MainForm
     void RefreshSelectionStatus()
     {
         if (_isBusy) return;
+        // Each tab reports its own count: they are different operations on
+        // different things, and one number for both would say neither.
+        if (IsFlattenTab)
+        {
+            int flattenCount = _flattenPanel.CheckedObjectCount;
+            SetStatus(flattenCount > 0
+                ? L10n.StatusFlattenSelection(flattenCount)
+                : _workflow.OpenDocuments.Count > 0 ? L10n.StatusAnalyzed : L10n.StatusOpenPrompt);
+            return;
+        }
         if (_selectedHashes.Count > 0)
         {
             SetStatus(L10n.StatusSelection(_selectedHashes.Count));

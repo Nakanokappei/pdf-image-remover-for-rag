@@ -121,6 +121,18 @@ internal sealed class JapaneseStrings : IStrings
     public string AboutLicenseLink => "ライセンス情報";
     public string ContextMenuUsageLocations => "使用箇所を表示(&U)…";
 
+    public string TabFlatten => "統合";
+    public string TabDelete => "削除";
+
+    public string FlattenDescription =>
+        "重なっているオブジェクトを 1 枚の画像に焼き込みます。見た目は変わりませんが、"
+        + "中のテキストはテキストでなくなります。";
+
+    public string FlattenUnitLabel(int number) => $"統合単位 {number}";
+    public string FlattenNoOverlaps => "重なっているオブジェクトはありません。";
+    public string StatusFlattenSelection(int objectCount) => $"{objectCount} 個のオブジェクトを統合";
+    public string AccessibleFlattenPreview => "プレビュー";
+
     public string ErrorSameAsSource =>
         "元 PDF と同じパスへの保存はできません。別名を指定してください。";
 

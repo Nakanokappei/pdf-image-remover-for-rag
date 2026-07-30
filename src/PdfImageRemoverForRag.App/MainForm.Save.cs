@@ -27,6 +27,19 @@ internal sealed partial class MainForm
             RebuildDisplay();                 // 再ソート（現在の並び順で）
             AutoSizeContentColumns();         // 残ったデータに合わせて再フィット
             FocusFirstRow();                  // フォーカス行を先頭行へ
+            // The flatten tree keeps its rows: they describe the SOURCE file,
+            // which is untouched, and every one of them is still there to
+            // flatten. Only the ticks are cleared, so a second save does not
+            // silently repeat the work. (Deletion is different — RemoveGroups
+            // above drops the rows, because the object list is meant to show
+            // what a saved output still contains.)
+            //
+            // Clearing them announces a selection change, which refreshes the
+            // status line — and that would replace the message the save just
+            // put there, so it is put back.
+            var savedStatus = _statusLabel.Text ?? string.Empty;
+            _flattenPanel.ClearChecks();
+            SetStatus(savedStatus);
             // Keep the "保存しました" status set by SaveSelectedAsync — do not
             // overwrite it with the selection/workspace message.
         }
@@ -54,9 +67,12 @@ internal sealed partial class MainForm
     /// </summary>
     async Task<bool> SaveSelectedAsync()
     {
-        if (_isBusy || _selectedHashes.Count == 0) return false;
+        // One run does both operations, so either tab's selection is enough to
+        // have something to save.
+        var flattenByFile = FlattenSelection();
+        if (_isBusy || (_selectedHashes.Count == 0 && flattenByFile.Count == 0)) return false;
 
-        var affectedFiles = _workflow.GetAffectedFiles(_selectedHashes);
+        var affectedFiles = _workflow.GetAffectedFiles(_selectedHashes, flattenByFile.Keys.ToArray());
         if (affectedFiles.Count == 0) return false;
 
         if (!TryResolveDestinations(affectedFiles, out var destinations)) return false;
@@ -65,7 +81,7 @@ internal sealed partial class MainForm
         try
         {
             var result = await _workflow.RemoveAndSaveAsync(
-                _selectedHashes.ToArray(), source => destinations[source]);
+                _selectedHashes.ToArray(), source => destinations[source], flattenByFile);
             SetStatus(L10n.StatusSaved(result.Files.Count, result.TotalDrawCallsRemoved));
             return true;
         }

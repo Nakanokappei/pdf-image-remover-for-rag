@@ -129,6 +129,18 @@ internal sealed class PortugueseStrings : IStrings
     public string AboutLicenseLink => "Informações de licença";
     public string ContextMenuUsageLocations => "Mostrar &locais de utilização…";
 
+    public string TabFlatten => "Achatar";
+    public string TabDelete => "Eliminar";
+
+    public string FlattenDescription =>
+        "Funde os objetos sobrepostos numa única imagem. A página fica igual, "
+        + "mas o texto lá dentro deixa de ser texto.";
+
+    public string FlattenUnitLabel(int number) => $"Unidade {number}";
+    public string FlattenNoOverlaps => "Não foram encontrados objetos sobrepostos.";
+    public string StatusFlattenSelection(int objectCount) => $"{objectCount} objeto(s) para achatar";
+    public string AccessibleFlattenPreview => "Pré-visualização";
+
     public string ErrorSameAsSource =>
         "Não é possível salvar sobre o PDF de origem. Escolha outro nome.";
 

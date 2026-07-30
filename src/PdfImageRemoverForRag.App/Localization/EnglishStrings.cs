@@ -125,6 +125,18 @@ internal sealed class EnglishStrings : IStrings
     public string AboutLicenseLink => "License information";
     public string ContextMenuUsageLocations => "Show &Usage Locations…";
 
+    public string TabFlatten => "Flatten";
+    public string TabDelete => "Delete";
+
+    public string FlattenDescription =>
+        "Bakes overlapping objects into a single image. The page looks the same, "
+        + "but the text inside is no longer text.";
+
+    public string FlattenUnitLabel(int number) => $"Unit {number}";
+    public string FlattenNoOverlaps => "No overlapping objects were found.";
+    public string StatusFlattenSelection(int objectCount) => $"{objectCount} object(s) to flatten";
+    public string AccessibleFlattenPreview => "Preview";
+
     public string ErrorSameAsSource =>
         "Cannot save over the source PDF. Choose a different name.";
 

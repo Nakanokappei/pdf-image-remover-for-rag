@@ -178,6 +178,54 @@ internal interface IStrings
     /// </summary>
     string ContextMenuUsageLocations { get; }
 
+    // --- the two tabs ------------------------------------------------------
+    // Flattening and deleting are opposite operations — one keeps the page's
+    // appearance and drops the text layer, the other drops the appearance — so
+    // they get a tab each. NO access key here: a TabPage caption shows "&" as a
+    // literal ampersand. Ctrl+Tab moves between tabs.
+
+    /// <summary>
+    /// Tab where overlapping objects are baked into one image. Use the term the
+    /// language's image editors use for Photoshop's "Flatten Image", if it has
+    /// one — that is the operation, and users have met it there.
+    /// </summary>
+    string TabFlatten { get; }
+
+    /// <summary>
+    /// Tab holding the object list. Use the same verb as
+    /// <see cref="AccessibleDeleteColumn"/>.
+    /// </summary>
+    string TabDelete { get; }
+
+    /// <summary>
+    /// One line above the tree, explaining what the tab does. It has to answer
+    /// "why would I want this": the page looks unchanged afterwards, and what
+    /// changes is invisible — the text stops being text.
+    /// </summary>
+    string FlattenDescription { get; }
+
+    /// <summary>
+    /// A place where objects of different kinds overlap, numbered within its
+    /// page: one such place is baked into one image. Keep it short — it is a
+    /// tree node label, followed by the kinds it contains in parentheses.
+    /// </summary>
+    string FlattenUnitLabel(int number);
+
+    /// <summary>Shown in place of the tree when no overlaps were found.</summary>
+    string FlattenNoOverlaps { get; }
+
+    /// <summary>
+    /// Status bar while objects are checked for flattening. Counts objects, not
+    /// units, because that is what the user ticks.
+    /// </summary>
+    string StatusFlattenSelection(int objectCount);
+
+    /// <summary>
+    /// Screen-reader name for the preview pane beside the tree. It is drawn, so
+    /// it has no text of its own for UI Automation to read.
+    /// </summary>
+    string AccessibleFlattenPreview { get; }
+
     // --- messages raised by the workflow (spec §17) ------------------------
 
     string ErrorSameAsSource { get; }

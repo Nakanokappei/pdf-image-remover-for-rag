@@ -34,7 +34,12 @@ internal static class Program
 
         var workflow = new PdfCleaningWorkflow(
             new PdfSharpDocumentAnalyzer(new PdfPigThumbnailProvider()),
-            new PdfSharpDocumentCleaner(),
+            // The cleaner needs a rasterizer to flatten an overlap into an
+            // image; the only one available without shipping a native binary is
+            // the operating system's own, which is why it is injected from here
+            // rather than built inside Infrastructure (that layer keeps
+            // building and testing on macOS).
+            new PdfSharpDocumentCleaner(new WindowsPageRasterizer()),
             new PdfSharpDocumentVerifier(),
             thumbnailStore,
             logger);

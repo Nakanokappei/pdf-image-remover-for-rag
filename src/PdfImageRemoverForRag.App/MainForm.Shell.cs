@@ -31,6 +31,7 @@ internal sealed partial class MainForm
         AllowDrop = !busy;
         _imageListGrid.Enabled = !busy;
         _tileView.Enabled = !busy;
+        _flattenPanel.Enabled = !busy;
         _progressIndicator.Visible = busy;
         if (statusText is not null) SetStatus(statusText);
         UpdateSelectionState();

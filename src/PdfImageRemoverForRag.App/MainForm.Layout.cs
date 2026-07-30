@@ -162,18 +162,25 @@ internal sealed partial class MainForm
         ConfigureImageListGrid();
 
         // Table and tile views share one host panel; visibility is toggled
-        // by the 表示 menu. It fills the whole client area now that the header
-        // info panel is gone — per-file details live in the ファイル column.
+        // by the 表示 menu. It fills its tab now that the header info panel is
+        // gone — per-file details live in the ファイル column.
         var viewHost = new Panel { Dock = DockStyle.Fill };
         viewHost.Controls.Add(_imageListGrid);
         viewHost.Controls.Add(_tileView);
+
+        // The object list and the flatten tree get a tab each; see the comment
+        // on the fields for why they cannot share one list.
+        _deleteTab.Controls.Add(viewHost);
+        _flattenTab.Controls.Add(_flattenPanel);
+        _tabs.TabPages.Add(_deleteTab);
+        _tabs.TabPages.Add(_flattenTab);
 
         _statusStrip.Items.Add(_statusLabel);
         _statusStrip.Items.Add(_progressIndicator);
 
         // Dock order: fill content first, then top strips, so the menu ends
         // up above the toolbar and both above the content.
-        Controls.Add(viewHost);
+        Controls.Add(_tabs);
         Controls.Add(_toolStrip);
         Controls.Add(_menuStrip);
         Controls.Add(_statusStrip);

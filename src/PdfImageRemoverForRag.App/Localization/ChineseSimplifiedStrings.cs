@@ -123,6 +123,17 @@ internal sealed class ChineseSimplifiedStrings : IStrings
     public string AboutLicenseLink => "许可证信息";
     public string ContextMenuUsageLocations => "显示使用位置(&U)…";
 
+    public string TabFlatten => "拼合";
+    public string TabDelete => "删除";
+
+    public string FlattenDescription =>
+        "将重叠的对象拼合为一张图像。页面外观不变，但其中的文字将不再是文字。";
+
+    public string FlattenUnitLabel(int number) => $"拼合单元 {number}";
+    public string FlattenNoOverlaps => "未找到重叠的对象。";
+    public string StatusFlattenSelection(int objectCount) => $"已选择 {objectCount} 个对象进行拼合";
+    public string AccessibleFlattenPreview => "预览";
+
     public string ErrorSameAsSource =>
         "无法覆盖源 PDF 进行保存。请指定其他文件名。";
 

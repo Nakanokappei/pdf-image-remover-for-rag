@@ -1,0 +1,144 @@
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
+
+namespace PdfImageRemoverForRag.App;
+
+/// <summary>
+/// Draws a rendered PDF page with certain places on it picked out: everything
+/// outside them desaturated and darkened, the places themselves left in full
+/// colour and outlined.
+///
+/// Two windows point at a place on a page — the usage-locations window ("where
+/// is this object drawn?") and the flatten tab's preview ("what would be baked
+/// into an image?") — and they must not drift into two different visual
+/// languages for the same question. The dimming came out of a specific
+/// complaint, that an outline alone was not noticeable, so it is also the one
+/// place to tune if that comes up again.
+/// </summary>
+internal static class PageHighlightPainter
+{
+    // Row = input channel, column = output channel; the luminance weights are
+    // the usual 0.3086/0.6094/0.0820, mixed toward grey by KeptSaturation and
+    // then scaled by Dimming.
+    const float KeptSaturation = 0.12f;
+    const float Dimming = 0.7f;
+    static readonly ImageAttributes DimAttributes = BuildDimAttributes();
+
+    static ImageAttributes BuildDimAttributes()
+    {
+        const float lr = 0.3086f, lg = 0.6094f, lb = 0.0820f;
+        const float s = KeptSaturation, k = Dimming;
+        var matrix = new ColorMatrix(new[]
+        {
+            new[] { (((1 - s) * lr) + s) * k, (1 - s) * lr * k,             (1 - s) * lr * k,             0f, 0f },
+            new[] { (1 - s) * lg * k,         (((1 - s) * lg) + s) * k,     (1 - s) * lg * k,             0f, 0f },
+            new[] { (1 - s) * lb * k,         (1 - s) * lb * k,             (((1 - s) * lb) + s) * k,     0f, 0f },
+            new[] { 0f, 0f, 0f, 1f, 0f },
+            new[] { 0f, 0f, 0f, 0f, 1f },
+        });
+        var attributes = new ImageAttributes();
+        attributes.SetColorMatrix(matrix);
+        return attributes;
+    }
+
+    /// <summary>
+    /// Draw the page into <paramref name="destination"/>, dimmed everywhere
+    /// except inside <paramref name="boxes"/>. With no boxes the page is drawn
+    /// normally: there is nothing to point at, and dimming the whole thing would
+    /// only say "nothing here".
+    /// </summary>
+    public static void DrawPage(
+        Graphics g, Bitmap page, Rectangle destination, IReadOnlyList<RectangleF> boxes)
+    {
+        if (boxes.Count == 0)
+        {
+            g.DrawImage(page, destination);
+            return;
+        }
+
+        g.DrawImage(page, destination, 0, 0, page.Width, page.Height,
+            GraphicsUnit.Pixel, DimAttributes);
+
+        // Repaint each place from the same bitmap, mapping the displayed
+        // rectangle back to source pixels.
+        double toSourceX = (double)page.Width / destination.Width;
+        double toSourceY = (double)page.Height / destination.Height;
+        foreach (var box in boxes)
+        {
+            var source = new RectangleF(
+                (float)((box.X - destination.X) * toSourceX),
+                (float)((box.Y - destination.Y) * toSourceY),
+                (float)(box.Width * toSourceX), (float)(box.Height * toSourceY));
+            g.DrawImage(page, box, source, GraphicsUnit.Pixel);
+        }
+    }
+
+    /// <summary>
+    /// Outline each place in light blue (the theme's Highlight under high
+    /// contrast). No translucent fill: the area inside the outline is the one
+    /// part still in full colour, and a wash over it would undo that.
+    /// </summary>
+    /// <param name="maxPenWidth">
+    /// Widest pen to use, in device pixels. A single line of text is only a few
+    /// pixels tall on a page thumbnail, and a 2 px outline drawn on both sides of
+    /// it fills the box solid — hiding the very thing being pointed at, so thin
+    /// boxes get a thinner pen.
+    /// </param>
+    public static void DrawOutlines(
+        Graphics g, IReadOnlyList<RectangleF> boxes, float maxPenWidth)
+    {
+        if (boxes.Count == 0) return;
+
+        var color = SystemInformation.HighContrast
+            ? SystemColors.Highlight : Color.FromArgb(0x1E, 0x90, 0xFF);
+        var saved = g.SmoothingMode;
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        foreach (var box in boxes)
+        {
+            float width = Math.Clamp(Math.Min(box.Width, box.Height) / 5f, 1f, maxPenWidth);
+            using var pen = new Pen(color, width);
+            g.DrawRectangle(pen, box.X, box.Y, box.Width, box.Height);
+        }
+        g.SmoothingMode = saved;
+    }
+
+    /// <summary>
+    /// Map bounding boxes in PDF points onto the displayed page rectangle. The
+    /// PDF origin is bottom-left and the display's is top-left, so Y is flipped.
+    /// Boxes thinner than <paramref name="minimumExtent"/> device pixels are
+    /// grown symmetrically — a rule has no thickness and a line of text is a
+    /// couple of pixels tall on a page thumbnail, so either would otherwise be
+    /// invisible.
+    /// </summary>
+    public static IReadOnlyList<RectangleF> MapToDisplay(
+        Rectangle destination,
+        double pageWidthPoints,
+        double pageHeightPoints,
+        IReadOnlyList<RectangleF> boxesInPoints,
+        float minimumExtent)
+    {
+        if (boxesInPoints.Count == 0 || pageWidthPoints <= 0 || pageHeightPoints <= 0)
+        {
+            return Array.Empty<RectangleF>();
+        }
+
+        double sx = destination.Width / pageWidthPoints;
+        double sy = destination.Height / pageHeightPoints;
+        var rects = new List<RectangleF>(boxesInPoints.Count);
+        foreach (var box in boxesInPoints)
+        {
+            var rect = new RectangleF(
+                destination.X + (float)(box.X * sx),
+                destination.Y + (float)((pageHeightPoints - (box.Y + box.Height)) * sy),
+                (float)(box.Width * sx),
+                (float)(box.Height * sy));
+            if (rect.Width < minimumExtent) rect.Inflate((minimumExtent - rect.Width) / 2, 0);
+            if (rect.Height < minimumExtent) rect.Inflate(0, (minimumExtent - rect.Height) / 2);
+            // A box drawn partly off the page must not make the repaint read
+            // outside the bitmap.
+            rect.Intersect(destination);
+            if (rect.Width >= 1 && rect.Height >= 1) rects.Add(rect);
+        }
+        return rects;
+    }
+}

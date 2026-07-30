@@ -131,6 +131,18 @@ internal sealed class VietnameseStrings : IStrings
     public string AboutLicenseLink => "Thông tin giấy phép";
     public string ContextMenuUsageLocations => "Hiển thị &Vị trí Sử dụng…";
 
+    public string TabFlatten => "Gộp";
+    public string TabDelete => "Xóa";
+
+    public string FlattenDescription =>
+        "Gộp các đối tượng chồng lên nhau thành một ảnh duy nhất. Trang vẫn trông như cũ, "
+        + "nhưng văn bản bên trong không còn là văn bản nữa.";
+
+    public string FlattenUnitLabel(int number) => $"Nhóm {number}";
+    public string FlattenNoOverlaps => "Không tìm thấy đối tượng nào chồng lên nhau.";
+    public string StatusFlattenSelection(int objectCount) => $"{objectCount} đối tượng sẽ được gộp";
+    public string AccessibleFlattenPreview => "Xem trước";
+
     public string ErrorSameAsSource =>
         "Không thể lưu đè lên tệp PDF nguồn. Vui lòng chọn tên khác.";
 

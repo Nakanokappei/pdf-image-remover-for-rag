@@ -145,30 +145,44 @@ internal sealed class PdfCleaningWorkflow
     }
 
     /// <summary>
-    /// Source files that contain at least one of the selected image hashes —
-    /// the set of files a save run will touch.
+    /// Source files a save run will touch: those holding at least one of the
+    /// selected object groups, plus those with a place to flatten. Either alone
+    /// is enough — a run can flatten without removing anything.
     /// </summary>
-    public IReadOnlyList<string> GetAffectedFiles(IReadOnlyCollection<string> selectedHashes)
+    public IReadOnlyList<string> GetAffectedFiles(
+        IReadOnlyCollection<string> selectedHashes,
+        IReadOnlyCollection<string>? filesToFlatten = null)
     {
         return _documents
-            .Where(d => d.ImageGroups.Any(g => selectedHashes.Contains(g.Hash)))
+            .Where(d => d.ImageGroups.Any(g => selectedHashes.Contains(g.Hash))
+                        || filesToFlatten?.Any(f => CleanedFileNamer.WouldOverwriteSource(f, d.FilePath)) == true)
             .Select(d => d.FilePath)
             .ToArray();
     }
 
     /// <summary>
-    /// Remove the selected image groups from every affected file. Each file
-    /// runs the spec §15 sequence independently: clean into a temp file,
-    /// verify the temp, move to the final name only on success, delete the
-    /// temp on failure. <paramref name="resolveDestination"/> maps each
-    /// source path to its output path (chosen by the UI beforehand).
+    /// Remove the selected object groups from every affected file, and flatten
+    /// the chosen places into images. Each file runs the spec §15 sequence
+    /// independently: clean into a temp file, verify the temp, move to the final
+    /// name only on success, delete the temp on failure.
+    /// <paramref name="resolveDestination"/> maps each source path to its output
+    /// path (chosen by the UI beforehand).
     /// </summary>
+    /// <param name="regionsToFlattenByFile">
+    /// Per source file, the places to bake into an image, each covering only the
+    /// objects the user ticked. The cleaner flattens before it removes, so both
+    /// can be asked for in one run — the order matters, because removing a group
+    /// first would take away the very instances a region is made of.
+    /// </param>
     public async Task<BatchSaveResult> RemoveAndSaveAsync(
         IReadOnlyCollection<string> selectedHashes,
         Func<string, string> resolveDestination,
+        IReadOnlyDictionary<string, IReadOnlyList<OverlapRegion>>? regionsToFlattenByFile = null,
         CancellationToken ct = default)
     {
-        if (selectedHashes.Count == 0)
+        var flattenByFile = regionsToFlattenByFile
+            ?? new Dictionary<string, IReadOnlyList<OverlapRegion>>();
+        if (selectedHashes.Count == 0 && flattenByFile.Count == 0)
         {
             throw new PdfCleanerException(PdfCleanerErrorKind.Unexpected, L10n.ErrorNoSelection);
         }
@@ -204,10 +218,16 @@ internal sealed class PdfCleaningWorkflow
                     x.group.GroupId, x.fileOccurrences!.Occurrences, x.group.Kind,
                     x.group.TextValue, x.group.Hash))
                 .ToList();
-            if (documentSelections.Count == 0) continue;
+            // Places to flatten in this file. Keyed by path, so the same
+            // path-comparison the rest of the workflow uses decides the match.
+            var documentRegions = flattenByFile
+                .FirstOrDefault(kv => CleanedFileNamer.WouldOverwriteSource(kv.Key, document.FilePath))
+                .Value ?? Array.Empty<OverlapRegion>();
+            if (documentSelections.Count == 0 && documentRegions.Count == 0) continue;
 
             var destinationPath = resolveDestination(document.FilePath);
-            var saved = await CleanVerifyCommitAsync(document, destinationPath, documentSelections, selectedHashes, ct)
+            var saved = await CleanVerifyCommitAsync(
+                    document, destinationPath, documentSelections, documentRegions, selectedHashes, ct)
                 .ConfigureAwait(false);
             savedFiles.Add(saved);
             totalRemoved += saved.DrawCallsRemoved;
@@ -233,6 +253,7 @@ internal sealed class PdfCleaningWorkflow
         PdfDocumentInfo document,
         string destinationPath,
         IReadOnlyList<ImageRemovalSelection> selections,
+        IReadOnlyList<OverlapRegion> regionsToFlatten,
         IReadOnlyCollection<string> selectedHashes,
         CancellationToken ct)
     {
@@ -247,16 +268,22 @@ internal sealed class PdfCleaningWorkflow
         var tempPath = destinationPath + ".part";
         try
         {
-            var result = await _cleaner.CleanAsync(document.FilePath, tempPath, selections, ct: ct)
+            var result = await _cleaner
+                .CleanAsync(document.FilePath, tempPath, selections, regionsToFlatten, ct)
                 .ConfigureAwait(false);
 
             // Logged before verification so a verification failure can be read
             // against what the cleaner believed it did: zero draw calls removed
             // means the selection never matched anything, a full count means it
-            // matched but the result did not survive the write.
+            // matched but the result did not survive the write. The flatten
+            // counts are here too, because a region asked for but not flattened
+            // (nothing rendered, or nothing found where it was detected) is
+            // otherwise invisible.
             _logger.LogInformation(
-                "cleaned: selections={Selections} pagesModified={Pages} drawCallsRemoved={Removed}",
-                selections.Count, result.PagesModified, result.DrawCallsRemoved);
+                "cleaned: selections={Selections} regionsAsked={RegionsAsked} " +
+                "regionsFlattened={RegionsFlattened} pagesModified={Pages} drawCallsRemoved={Removed}",
+                selections.Count, regionsToFlatten.Count, result.RegionsFlattened,
+                result.PagesModified, result.DrawCallsRemoved);
 
             // The verifier resolves hashes against Image XObjects, so it only
             // handles image groups; text removal is checked by tests, not here.

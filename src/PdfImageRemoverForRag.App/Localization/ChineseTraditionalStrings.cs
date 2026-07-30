@@ -125,6 +125,17 @@ internal sealed class ChineseTraditionalStrings : IStrings
     public string AboutLicenseLink => "授權資訊";
     public string ContextMenuUsageLocations => "顯示使用位置(&U)…";
 
+    public string TabFlatten => "平面化";
+    public string TabDelete => "刪除";
+
+    public string FlattenDescription =>
+        "將重疊的物件平面化為一張影像。頁面外觀不變，但其中的文字將不再是文字。";
+
+    public string FlattenUnitLabel(int number) => $"平面化單元 {number}";
+    public string FlattenNoOverlaps => "找不到重疊的物件。";
+    public string StatusFlattenSelection(int objectCount) => $"已選取 {objectCount} 個物件進行平面化";
+    public string AccessibleFlattenPreview => "預覽";
+
     public string ErrorSameAsSource =>
         "無法覆寫來源 PDF。請指定其他檔案名稱。";
 

@@ -267,4 +267,36 @@ public class OverlapDetectorTests
         Assert.Empty(OverlapDetector.Detect(1, new[] { Image(0, 0, 10, 10) }));
         Assert.Empty(OverlapDetector.Detect(1, Array.Empty<PlacedObject>()));
     }
+
+    [Fact]
+    public void RegionCovering_TakesOnlyTheMembersItIsGiven()
+    {
+        // What the user checks is what gets flattened, so the rectangle sent to
+        // the renderer is the union of the checked objects — not of the region
+        // they were found in. Here the image is left unchecked, and the area
+        // shrinks to the two labels.
+        var detected = OverlapDetector.Detect(1, new[]
+        {
+            Image(100, 100, 300, 200),
+            Text(150, 250, 40, 12, "one"),
+            Text(150, 150, 40, 12, "two"),
+        })[0];
+
+        var checkedOnly = OverlapDetector.RegionCovering(
+            detected.PageNumber,
+            detected.Members.Where(m => m.Kind == RemovableKind.Text).ToArray());
+
+        Assert.Equal(150, checkedOnly.X, 3);
+        Assert.Equal(150, checkedOnly.Y, 3);
+        Assert.Equal(40, checkedOnly.Width, 3);
+        Assert.Equal(112, checkedOnly.Height, 3);   // 150..262
+        Assert.Equal(2, checkedOnly.Members.Count);
+    }
+
+    [Fact]
+    public void RegionCovering_RefusesAnEmptySelection()
+    {
+        Assert.Throws<ArgumentException>(() =>
+            OverlapDetector.RegionCovering(1, Array.Empty<PlacedObject>()));
+    }
 }

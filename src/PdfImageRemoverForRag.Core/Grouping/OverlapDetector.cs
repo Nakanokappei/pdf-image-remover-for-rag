@@ -99,8 +99,25 @@ public static class OverlapDetector
         return Intersects(candidate, whole);
     }
 
+    /// <summary>
+    /// The region a given set of objects covers, without asking whether they
+    /// overlap. Flattening needs this because the user chooses which of a
+    /// region's objects to bake in: what gets rasterized, and what gets deleted,
+    /// is the union of the checked ones — never the whole region as detected.
+    /// </summary>
+    public static OverlapRegion RegionCovering(
+        int pageNumber, IReadOnlyList<PlacedObject> members)
+    {
+        if (members.Count == 0)
+        {
+            throw new ArgumentException(
+                "A region needs at least one member to cover.", nameof(members));
+        }
+        return BuildRegion(pageNumber, members);
+    }
+
     /// <summary>The union of the members' rectangles, as the region to raster.</summary>
-    static OverlapRegion BuildRegion(int pageNumber, List<PlacedObject> members)
+    static OverlapRegion BuildRegion(int pageNumber, IReadOnlyList<PlacedObject> members)
     {
         double left = double.MaxValue, bottom = double.MaxValue;
         double right = double.MinValue, top = double.MinValue;

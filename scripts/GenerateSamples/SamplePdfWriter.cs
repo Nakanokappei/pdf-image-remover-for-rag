@@ -326,9 +326,11 @@ public static class SamplePdfWriter
 
 /// <summary>
 /// Minimal PNG encoder (RGB, 8-bit, no interlace, filter 0). Just enough to
-/// feed PDFsharp's XImage.FromStream without an external image library.
+/// feed PDFsharp's XImage.FromStream without an external image library — which
+/// is also what a test needs to stand in for the operating system's PDF
+/// rasterizer, so it is public rather than duplicated over there.
 /// </summary>
-internal static class MinimalPng
+public static class MinimalPng
 {
     public static byte[] EncodeRgb(int width, int height, byte[] rgbPixels)
     {

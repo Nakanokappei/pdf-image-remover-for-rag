@@ -247,7 +247,7 @@ internal sealed class PdfCleaningWorkflow
         var tempPath = destinationPath + ".part";
         try
         {
-            var result = await _cleaner.CleanAsync(document.FilePath, tempPath, selections, ct)
+            var result = await _cleaner.CleanAsync(document.FilePath, tempPath, selections, ct: ct)
                 .ConfigureAwait(false);
 
             // Logged before verification so a verification failure can be read

@@ -124,16 +124,37 @@ public static class OverlapDetector
     }
 
     /// <summary>
-    /// True when the two objects' rectangles share any area. Touching edges do
-    /// not count: a caption sitting exactly on a rule's edge is adjacent, not
-    /// overlapping — but see <see cref="MinimumExtent"/>, which gives a
-    /// zero-height rule enough thickness for a label drawn across it to count.
+    /// True when the two objects are close enough to belong to the same region.
+    ///
+    /// For anything that paints over what is behind it — an image, a string, a
+    /// filled shape — sharing any area is enough: a heading on a shaded table
+    /// band, a caption over a photo. Touching edges alone does not count, though
+    /// <see cref="MinimumExtent"/> gives a zero-height rule enough thickness for
+    /// a label drawn across it to register.
+    ///
+    /// A shape that only strokes its path is different. It hides nothing, so
+    /// meeting it means nothing: a page border crosses every paragraph on the
+    /// page, and treating that as an overlap made one region out of most of a
+    /// document. Such a shape joins only when it lies entirely inside the other
+    /// object — an arrow drawn on a photograph is part of the photograph, while
+    /// a frame around a paragraph is furniture that happens to surround it.
     /// </summary>
     static bool Intersects(PlacedObject a, PlacedObject b)
     {
+        if (!a.HidesWhatIsBehind) return IsInside(a, b);
+        if (!b.HidesWhatIsBehind) return IsInside(b, a);
+
         var (al, ab, ar, at) = Padded(a);
         var (bl, bb, br, bt) = Padded(b);
         return al < br && bl < ar && ab < bt && bb < at;
+    }
+
+    /// <summary>True when <paramref name="inner"/>'s rectangle sits within <paramref name="outer"/>'s.</summary>
+    static bool IsInside(PlacedObject inner, PlacedObject outer)
+    {
+        var (il, ib, ir, it) = Padded(inner);
+        var (ol, ob, orr, ot) = Padded(outer);
+        return il >= ol && ir <= orr && ib >= ob && it <= ot;
     }
 
     /// <summary>

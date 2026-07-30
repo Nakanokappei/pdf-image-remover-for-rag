@@ -15,8 +15,13 @@ public class OverlapDetectorTests
     static PlacedObject Text(double x, double y, double w, double h, string value = "label") =>
         new(RemovableKind.Text, value, x, y, w, h);
 
+    /// <summary>A filled shape: it hides what is under it, so meeting is enough.</summary>
     static PlacedObject Shape(double x, double y, double w, double h, string sig = "SHAPESIG") =>
         new(RemovableKind.Shape, sig, x, y, w, h);
+
+    /// <summary>A stroke-only shape: a frame, a rule, an outline.</summary>
+    static PlacedObject Outline(double x, double y, double w, double h, string sig = "OUTLINE") =>
+        new(RemovableKind.Shape, sig, x, y, w, h, HidesWhatIsBehind: false);
 
     [Fact]
     public void TextInsideAnImage_IsOneRegion()
@@ -118,17 +123,92 @@ public class OverlapDetectorTests
     }
 
     [Fact]
-    public void AZeroHeightRule_StillOverlapsTextDrawnAcrossIt()
+    public void AZeroHeightFilledBar_StillOverlapsTextDrawnAcrossIt()
     {
-        // Rules are paths of zero height ("495x0 pt" in the object list). Without
+        // Paths of zero height do occur ("495x0 pt" in the object list). Without
         // a minimum extent they would intersect nothing at all.
         var regions = OverlapDetector.Detect(1, new[]
         {
-            Shape(50, 700, 495, 0, "rule"),
+            Shape(50, 700, 495, 0, "bar"),
             Text(60, 699.6, 80, 1),
         });
 
         Assert.Single(regions);
+    }
+
+    [Fact]
+    public void AStrokeOnlyRuleCrossingText_IsNotARegion()
+    {
+        // A rule hides nothing, so a heading sitting on one has no reason to be
+        // rasterized with it. The rule is wider than the text, so it is not
+        // inside it either.
+        var regions = OverlapDetector.Detect(1, new[]
+        {
+            Outline(50, 700, 495, 0, "rule"),
+            Text(60, 699.6, 80, 1),
+        });
+
+        Assert.Empty(regions);
+    }
+
+    [Fact]
+    public void APageFrameAroundText_IsNotARegion()
+    {
+        // The case that made this rule necessary: a border rectangle crosses
+        // every paragraph on the page, and treating that as an overlap turned
+        // most of a document into one region.
+        var regions = OverlapDetector.Detect(1, new[]
+        {
+            Outline(40, 80, 515, 680, "page frame"),
+            Text(60, 700, 200, 12, "a paragraph"),
+            Text(60, 680, 200, 12, "another paragraph"),
+        });
+
+        Assert.Empty(regions);
+    }
+
+    [Fact]
+    public void AFilledBandUnderAHeading_IsARegion()
+    {
+        // The other side of the same coin: a shaded table header band does hide
+        // what is under it, and the headings drawn on it belong with it.
+        var regions = OverlapDetector.Detect(1, new[]
+        {
+            Shape(50, 578, 495, 20, "header band"),
+            Text(60, 582, 40, 10, "Column"),
+        });
+
+        var region = Assert.Single(regions);
+        Assert.Equal(2, region.Members.Count);
+    }
+
+    [Fact]
+    public void AnOutlineDrawnInsideAnImage_IsPartOfIt()
+    {
+        // An arrow or a callout box drawn on a photograph sits entirely within
+        // it, and flattening the picture has to take the annotation along.
+        var regions = OverlapDetector.Detect(1, new[]
+        {
+            Image(100, 100, 300, 200),
+            Outline(150, 150, 60, 40, "callout"),
+            Text(160, 160, 30, 10),
+        });
+
+        var region = Assert.Single(regions);
+        Assert.Equal(3, region.Members.Count);
+    }
+
+    [Fact]
+    public void AnOutlineOverlappingAnImagesEdge_IsNotPartOfIt()
+    {
+        // Half in, half out: not inside, so it stays furniture.
+        var regions = OverlapDetector.Detect(1, new[]
+        {
+            Image(100, 100, 300, 200),
+            Outline(350, 150, 200, 40, "rule running off the picture"),
+        });
+
+        Assert.Empty(regions);
     }
 
     [Fact]

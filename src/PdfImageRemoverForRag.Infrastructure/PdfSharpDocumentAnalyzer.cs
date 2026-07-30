@@ -45,7 +45,7 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
 
         // The PDFsharp calls themselves are synchronous; wrap in Task.Run so
         // the caller (UI thread) never blocks on IO or hashing (spec §18).
-        var (discoveries, pageDimensions, isEncrypted, pageCount) = await Task.Run(
+        var (discoveries, pageDimensions, isEncrypted, pageCount, overlapRegions) = await Task.Run(
             () => SweepPdfsharp(pdfFilePath, progress, ct), ct).ConfigureAwait(false);
 
         // Ask the thumbnail provider off-thread as well. Missing keys or an
@@ -86,13 +86,15 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
             FileSize: new FileInfo(pdfFilePath).Length,
             PageCount: pageCount,
             IsEncrypted: isEncrypted,
-            ImageGroups: groups);
+            ImageGroups: groups,
+            OverlapRegions: overlapRegions);
     }
 
     static (List<ImageDiscovery> Discoveries,
             List<PageDimensions> PageDimensions,
             bool IsEncrypted,
-            int PageCount) SweepPdfsharp(
+            int PageCount,
+            List<OverlapRegion> OverlapRegions) SweepPdfsharp(
         string path, IProgress<AnalysisProgress>? progress, CancellationToken ct)
     {
         try
@@ -100,6 +102,7 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
             using var doc = PdfReader.Open(path, PdfDocumentOpenMode.Import);
             var accumulators = new Dictionary<string, DiscoveryAccumulator>(StringComparer.Ordinal);
             var pageDims = new List<PageDimensions>(doc.PageCount);
+            var overlapRegions = new List<OverlapRegion>();
             // Text value → where it is shown (one entry per showing).
             var textPlacementsByValue = new Dictionary<string, List<Placement>>(StringComparer.Ordinal);
             // Shape signature → where it is drawn + one bounding box for the size.
@@ -131,7 +134,8 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
                 // same way it outlines an image.
                 var textDecoder = new PdfTextDecoder(page.Resources);
                 var textMetrics = new PdfFontMetrics(page.Resources);
-                foreach (var text in ContentStreamWalker.FindTexts(sequence, textDecoder, textMetrics))
+                var textHits = ContentStreamWalker.FindTexts(sequence, textDecoder, textMetrics);
+                foreach (var text in textHits)
                 {
                     if (text.Value.Length < MinTextLength) continue;
                     if (!textPlacementsByValue.TryGetValue(text.Value, out var placements))
@@ -144,7 +148,8 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
 
                 // Vector shapes: record every paintable path, grouped by the
                 // page-space signature. No occurrence-count filter (like images).
-                foreach (var shape in ContentStreamWalker.FindShapes(sequence))
+                var shapeHits = ContentStreamWalker.FindShapes(sequence);
+                foreach (var shape in shapeHits)
                 {
                     if (!shapesBySignature.TryGetValue(shape.Signature, out var acc))
                     {
@@ -167,6 +172,18 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
                             call.X, call.Y, call.Width, call.Height));
                     }
                 }
+
+                // Where objects of different kinds overlap on this page. Fed from
+                // the hits just gathered, so it costs one pass over lists that
+                // are already in hand.
+                //
+                // Note what goes in: EVERY text hit, not the ones that survive
+                // the removable-text filters. A chart's axis labels are usually
+                // unique strings one or two characters long, so the filters that
+                // make sense for "repeated noise to delete" (2+ characters, shown
+                // 2+ times) would hide exactly the text flattening exists for.
+                overlapRegions.AddRange(OverlapDetector.Detect(
+                    pageNumber, PlacedObjectsOf(directImages, drawCalls, textHits, shapeHits)));
 
                 // Form XObjects — enumerate the Image XObjects inside them.
                 // The image is drawn wherever the Form's Do call is placed,
@@ -220,7 +237,7 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
                 discoveries.Add(BuildShapeDiscovery(signature, acc));
             }
 
-            return (discoveries, pageDims, doc.SecuritySettings.IsEncrypted, doc.PageCount);
+            return (discoveries, pageDims, doc.SecuritySettings.IsEncrypted, doc.PageCount, overlapRegions);
         }
         catch (OperationCanceledException)
         {
@@ -234,6 +251,53 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
         {
             throw PdfsharpExceptionMapper.Map(ex, "PDF 解析");
         }
+    }
+
+    /// <summary>
+    /// Everything drawn on one page, as overlap detection wants it: kind,
+    /// the identity the cleaner matches instances on, and the rectangle.
+    ///
+    /// Images are identified by stream hash (the same key that groups them and
+    /// that the cleaner resolves resource names from), text by its shown string,
+    /// shapes by their path signature. Images reached through a Form XObject are
+    /// left out: their content stream is shared with other pages and cannot be
+    /// rewritten, which is the same reason they are not safely removable.
+    /// </summary>
+    static List<PlacedObject> PlacedObjectsOf(
+        IReadOnlyList<ImageXObjectCollector.ImageEntry> directImages,
+        IReadOnlyList<ContentStreamWalker.DrawCall> drawCalls,
+        IReadOnlyList<ContentStreamWalker.TextHit> textHits,
+        IReadOnlyList<ContentStreamWalker.ShapeHit> shapeHits)
+    {
+        var placed = new List<PlacedObject>(drawCalls.Count + textHits.Count + shapeHits.Count);
+
+        foreach (var image in directImages)
+        {
+            string hash = ImageXObjectCollector.ComputeStreamHash(image.Dictionary);
+            foreach (var call in drawCalls)
+            {
+                if (call.ResourceName != image.ResourceName) continue;
+                placed.Add(new PlacedObject(
+                    RemovableKind.Image, hash, call.X, call.Y, call.Width, call.Height));
+            }
+        }
+
+        foreach (var text in textHits)
+        {
+            placed.Add(new PlacedObject(
+                RemovableKind.Text, text.Value, text.X, text.Y, text.Width, text.Height));
+        }
+
+        foreach (var shape in shapeHits)
+        {
+            // A stroke-only path hides nothing, and the detector connects it
+            // differently for that reason.
+            placed.Add(new PlacedObject(
+                RemovableKind.Shape, shape.Signature, shape.X, shape.Y, shape.Width, shape.Height,
+                HidesWhatIsBehind: shape.Geometry.IsFilled));
+        }
+
+        return placed;
     }
 
     /// <summary>Minimum characters for a text object to be removable (§ user request).</summary>

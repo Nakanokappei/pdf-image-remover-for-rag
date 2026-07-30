@@ -35,4 +35,16 @@ public sealed record ShapeGeometry(
     string PaintOperator,
     double LineWidth,
     RgbColor? StrokeColor = null,
-    RgbColor? FillColor = null);
+    RgbColor? FillColor = null)
+{
+    /// <summary>
+    /// Whether the path is painted with a fill — which is what decides, for
+    /// overlap detection, whether the shape hides what is drawn under it.
+    ///
+    /// This is the paint operator's doing, not an alpha value: real
+    /// transparency (an ExtGState <c>/ca</c>, a soft mask) is not tracked, so a
+    /// shape filled with white counts as filled even though it may look like
+    /// background.
+    /// </summary>
+    public bool IsFilled => PaintOperator is "f" or "F" or "f*" or "B" or "B*" or "b" or "b*";
+}

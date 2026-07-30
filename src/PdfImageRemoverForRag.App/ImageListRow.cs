@@ -186,7 +186,7 @@ internal static class ImageListRow
     /// </summary>
     public static Image CreateShapeThumbnail(ShapeGeometry geometry, int width, int height)
     {
-        bool fill = geometry.PaintOperator is "f" or "F" or "f*" or "B" or "B*" or "b" or "b*";
+        bool fill = geometry.IsFilled;
         bool stroke = geometry.PaintOperator is "S" or "s" or "B" or "B*" or "b" or "b*";
 
         // Default PDF drawing color is black. The "representative" color (for

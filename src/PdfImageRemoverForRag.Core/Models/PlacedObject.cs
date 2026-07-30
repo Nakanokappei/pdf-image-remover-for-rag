@@ -16,13 +16,20 @@ namespace PdfImageRemoverForRag.Core.Models;
 /// Stream hash for an image, the shown string for text, the path signature for
 /// a shape — the value the cleaner matches instances on.
 /// </param>
+/// <param name="HidesWhatIsBehind">
+/// Whether the object paints over what is under it. Images and text always do.
+/// A shape does when its paint operator fills; a stroke-only path — a frame, a
+/// rule, an outline — does not, and that changes how it may connect to other
+/// objects (see <c>OverlapDetector</c>).
+/// </param>
 public sealed record PlacedObject(
     RemovableKind Kind,
     string Identity,
     double X,
     double Y,
     double Width,
-    double Height);
+    double Height,
+    bool HidesWhatIsBehind = true);
 
 /// <summary>
 /// One member of an overlap region: what to look for when the cleaner rewrites

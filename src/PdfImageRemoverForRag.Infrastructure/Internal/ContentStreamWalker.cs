@@ -1,4 +1,5 @@
 using System.Text;
+using PdfImageRemoverForRag.Core.Grouping;
 using PdfImageRemoverForRag.Core.Models;
 using PdfSharp.Pdf.Content.Objects;
 
@@ -11,8 +12,9 @@ namespace PdfImageRemoverForRag.Infrastructure.Internal;
 /// </summary>
 internal static class ContentStreamWalker
 {
+    /// <summary><see cref="Index"/> is the operator's position in the sequence.</summary>
     internal readonly record struct DrawCall(string ResourceName,
-        double X, double Y, double Width, double Height);
+        double X, double Y, double Width, double Height, int Index);
 
     /// <summary>
     /// Scan the whole sequence and emit one <see cref="DrawCall"/> per
@@ -23,9 +25,9 @@ internal static class ContentStreamWalker
     {
         var hits = new List<DrawCall>();
         var stack = new TransformStack();
-        foreach (var obj in sequence)
+        for (int index = 0; index < sequence.Count; index++)
         {
-            if (obj is not COperator op) continue;
+            if (sequence[index] is not COperator op) continue;
             switch (op.OpCode.Name)
             {
                 case "q":
@@ -47,7 +49,7 @@ internal static class ContentStreamWalker
                     if (op.Operands.Count == 1 && op.Operands[0] is CName name)
                     {
                         var box = stack.Current.MapUnitBoundingBox();
-                        hits.Add(new DrawCall(name.Name, box.X, box.Y, box.W, box.H));
+                        hits.Add(new DrawCall(name.Name, box.X, box.Y, box.W, box.H, index));
                     }
                     break;
             }
@@ -230,6 +232,76 @@ internal static class ContentStreamWalker
             for (int i = shape.EndIndex; i >= shape.StartIndex; i--) sequence.RemoveAt(i);
         }
         return targets.Count;
+    }
+
+    /// <summary>
+    /// Remove only the instances that sit inside <paramref name="region"/> — the
+    /// draw calls, shown strings and painted paths that the region's members
+    /// name, and only where they overlap it.
+    ///
+    /// This is what flattening an overlap needs and plain removal does not.
+    /// Removing a text group deletes every showing of that string in the file,
+    /// which is right when the user asked for the string to go; a flattened
+    /// region has replaced one place with pixels, so the identical header on the
+    /// next page must survive. Instances are matched by geometry rather than by
+    /// a stored operator index because the file is re-read from disk here and
+    /// the indices from analysis no longer apply.
+    ///
+    /// Returns the number of operators (or operator ranges) removed.
+    /// </summary>
+    public static int RemoveInRegion(
+        CSequence sequence,
+        OverlapRegion region,
+        IReadOnlySet<string> imageResourceNames,
+        PdfTextDecoder decoder,
+        PdfFontMetrics metrics)
+    {
+        var textValues = new HashSet<string>(
+            region.Members.Where(m => m.Kind == RemovableKind.Text).Select(m => m.Identity),
+            StringComparer.Ordinal);
+        var shapeSignatures = new HashSet<string>(
+            region.Members.Where(m => m.Kind == RemovableKind.Shape).Select(m => m.Identity),
+            StringComparer.Ordinal);
+
+        // Collect (start, end) ranges in one forward pass, then delete
+        // back-to-front so earlier indices stay valid.
+        var ranges = new List<(int Start, int End)>();
+
+        if (imageResourceNames.Count > 0)
+        {
+            foreach (var call in FindDrawCalls(sequence))
+            {
+                if (!imageResourceNames.Contains(call.ResourceName)) continue;
+                if (!OverlapDetector.RegionOverlaps(region, call.X, call.Y, call.Width, call.Height)) continue;
+                ranges.Add((call.Index, call.Index));
+            }
+        }
+
+        if (textValues.Count > 0)
+        {
+            foreach (var hit in FindTexts(sequence, decoder, metrics))
+            {
+                if (!textValues.Contains(hit.Value)) continue;
+                if (!OverlapDetector.RegionOverlaps(region, hit.X, hit.Y, hit.Width, hit.Height)) continue;
+                ranges.Add((hit.Index, hit.Index));
+            }
+        }
+
+        if (shapeSignatures.Count > 0)
+        {
+            foreach (var hit in FindShapes(sequence))
+            {
+                if (!shapeSignatures.Contains(hit.Signature)) continue;
+                if (!OverlapDetector.RegionOverlaps(region, hit.X, hit.Y, hit.Width, hit.Height)) continue;
+                ranges.Add((hit.StartIndex, hit.EndIndex));
+            }
+        }
+
+        foreach (var range in ranges.OrderByDescending(r => r.Start))
+        {
+            for (int i = range.End; i >= range.Start; i--) sequence.RemoveAt(i);
+        }
+        return ranges.Count;
     }
 
     /// <summary>

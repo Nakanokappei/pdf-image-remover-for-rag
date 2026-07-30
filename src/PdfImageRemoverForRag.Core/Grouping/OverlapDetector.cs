@@ -84,6 +84,21 @@ public static class OverlapDetector
             .ToArray();
     }
 
+    /// <summary>
+    /// True when a rectangle overlaps the region, under the same padding rule
+    /// detection used. The cleaner asks this to decide which instances on a page
+    /// belong to the region it is flattening: the same string may be shown
+    /// elsewhere on the page and must survive.
+    /// </summary>
+    public static bool RegionOverlaps(
+        OverlapRegion region, double x, double y, double width, double height)
+    {
+        var candidate = new PlacedObject(RemovableKind.Image, string.Empty, x, y, width, height);
+        var whole = new PlacedObject(
+            RemovableKind.Image, string.Empty, region.X, region.Y, region.Width, region.Height);
+        return Intersects(candidate, whole);
+    }
+
     /// <summary>The union of the members' rectangles, as the region to raster.</summary>
     static OverlapRegion BuildRegion(int pageNumber, List<PlacedObject> members)
     {

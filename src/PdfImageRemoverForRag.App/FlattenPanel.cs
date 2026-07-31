@@ -1,71 +1,63 @@
-using System.Runtime.InteropServices;
 using PdfImageRemoverForRag.Core.Grouping;
 using PdfImageRemoverForRag.Core.Models;
 
 namespace PdfImageRemoverForRag.App;
 
 /// <summary>
-/// The 統合 (Flatten) tab: a tree of every place where objects of different
-/// kinds overlap, with a preview of the page beside it.
+/// The 統合 (Flatten) panel, docked to the right of the object list: the units
+/// the object selected on the left takes part in, laid out like an image
+/// editor's layers panel, with a preview of the page underneath.
 ///
-/// Four levels — document, page, unit, object — because flattening acts on one
-/// place on one page, not on an object wherever it appears. That is the
-/// opposite of the delete tab, where one row is the same image in five files
-/// and one tick removes it from all of them. Checkboxes sit on the unit and the
-/// object: ticking a unit takes everything in it, ticking objects individually
-/// takes only those. Nothing happens until the file is saved.
+/// It answers one question — "where does this object overlap something, and
+/// what would be baked with it" — about whatever the list has selected. That is
+/// why it is not a tree of the whole document: the object list already is that
+/// overview, and duplicating it beside itself gave the user two lists to read
+/// and no reason to prefer either.
+///
+/// A unit is a layer group and its objects are the layers inside it, each with
+/// a thumbnail, a name and a checkbox. Ticking the group takes everything in
+/// it; ticking objects takes only those.
+///
+/// **Ticks live here, not in the rows.** The list is a filtered view — moving
+/// the selection on the left changes which units are shown — so anything held
+/// per row would be lost the moment the user looked at another object.
 /// </summary>
 internal sealed class FlattenPanel : UserControl
 {
-    // --- what a tree node stands for ---------------------------------------
-    // Each carries enough to drive the preview: which file, which page, and
-    // which rectangles to pick out on it.
-
-    abstract record FlattenNode(string FilePath, int PageNumber)
+    /// <summary>One unit on one page of one file, as the panel lists it.</summary>
+    sealed record UnitEntry(string FilePath, OverlapRegion Region, int NumberOnPage)
     {
-        public abstract IReadOnlyList<RectangleF> HighlightBoxes { get; }
+        public bool Expanded { get; set; } = true;
     }
 
-    sealed record DocumentNode(string FilePath) : FlattenNode(FilePath, 1)
+    /// <summary>
+    /// A line in the list: a unit header, or one of its objects. Kept as
+    /// indices into <see cref="_units"/> so the rows stay cheap to rebuild on
+    /// every expand and every tick.
+    /// </summary>
+    readonly record struct Row(int UnitIndex, PlacedObject? Object);
+
+    // Every unit in the open workspace, and the subset currently listed.
+    readonly List<UnitEntry> _units = new();
+    readonly List<Row> _rows = new();
+
+    // What is ticked, by unit. Reference-keyed: the regions come from the
+    // analysis of the open files and live as long as the workspace does, while
+    // two different places on a page can hold equal-valued members.
+    readonly Dictionary<OverlapRegion, HashSet<PlacedObject>> _checked =
+        new((IEqualityComparer<OverlapRegion>)ReferenceEqualityComparer.Instance);
+
+    CrossFileImageGroup? _selectedGroup;
+    bool _anyDocuments;
+
+    readonly LayerListView _list;
+    readonly Label _title = new()
     {
-        // A whole document has no one place to point at, so its preview is just
-        // the first page.
-        public override IReadOnlyList<RectangleF> HighlightBoxes => Array.Empty<RectangleF>();
-    }
-
-    sealed record PageNode(string FilePath, int Page, IReadOnlyList<OverlapRegion> Regions)
-        : FlattenNode(FilePath, Page)
-    {
-        public override IReadOnlyList<RectangleF> HighlightBoxes =>
-            Regions.Select(RectOf).ToArray();
-    }
-
-    sealed record UnitNode(string FilePath, OverlapRegion Region)
-        : FlattenNode(FilePath, Region.PageNumber)
-    {
-        public override IReadOnlyList<RectangleF> HighlightBoxes =>
-            Region.Members.Select(RectOf).ToArray();
-    }
-
-    sealed record ObjectNode(string FilePath, OverlapRegion Region, PlacedObject Member)
-        : FlattenNode(FilePath, Region.PageNumber)
-    {
-        public override IReadOnlyList<RectangleF> HighlightBoxes => new[] { RectOf(Member) };
-    }
-
-    static RectangleF RectOf(OverlapRegion r) =>
-        new((float)r.X, (float)r.Y, (float)r.Width, (float)r.Height);
-
-    static RectangleF RectOf(PlacedObject o) =>
-        new((float)o.X, (float)o.Y, (float)o.Width, (float)o.Height);
-
-    readonly TreeView _tree = new()
-    {
-        Dock = DockStyle.Fill,
-        CheckBoxes = true,
-        HideSelection = false,
-        ShowLines = true,
-        FullRowSelect = false,
+        Dock = DockStyle.Top,
+        AutoSize = false,
+        Text = L10n.FlattenPanelTitle,
+        TextAlign = ContentAlignment.MiddleLeft,
+        UseMnemonic = false,
     };
     readonly Label _description = new()
     {
@@ -77,54 +69,67 @@ internal sealed class FlattenPanel : UserControl
     readonly Label _emptyMessage = new()
     {
         Dock = DockStyle.Fill,
-        Text = L10n.FlattenNoOverlaps,
+        Text = L10n.StatusOpenPrompt,
         TextAlign = ContentAlignment.MiddleCenter,
         ForeColor = SystemColors.GrayText,
-        Visible = false,
         UseMnemonic = false,
     };
-    readonly SplitContainer _split = new() { Dock = DockStyle.Fill };
+    // List above, page below.
+    readonly SplitContainer _split = new()
+    {
+        Dock = DockStyle.Fill,
+        Orientation = Orientation.Horizontal,
+    };
     readonly PreviewPane _preview = new() { Dock = DockStyle.Fill };
 
-    // Guards the parent/child check propagation from re-entering itself.
-    bool _syncingChecks;
-
-    /// <summary>Raised whenever the set of checked objects changes.</summary>
+    /// <summary>Raised whenever the set of ticked objects changes.</summary>
     public event EventHandler? SelectionChanged;
+
+    /// <summary>
+    /// Raised when the rows on screen change, so the host can fetch the
+    /// thumbnails they need. The panel never holds a bitmap itself.
+    /// </summary>
+    public event EventHandler? ViewportChanged;
+
+    /// <summary>The list row an object belongs to, supplied by the host.</summary>
+    public Func<PlacedObject, CrossFileImageGroup?>? GroupFor { get; set; }
+
+    /// <summary>A group's small thumbnail, or null when none is resident.</summary>
+    public Func<CrossFileImageGroup, Image?>? ThumbnailFor { get; set; }
 
     public FlattenPanel()
     {
-        _tree.AccessibleName = L10n.TabFlatten;
-        _tree.AccessibleDescription = L10n.FlattenDescription;
+        _list = new LayerListView(VisualForRow)
+        {
+            Dock = DockStyle.Fill,
+            Visible = false,
+        };
+        _list.AccessibleName = L10n.FlattenPanelTitle;
+        _list.AccessibleDescription = L10n.FlattenDescription;
+        _list.CheckToggled += OnCheckToggled;
+        _list.ExpandToggled += OnExpandToggled;
+        _list.RowSelected += OnRowSelected;
+        _list.ToolTipFor = ToolTipForRow;
+        _list.ViewportChanged += (_, e) => ViewportChanged?.Invoke(this, e);
+
         _preview.AccessibleName = L10n.AccessibleFlattenPreview;
+        _title.Font = new Font(Font, FontStyle.Bold);
 
-        _tree.AfterSelect += OnAfterSelect;
-        _tree.BeforeCheck += OnBeforeCheck;
-        _tree.AfterCheck += OnAfterCheck;
-        // A node's checkbox can only be hidden once the item exists in the
-        // native control, and neither moment is when the tree is filled: this
-        // tab's handle is not created until it is first displayed, and the items
-        // under a collapsed node are not created until it opens.
-        _tree.HandleCreated += (_, _) => HideCheckBoxesOnGroupingNodes();
-        _tree.AfterExpand += (_, _) => HideCheckBoxesOnGroupingNodes();
-
-        var treeSide = new Panel { Dock = DockStyle.Fill };
-        treeSide.Controls.Add(_tree);
-        treeSide.Controls.Add(_emptyMessage);
-        _split.Panel1.Controls.Add(treeSide);
+        var listSide = new Panel { Dock = DockStyle.Fill };
+        listSide.Controls.Add(_list);
+        listSide.Controls.Add(_emptyMessage);
+        _split.Panel1.Controls.Add(listSide);
         _split.Panel2.Controls.Add(_preview);
 
+        // Docked children claim their edge in reverse order of addition, so the
+        // fill goes in first and the title ends up outermost.
         Controls.Add(_split);
         Controls.Add(_description);
+        Controls.Add(_title);
     }
 
     int Dip(int logical) => LogicalToDeviceUnits(logical);
 
-    /// <summary>
-    /// Size what this panel measures by hand. The description's height depends
-    /// on the font, and the splitter's opening position on the window, so both
-    /// are set here rather than baked in at 96 DPI.
-    /// </summary>
     protected override void OnHandleCreated(EventArgs e)
     {
         base.OnHandleCreated(e);
@@ -139,129 +144,202 @@ internal sealed class FlattenPanel : UserControl
 
     void ApplyDpiDependentLayout()
     {
-        _description.Padding = new Padding(Dip(8), Dip(6), Dip(8), Dip(6));
-        _description.Height = TextRenderer.MeasureText(
-            _description.Text, _description.Font,
-            new Size(Math.Max(Dip(200), Width - Dip(16)), int.MaxValue),
-            TextFormatFlags.WordBreak).Height + Dip(14);
+        _title.Padding = new Padding(Dip(8), Dip(6), Dip(8), Dip(2));
+        _title.Height = _title.Font.Height + Dip(10);
+        _description.Padding = new Padding(Dip(8), 0, Dip(8), Dip(6));
+        FitDescriptionHeight();
         _split.SplitterWidth = Math.Max(4, Dip(4));
-        _split.Panel1MinSize = Dip(180);
-        _split.Panel2MinSize = Dip(180);
-        // Roughly two fifths to the tree: the labels are long (a text object
-        // shows its string) and the preview still needs to be a readable page.
-        int wanted = Math.Max(_split.Panel1MinSize, (int)(Width * 0.4));
-        if (Width > _split.Panel1MinSize + _split.Panel2MinSize + _split.SplitterWidth)
+        _split.Panel1MinSize = Dip(120);
+        _split.Panel2MinSize = Dip(120);
+        // Three fifths to the list: it is the thing being operated, and the
+        // preview only has to be big enough to say where on the page you are.
+        int available = _split.Height;
+        int wanted = Math.Max(_split.Panel1MinSize, (int)(available * 0.6));
+        if (available > _split.Panel1MinSize + _split.Panel2MinSize + _split.SplitterWidth)
         {
             _split.SplitterDistance = Math.Min(
-                wanted, Width - _split.Panel2MinSize - _split.SplitterWidth);
+                wanted, available - _split.Panel2MinSize - _split.SplitterWidth);
         }
+    }
+
+    /// <summary>
+    /// The description wraps, and this panel is narrow and user-resizable, so
+    /// its height has to be re-measured whenever the width changes.
+    /// </summary>
+    void FitDescriptionHeight()
+    {
+        _description.Height = TextRenderer.MeasureText(
+            _description.Text, _description.Font,
+            new Size(Math.Max(Dip(100), Width - Dip(16)), int.MaxValue),
+            TextFormatFlags.WordBreak).Height + Dip(8);
     }
 
     protected override void OnResize(EventArgs e)
     {
         base.OnResize(e);
-        // Only the description's wrapped height depends on the width; the
-        // splitter keeps wherever the user dragged it.
-        if (IsHandleCreated) _description.Height = TextRenderer.MeasureText(
-            _description.Text, _description.Font,
-            new Size(Math.Max(Dip(200), Width - Dip(16)), int.MaxValue),
-            TextFormatFlags.WordBreak).Height + Dip(14);
+        if (IsHandleCreated) FitDescriptionHeight();
     }
 
     // =======================================================================
-    // Building the tree
+    // The workspace
     // =======================================================================
 
     /// <summary>
-    /// Rebuild from the open documents. Checks do not survive: the workspace
-    /// they referred to is gone, and silently carrying ticks over to a
-    /// different set of regions would flatten something nobody chose.
+    /// Take the units out of a freshly analyzed workspace. Ticks do not survive:
+    /// the regions they referred to are gone, and carrying them over to a
+    /// different set would flatten something nobody chose.
     /// </summary>
     public void SetDocuments(IReadOnlyList<PdfDocumentInfo> documents)
     {
-        _tree.BeginUpdate();
-        try
+        _units.Clear();
+        _checked.Clear();
+        _selectedGroup = null;
+        _anyDocuments = documents.Count > 0;
+
+        foreach (var document in documents)
         {
-            _tree.Nodes.Clear();
-            foreach (var document in documents)
+            // Numbered within their page, so a unit's label matches what the
+            // user is looking at rather than a running total across the file.
+            foreach (var page in document.OverlapRegions.GroupBy(r => r.PageNumber).OrderBy(g => g.Key))
             {
-                if (document.OverlapRegions.Count == 0) continue;
-                _tree.Nodes.Add(BuildDocumentNode(document));
+                int number = 1;
+                foreach (var region in page)
+                {
+                    _units.Add(new UnitEntry(document.FilePath, region, number++));
+                }
             }
         }
-        finally
-        {
-            _tree.EndUpdate();
-        }
 
-        bool anything = _tree.Nodes.Count > 0;
-        _tree.Visible = anything;
-        _emptyMessage.Visible = !anything;
-        HideCheckBoxesOnGroupingNodes();
+        // Files can be open with nothing in them to flatten. Say why, or the
+        // panel staying empty on every selection reads as it being broken.
+        _description.Text = _anyDocuments && _units.Count == 0
+            ? L10n.FlattenNoOverlaps
+            : L10n.FlattenDescription;
+        if (IsHandleCreated) FitDescriptionHeight();
 
-        // Open the first document so the panel is not a wall of collapsed
-        // nodes, but leave the pages closed — a 176-page file would fill the
-        // pane with page numbers before showing anything to act on.
-        //
-        // The preview is pointed at that document directly rather than through
-        // TreeView.SelectedNode: assigning that puts the focus in the tree, and
-        // a TabControl brings forward whichever page holds the focused control —
-        // so the window opened on this tab instead of the object list.
-        if (anything)
+        ShowFor(null);
+        SelectionChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// List the units the given object takes part in. Null — nothing selected
+    /// on the left — empties the panel: there is no object to say anything
+    /// about, and showing every unit here would just be the object list again.
+    /// </summary>
+    public void ShowFor(CrossFileImageGroup? group)
+    {
+        _selectedGroup = group;
+        RebuildRows(resetScroll: true);
+
+        // Point the preview at the first unit so selecting on the left already
+        // shows where on the page this is, without a second click.
+        if (_rows.Count > 0)
         {
-            _tree.Nodes[0].Expand();
-            var first = (DocumentNode)_tree.Nodes[0].Tag!;
-            _preview.Show(first.FilePath, first.PageNumber, first.HighlightBoxes);
+            ShowPreviewFor(_rows[0]);
         }
         else
         {
             _preview.Clear();
         }
-        SelectionChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    static TreeNode BuildDocumentNode(PdfDocumentInfo document)
+    void RebuildRows(bool resetScroll)
     {
-        var documentNode = new TreeNode(Path.GetFileName(document.FilePath))
+        _rows.Clear();
+        for (int i = 0; i < _units.Count; i++)
         {
-            Tag = new DocumentNode(document.FilePath),
-        };
+            if (_selectedGroup is null || !UnitContains(_units[i], _selectedGroup)) continue;
 
-        foreach (var page in document.OverlapRegions
-                     .GroupBy(r => r.PageNumber)
-                     .OrderBy(g => g.Key))
-        {
-            var regions = page.ToArray();
-            var pageNode = new TreeNode(L10n.UsagePageLabel(page.Key))
-            {
-                Tag = new PageNode(document.FilePath, page.Key, regions),
-            };
-
-            // Units are numbered within their page, so the label matches what
-            // the user is looking at rather than a running total across a file.
-            for (int i = 0; i < regions.Length; i++)
-            {
-                pageNode.Nodes.Add(BuildUnitNode(document.FilePath, regions[i], i + 1));
-            }
-            documentNode.Nodes.Add(pageNode);
+            _rows.Add(new Row(i, null));
+            if (!_units[i].Expanded) continue;
+            foreach (var member in _units[i].Region.Members) _rows.Add(new Row(i, member));
         }
-        return documentNode;
+
+        bool anyRows = _rows.Count > 0;
+        _list.Visible = anyRows;
+        _emptyMessage.Visible = !anyRows;
+        _emptyMessage.Text = EmptyMessage();
+
+        if (resetScroll) _list.SetRowCount(_rows.Count);
+        else _list.RefreshRows(_rows.Count);
     }
 
-    static TreeNode BuildUnitNode(string filePath, OverlapRegion region, int number)
+    /// <summary>
+    /// What the panel says when it has no rows. Three different silences, and
+    /// only one of them is worth explaining: an object that overlaps nothing is
+    /// the case where the user is entitled to wonder what went wrong.
+    /// </summary>
+    string EmptyMessage()
     {
-        var unitNode = new TreeNode($"{L10n.FlattenUnitLabel(number)} ({KindSummary(region)})")
+        if (!_anyDocuments) return L10n.StatusOpenPrompt;
+        if (_selectedGroup is null) return string.Empty;
+        return L10n.FlattenObjectNotOverlapping;
+    }
+
+    /// <summary>
+    /// Whether a unit has a member that IS the selected list row. Images are
+    /// grouped by stream hash and the other kinds by their match key, which is
+    /// exactly what a member's identity carries — so this is a lookup, not a
+    /// second opinion about identity.
+    /// </summary>
+    static bool UnitContains(UnitEntry unit, CrossFileImageGroup group) =>
+        unit.Region.Members.Any(m => m.Kind == group.Kind
+            && (group.Kind == RemovableKind.Image
+                ? m.Identity == group.Hash
+                : m.Identity == group.TextValue));
+
+    // =======================================================================
+    // Rows
+    // =======================================================================
+
+    LayerVisual VisualForRow(int index)
+    {
+        if (index < 0 || index >= _rows.Count) return default;
+        var row = _rows[index];
+        var unit = _units[row.UnitIndex];
+
+        if (row.Object is null)
         {
-            Tag = new UnitNode(filePath, region),
-        };
-        foreach (var member in region.Members)
-        {
-            unitNode.Nodes.Add(new TreeNode(ObjectLabel(member))
-            {
-                Tag = new ObjectNode(filePath, region, member),
-            });
+            var ticked = _checked.GetValueOrDefault(unit.Region);
+            return new LayerVisual(
+                IsGroup: true,
+                Title: $"{L10n.FlattenUnitLabel(unit.NumberOnPage)} ({KindSummary(unit.Region)})",
+                Subtitle: $"{Path.GetFileName(unit.FilePath)}  {L10n.UsagePageLabel(unit.Region.PageNumber)}",
+                Kind: RemovableKind.Image,
+                Thumbnail: null,
+                TextContent: null,
+                IsThumbnailPending: false,
+                HasCheckBox: true,
+                IsChecked: ticked is not null && ticked.Count == unit.Region.Members.Count,
+                IsExpanded: unit.Expanded);
         }
-        return unitNode;
+
+        var member = row.Object;
+        var group = GroupFor?.Invoke(member);
+        // Text draws its string rather than a bitmap, the same rule the table
+        // and the tiles follow — so one object looks the same in all three.
+        string? text = member.Kind == RemovableKind.Text ? member.Identity : null;
+        var bitmap = text is null && group is not null ? ThumbnailFor?.Invoke(group) : null;
+
+        return new LayerVisual(
+            IsGroup: false,
+            Title: ObjectLabel(member),
+            Subtitle: null,
+            Kind: member.Kind,
+            Thumbnail: bitmap,
+            TextContent: text,
+            IsThumbnailPending: text is null && bitmap is null,
+            HasCheckBox: true,
+            IsChecked: _checked.GetValueOrDefault(unit.Region)?.Contains(member) == true,
+            IsExpanded: false);
+    }
+
+    string? ToolTipForRow(int index)
+    {
+        if (index < 0 || index >= _rows.Count) return null;
+        var row = _rows[index];
+        if (row.Object is null) return _units[row.UnitIndex].FilePath;
+        return row.Object.Kind == RemovableKind.Text ? row.Object.Identity : ObjectLabel(row.Object);
     }
 
     /// <summary>The kinds in the unit, in list order, e.g. "image + text".</summary>
@@ -279,10 +357,10 @@ internal sealed class FlattenPanel : UserControl
     };
 
     /// <summary>
-    /// An object's label: its kind, then what identifies it to a person. For
-    /// text that is the string itself — quoted, so a run of spaces reads as
-    /// content rather than as a missing label — and for the other kinds the
-    /// size, since one image looks like another in a list of words.
+    /// An object's name: its kind, then what identifies it to a person. For text
+    /// that is the string itself — quoted, so a run of spaces reads as content
+    /// rather than as a missing label — and for the other kinds the size, since
+    /// one image looks like another in a list of words.
     /// </summary>
     static string ObjectLabel(PlacedObject member)
     {
@@ -298,104 +376,118 @@ internal sealed class FlattenPanel : UserControl
     }
 
     // =======================================================================
-    // Checking
+    // Ticking
     // =======================================================================
 
-    void OnBeforeCheck(object? sender, TreeViewCancelEventArgs e)
+    void OnCheckToggled(int index)
     {
-        // Document and page nodes group; they are not things to flatten. Their
-        // checkboxes are hidden below, but the keyboard can still reach them.
-        if (e.Node?.Tag is DocumentNode or PageNode) e.Cancel = true;
-    }
+        if (index < 0 || index >= _rows.Count) return;
+        var row = _rows[index];
+        var unit = _units[row.UnitIndex];
+        var ticked = _checked.TryGetValue(unit.Region, out var found)
+            ? found
+            : _checked[unit.Region] = new HashSet<PlacedObject>();
 
-    void OnAfterCheck(object? sender, TreeViewEventArgs e)
-    {
-        if (_syncingChecks || e.Node is null) return;
+        if (row.Object is null)
+        {
+            // A unit is a bulk switch for its objects.
+            bool takeAll = ticked.Count != unit.Region.Members.Count;
+            ticked.Clear();
+            if (takeAll) foreach (var m in unit.Region.Members) ticked.Add(m);
+        }
+        else if (!ticked.Remove(row.Object))
+        {
+            ticked.Add(row.Object);
+        }
 
-        _syncingChecks = true;
-        try
-        {
-            // A unit is a bulk switch for its objects; an object ticked on its
-            // own leaves its unit checked only when nothing is left unticked,
-            // so the unit's box always answers "is all of this being flattened".
-            if (e.Node.Tag is UnitNode)
-            {
-                foreach (TreeNode child in e.Node.Nodes) child.Checked = e.Node.Checked;
-            }
-            else if (e.Node.Tag is ObjectNode && e.Node.Parent is { } unit)
-            {
-                unit.Checked = unit.Nodes.Cast<TreeNode>().All(n => n.Checked);
-            }
-        }
-        finally
-        {
-            _syncingChecks = false;
-        }
+        if (ticked.Count == 0) _checked.Remove(unit.Region);
+        RebuildRows(resetScroll: false);
         SelectionChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    /// <summary>Tick every object in the tree.</summary>
-    public void CheckAll() => SetAllChecks(true);
-
-    /// <summary>Clear every tick. Called after a save, and by the toolbar.</summary>
-    public void ClearChecks() => SetAllChecks(false);
-
-    void SetAllChecks(bool value)
+    void OnExpandToggled(int index)
     {
-        _syncingChecks = true;
-        try
-        {
-            foreach (var node in AllNodes(_tree.Nodes))
-            {
-                if (node.Tag is UnitNode or ObjectNode) node.Checked = value;
-            }
-        }
-        finally
-        {
-            _syncingChecks = false;
-        }
+        if (index < 0 || index >= _rows.Count) return;
+        var unit = _units[_rows[index].UnitIndex];
+        unit.Expanded = !unit.Expanded;
+        RebuildRows(resetScroll: false);
+    }
+
+    void OnRowSelected(int index)
+    {
+        if (index < 0 || index >= _rows.Count) return;
+        ShowPreviewFor(_rows[index]);
+    }
+
+    void ShowPreviewFor(Row row)
+    {
+        var unit = _units[row.UnitIndex];
+        var boxes = row.Object is null
+            ? unit.Region.Members.Select(RectOf).ToArray()
+            : new[] { RectOf(row.Object) };
+        _preview.Show(unit.FilePath, unit.Region.PageNumber, boxes);
+    }
+
+    static RectangleF RectOf(PlacedObject o) =>
+        new((float)o.X, (float)o.Y, (float)o.Width, (float)o.Height);
+
+    /// <summary>Clear every tick. Called after a save.</summary>
+    public void ClearChecks()
+    {
+        if (_checked.Count == 0) return;
+        _checked.Clear();
+        RebuildRows(resetScroll: false);
         SelectionChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    static IEnumerable<TreeNode> AllNodes(TreeNodeCollection nodes)
-    {
-        foreach (TreeNode node in nodes)
-        {
-            yield return node;
-            foreach (var descendant in AllNodes(node.Nodes)) yield return descendant;
-        }
-    }
+    /// <summary>How many individual objects are ticked, across every unit.</summary>
+    public int CheckedObjectCount => _checked.Values.Sum(set => set.Count);
 
-    /// <summary>How many individual objects are ticked.</summary>
-    public int CheckedObjectCount =>
-        AllNodes(_tree.Nodes).Count(n => n.Tag is ObjectNode && n.Checked);
-
-    /// <summary>Whether there is anything at all to tick.</summary>
-    public bool HasAnyObject => AllNodes(_tree.Nodes).Any(n => n.Tag is ObjectNode);
+    /// <summary>Whether the workspace holds anything that could be flattened.</summary>
+    public bool HasAnyObject => _units.Count > 0;
 
     /// <summary>
-    /// The regions to flatten, per source file — each covering only the objects
-    /// that are actually ticked, which is also all that will be deleted. A unit
+    /// The groups whose thumbnails the visible rows need. The panel holds no
+    /// bitmaps; the host renders these into the same viewport-bounded cache the
+    /// object list uses.
+    /// </summary>
+    public IReadOnlyList<CrossFileImageGroup> VisibleThumbnailGroups()
+    {
+        if (GroupFor is null || _rows.Count == 0) return Array.Empty<CrossFileImageGroup>();
+
+        var (first, count) = _list.VisibleRange();
+        var groups = new List<CrossFileImageGroup>(count);
+        for (int i = first; i < first + count && i < _rows.Count; i++)
+        {
+            var member = _rows[i].Object;
+            if (member is null || member.Kind == RemovableKind.Text) continue;
+            var group = GroupFor(member);
+            if (group is not null) groups.Add(group);
+        }
+        return groups;
+    }
+
+    /// <summary>
+    /// The places to flatten, per source file — each covering only the objects
+    /// that are actually ticked, which is also all that will be removed. A unit
     /// with nothing ticked is not in the result at all.
     /// </summary>
     public IReadOnlyDictionary<string, IReadOnlyList<OverlapRegion>> SelectedRegionsByFile()
     {
         var byFile = new Dictionary<string, List<OverlapRegion>>(StringComparer.OrdinalIgnoreCase);
-        foreach (var unit in AllNodes(_tree.Nodes).Where(n => n.Tag is UnitNode))
+        foreach (var unit in _units)
         {
-            var tag = (UnitNode)unit.Tag!;
-            var members = unit.Nodes.Cast<TreeNode>()
-                .Where(n => n.Checked)
-                .Select(n => ((ObjectNode)n.Tag!).Member)
-                .ToArray();
-            if (members.Length == 0) continue;
+            if (!_checked.TryGetValue(unit.Region, out var ticked) || ticked.Count == 0) continue;
 
-            if (!byFile.TryGetValue(tag.FilePath, out var regions))
+            // In the region's own member order, so the covering rectangle is
+            // built from the same sequence the analyzer produced.
+            var members = unit.Region.Members.Where(ticked.Contains).ToArray();
+            if (!byFile.TryGetValue(unit.FilePath, out var regions))
             {
                 regions = new List<OverlapRegion>();
-                byFile[tag.FilePath] = regions;
+                byFile[unit.FilePath] = regions;
             }
-            regions.Add(OverlapDetector.RegionCovering(tag.Region.PageNumber, members));
+            regions.Add(OverlapDetector.RegionCovering(unit.Region.PageNumber, members));
         }
         return byFile.ToDictionary(
             kv => kv.Key,
@@ -404,72 +496,11 @@ internal sealed class FlattenPanel : UserControl
     }
 
     // =======================================================================
-    // Preview
-    // =======================================================================
-
-    void OnAfterSelect(object? sender, TreeViewEventArgs e)
-    {
-        if (e.Node?.Tag is FlattenNode node)
-        {
-            _preview.Show(node.FilePath, node.PageNumber, node.HighlightBoxes);
-        }
-    }
-
-    // =======================================================================
-    // Hiding the checkbox on the grouping levels
-    // =======================================================================
-    //
-    // TreeView.CheckBoxes is all-or-nothing, and a checkbox on a document or a
-    // page would promise a bulk action the design does not have. The state
-    // image index is per item, though, and setting it to zero hides the box —
-    // the documented way to do this.
-
-    const int TvFirst = 0x1100;
-    const int TvmSetItemW = TvFirst + 63;
-    const int TvifState = 0x0008;
-    const int TvisStateImageMask = 0xF000;
-
-    [StructLayout(LayoutKind.Sequential)]
-    struct TvItem
-    {
-        public int Mask;
-        public IntPtr Item;
-        public int State;
-        public int StateMask;
-        public IntPtr Text;
-        public int TextMax;
-        public int Image;
-        public int SelectedImage;
-        public int Children;
-        public IntPtr LParam;
-    }
-
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-    static extern IntPtr SendMessage(IntPtr window, int message, IntPtr wParam, ref TvItem lParam);
-
-    void HideCheckBoxesOnGroupingNodes()
-    {
-        if (!_tree.IsHandleCreated) return;
-        foreach (var node in AllNodes(_tree.Nodes))
-        {
-            if (node.Tag is not (DocumentNode or PageNode)) continue;
-            var item = new TvItem
-            {
-                Item = node.Handle,
-                Mask = TvifState,
-                StateMask = TvisStateImageMask,
-                State = 0,
-            };
-            SendMessage(_tree.Handle, TvmSetItemW, IntPtr.Zero, ref item);
-        }
-    }
-
-    // =======================================================================
     // The preview pane
     // =======================================================================
 
     /// <summary>
-    /// One page of one file, drawn with the selected node's rectangles picked
+    /// One page of one file, drawn with the selected row's rectangles picked
     /// out. Exactly one rendered page is held at a time — the same
     /// viewport-bounded memory rule the rest of the app follows.
     /// </summary>
@@ -487,7 +518,7 @@ internal sealed class FlattenPanel : UserControl
         int _pageNumber;
         int _renderedWidth;
         // Only the newest request may install its result: the user can click
-        // through the tree faster than a page renders.
+        // through the list faster than a page renders.
         int _requestId;
         bool _closed;
 
@@ -504,7 +535,7 @@ internal sealed class FlattenPanel : UserControl
         public void Show(string filePath, int pageNumber, IReadOnlyList<RectangleF> boxesInPoints)
         {
             _boxesInPoints = boxesInPoints;
-            // Same page, different boxes (a different node on the same page):
+            // Same page, different boxes (a different row on the same page):
             // repaint, do not render again.
             if (_filePath == filePath && _pageNumber == pageNumber && _page is not null)
             {

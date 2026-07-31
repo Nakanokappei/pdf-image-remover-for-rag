@@ -58,6 +58,13 @@ internal sealed class TileView : Panel
     /// </summary>
     public event EventHandler? ViewportChanged;
 
+    /// <summary>
+    /// Raised when the tile cursor lands on a different tile. This view's
+    /// equivalent of the grid's CurrentCellChanged — what tells the flatten
+    /// panel which object to describe.
+    /// </summary>
+    public event EventHandler? FocusedGroupChanged;
+
     /// <summary>Supplies the tooltip for a group, or null for none.</summary>
     public Func<CrossFileImageGroup, string?>? ToolTipFor { get; set; }
 
@@ -342,6 +349,7 @@ internal sealed class TileView : Panel
         EnsureVisible(index);
         if (old >= 0 && old != index) Invalidate(BoundsOf(old));
         Invalidate(BoundsOf(index));
+        if (old != index) FocusedGroupChanged?.Invoke(this, EventArgs.Empty);
 
         // childID is 1-based here (0 identifies the control itself), which is the
         // offset the framework's ControlAccessibleObject uses when it maps an OS
@@ -349,6 +357,16 @@ internal sealed class TileView : Panel
         // follows the cursor; if it lands on the wrong tile, this offset is why.
         AccessibilityNotifyClients(AccessibleEvents.Focus, index + 1);
     }
+
+    /// <summary>
+    /// The group the tile cursor is on, or null before it has landed anywhere.
+    /// This view's equivalent of the grid's current row — what the flatten
+    /// panel describes while the tiles are showing.
+    /// </summary>
+    public CrossFileImageGroup? FocusedGroup =>
+        _focusedTileIndex >= 0 && _focusedTileIndex < _items.Count
+            ? _items[_focusedTileIndex]
+            : null;
 
     void EnsureVisible(int index)
     {

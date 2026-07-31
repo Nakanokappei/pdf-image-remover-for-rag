@@ -25,11 +25,15 @@ internal sealed partial class MainForm
         // Thumbnails are cached for every live group regardless of the type
         // filter, so toggling the filter never re-decodes bitmaps.
         RefreshThumbnailImages(groups);
-        RebuildDisplay();
-        // The flatten tab reads the documents directly (overlap regions are
+        // The flatten panel reads the documents directly (overlap regions are
         // per page, not merged across files like the object groups), so it is
         // rebuilt from the same event rather than from the group list.
+        //
+        // BEFORE the views, not after: rebuilding them ends by pointing the
+        // panel at the current row, and a panel rebuilt afterwards would clear
+        // that again — which showed as an empty panel until the user moved.
         _flattenPanel.SetDocuments(_workflow.OpenDocuments);
+        RebuildDisplay();
     }
 
     /// <summary>
@@ -61,6 +65,11 @@ internal sealed partial class MainForm
             // the old "rebuild it lazily on first show" state is gone.
             RebuildTiles(_displayGroups);
             UpdateSelectionState();
+            // Re-aim the flatten panel at whatever the cursor ended up on. The
+            // grid's CurrentCellChanged does fire during the rebuild, but on the
+            // first row added — before its Tag names a group — so the panel
+            // would be left describing nothing until the user moved.
+            ShowFlattenPanelForCurrentRow();
             // Whichever view is showing, fetch the bitmaps its viewport needs.
             ScheduleThumbnailLoad();
             // Re-assert which view is on screen: a rebuild must never leave the
@@ -281,13 +290,24 @@ internal sealed partial class MainForm
     /// </summary>
     IReadOnlyList<CrossFileImageGroup> CurrentViewportWindow()
     {
+        // The flatten panel draws thumbnails too, and its rows are not a slice
+        // of the object list — they are whichever objects share a unit with the
+        // current row, which can sit anywhere in it. So its visible rows are
+        // added to the window rather than assumed to be inside it.
+        var alsoNeeded = _flattenPanel.VisibleThumbnailGroups();
+
         var (first, count) = _isTileView ? VisibleTileRange() : VisibleRowRange();
-        if (count <= 0) return Array.Empty<CrossFileImageGroup>();
+        if (count <= 0) return alsoNeeded;
 
         int margin = Math.Max(count, 1) / 2;
         int start = Math.Max(0, first - margin);
         int end = Math.Min(_displayGroups.Length, first + count + margin);
-        return _displayGroups[start..end];
+        if (alsoNeeded.Count == 0) return _displayGroups[start..end];
+
+        var window = new List<CrossFileImageGroup>(end - start + alsoNeeded.Count);
+        window.AddRange(_displayGroups[start..end]);
+        window.AddRange(alsoNeeded);
+        return window;
     }
 
     /// <summary>First visible row and how many rows are showing.</summary>

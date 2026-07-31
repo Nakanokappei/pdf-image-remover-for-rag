@@ -178,29 +178,25 @@ internal interface IStrings
     /// </summary>
     string ContextMenuUsageLocations { get; }
 
-    // --- the two tabs ------------------------------------------------------
+    // --- the flatten panel -------------------------------------------------
     // Flattening and deleting are opposite operations — one keeps the page's
-    // appearance and drops the text layer, the other drops the appearance — so
-    // they get a tab each. NO access key here: a TabPage caption shows "&" as a
-    // literal ampersand. Ctrl+Tab moves between tabs.
+    // appearance and drops the text layer, the other drops the appearance — but
+    // they act on the same objects, so they sit side by side: the object list
+    // fills the window and the flatten tree docks to its right. NO access key
+    // in the title: it labels a panel, not a menu, and "&" would show literally.
 
     /// <summary>
-    /// Tab where overlapping objects are baked into one image. Use the term the
-    /// language's image editors use for Photoshop's "Flatten Image", if it has
-    /// one — that is the operation, and users have met it there.
+    /// Title over the panel where overlapping objects are baked into one image.
+    /// Use the term the language's image editors use for Photoshop's "Flatten
+    /// Image", if it has one — that is the operation, and users have met it
+    /// there.
     /// </summary>
-    string TabFlatten { get; }
+    string FlattenPanelTitle { get; }
 
     /// <summary>
-    /// Tab holding the object list. Use the same verb as
-    /// <see cref="AccessibleDeleteColumn"/>.
-    /// </summary>
-    string TabDelete { get; }
-
-    /// <summary>
-    /// One line above the tree, explaining what the tab does. It has to answer
-    /// "why would I want this": the page looks unchanged afterwards, and what
-    /// changes is invisible — the text stops being text.
+    /// One line under the title, explaining what the panel is for. It has to
+    /// answer "why would I want this": the page looks unchanged afterwards, and
+    /// what changes is invisible — the text stops being text.
     /// </summary>
     string FlattenDescription { get; }
 
@@ -211,7 +207,18 @@ internal interface IStrings
     /// </summary>
     string FlattenUnitLabel(int number);
 
-    /// <summary>Shown in place of the tree when no overlaps were found.</summary>
+    /// <summary>
+    /// Shown in the panel when the object selected in the list overlaps nothing
+    /// anywhere, so there is no unit to list. States the fact — it is not an
+    /// error, and most objects in a document are like this.
+    /// </summary>
+    string FlattenObjectNotOverlapping { get; }
+
+    /// <summary>
+    /// Shown under the description when files are open but nothing in them can
+    /// be flattened, so the tree is a plain listing. Answers the question the
+    /// user is about to ask: why is there nothing to tick?
+    /// </summary>
     string FlattenNoOverlaps { get; }
 
     /// <summary>

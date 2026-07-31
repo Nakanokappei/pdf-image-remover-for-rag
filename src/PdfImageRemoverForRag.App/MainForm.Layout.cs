@@ -154,7 +154,33 @@ internal sealed partial class MainForm
             ScheduleThumbnailLoad();
         }
 
+        ApplyWorkspaceSplitMetrics();
+
         if (_imageListGrid.Columns.Count > 0) AutoSizeContentColumns();
+    }
+
+    /// <summary>
+    /// Give the flatten panel its width in logical pixels. Re-applied on a DPI
+    /// change because <see cref="SplitContainer.FixedPanel"/> holds a panel to
+    /// its size in device pixels — left alone, the panel would shrink by half
+    /// when the window moved to a 200 % display.
+    /// </summary>
+    void ApplyWorkspaceSplitMetrics()
+    {
+        _workspaceSplit.SplitterWidth = Math.Max(4, Dip(4));
+        _workspaceSplit.Panel1MinSize = Dip(320);
+        _workspaceSplit.Panel2MinSize = Dip(200);
+
+        // Wide enough for a file name and an indented object label; the user
+        // can drag from here and the width then survives window resizing.
+        int wanted = Dip(300);
+        int room = _workspaceSplit.Width
+                 - _workspaceSplit.Panel1MinSize - _workspaceSplit.SplitterWidth;
+        if (room < _workspaceSplit.Panel2MinSize) return;
+
+        int panelWidth = Math.Min(wanted, room);
+        _workspaceSplit.SplitterDistance =
+            _workspaceSplit.Width - panelWidth - _workspaceSplit.SplitterWidth;
     }
 
     void BuildLayout()
@@ -162,25 +188,25 @@ internal sealed partial class MainForm
         ConfigureImageListGrid();
 
         // Table and tile views share one host panel; visibility is toggled
-        // by the 表示 menu. It fills its tab now that the header info panel is
-        // gone — per-file details live in the ファイル column.
+        // by the 表示 menu. Per-file details live in the ファイル column, so it
+        // needs no header of its own.
         var viewHost = new Panel { Dock = DockStyle.Fill };
         viewHost.Controls.Add(_imageListGrid);
         viewHost.Controls.Add(_tileView);
 
-        // The object list and the flatten tree get a tab each; see the comment
-        // on the fields for why they cannot share one list.
-        _deleteTab.Controls.Add(viewHost);
-        _flattenTab.Controls.Add(_flattenPanel);
-        _tabs.TabPages.Add(_deleteTab);
-        _tabs.TabPages.Add(_flattenTab);
+        // Object list left, flatten tree right — both always visible; see the
+        // comment on the field for why they are not tabs and cannot be one list.
+        // The tree stays put when the view switches to tiles: it describes the
+        // document, not the way the objects happen to be drawn.
+        _workspaceSplit.Panel1.Controls.Add(viewHost);
+        _workspaceSplit.Panel2.Controls.Add(_flattenPanel);
 
         _statusStrip.Items.Add(_statusLabel);
         _statusStrip.Items.Add(_progressIndicator);
 
         // Dock order: fill content first, then top strips, so the menu ends
         // up above the toolbar and both above the content.
-        Controls.Add(_tabs);
+        Controls.Add(_workspaceSplit);
         Controls.Add(_toolStrip);
         Controls.Add(_menuStrip);
         Controls.Add(_statusStrip);

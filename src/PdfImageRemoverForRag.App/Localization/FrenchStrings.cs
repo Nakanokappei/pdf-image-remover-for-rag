@@ -131,14 +131,14 @@ internal sealed class FrenchStrings : IStrings
     public string AboutLicenseLink => "Informations de licence";
     public string ContextMenuUsageLocations => "Afficher les &emplacements d'utilisation…";
 
-    public string TabFlatten => "Aplatir";
-    public string TabDelete => "Supprimer";
+    public string FlattenPanelTitle => "Aplatir";
 
     public string FlattenDescription =>
         "Fusionne les objets superposés en une seule image. La page garde le même "
         + "aspect, mais le texte qu'elle contient n'est plus du texte.";
 
     public string FlattenUnitLabel(int number) => $"Unité {number}";
+    public string FlattenObjectNotOverlapping => "Cet objet ne chevauche rien.";
     public string FlattenNoOverlaps => "Aucun objet superposé n'a été trouvé.";
     public string StatusFlattenSelection(int objectCount) => $"{objectCount} objet(s) à aplatir";
     public string AccessibleFlattenPreview => "Aperçu";

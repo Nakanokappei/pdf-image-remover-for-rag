@@ -127,14 +127,14 @@ internal sealed class HindiStrings : IStrings
     public string AboutLicenseLink => "लाइसेंस जानकारी";
     public string ContextMenuUsageLocations => "उपयोग स्थान दिखाएँ(&U)…";
 
-    public string TabFlatten => "मिलाएँ";
-    public string TabDelete => "हटाएँ";
+    public string FlattenPanelTitle => "मिलाएँ";
 
     public string FlattenDescription =>
         "एक-दूसरे पर आने वाली वस्तुओं को एक ही छवि में मिला देता है। पृष्ठ वैसा ही दिखता है, "
         + "पर उसके भीतर का पाठ अब पाठ नहीं रहता।";
 
     public string FlattenUnitLabel(int number) => $"इकाई {number}";
+    public string FlattenObjectNotOverlapping => "यह वस्तु किसी से नहीं मिलती।";
     public string FlattenNoOverlaps => "एक-दूसरे पर आने वाली कोई वस्तु नहीं मिली।";
     public string StatusFlattenSelection(int objectCount) => $"मिलाने के लिए {objectCount} वस्तुएँ";
     public string AccessibleFlattenPreview => "पूर्वावलोकन";

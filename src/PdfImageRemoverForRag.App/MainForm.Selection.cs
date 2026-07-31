@@ -376,15 +376,12 @@ internal sealed partial class MainForm
 
     void OnSelectAllClicked(object? sender, EventArgs e)
     {
-        // The two tabs hold two independent selections, and the button acts on
-        // the one being looked at. Ticking the hidden tab's objects as well
-        // would mark work the user cannot see for an irreversible operation.
-        if (IsFlattenTab)
-        {
-            _flattenPanel.CheckAll();
-            return;   // FlattenPanel raises SelectionChanged, which refreshes both
-        }
-
+        // These act on the object list only, never on the flatten tree. Both are
+        // on screen now, so "everything" would have to mean both — and one click
+        // that marks every overlap on every page for baking is not something to
+        // offer beside a button whose usual job is ticking a list. Flattening is
+        // chosen per unit in the tree, which is the granularity it acts at.
+        //
         // Select only what the list currently shows: the 表示列 filter scopes
         // "select all" so hidden kinds are never silently marked for removal.
         foreach (var group in _workflow.ImageGroups
@@ -399,12 +396,6 @@ internal sealed partial class MainForm
 
     void OnClearSelectionClicked(object? sender, EventArgs e)
     {
-        if (IsFlattenTab)
-        {
-            _flattenPanel.ClearChecks();
-            return;
-        }
-
         _selectedHashes.Clear();
         SyncAllViewCheckStates();
         UpdateSelectionState();
@@ -441,16 +432,13 @@ internal sealed partial class MainForm
     void UpdateSelectionState()
     {
         bool hasDocuments = _workflow.OpenDocuments.Count > 0;
-        int flattenCount = _flattenPanel.CheckedObjectCount;
-        // One save run does both, so the button follows either selection —
-        // switching tabs must not appear to disable a save that is ready.
-        bool canSave = _selectedHashes.Count > 0 || flattenCount > 0;
-        // Select-all / clear act on the tab in front, so their enablement has
-        // to describe that tab.
-        bool hasSelectable = IsFlattenTab
-            ? _flattenPanel.HasAnyObject
-            : _workflow.ImageGroups.Any(g => g.IsSafelyRemovable && _visibleKinds.Contains(g.Kind));
-        bool hasSelected = IsFlattenTab ? flattenCount > 0 : _selectedHashes.Count > 0;
+        // One save run does both, so the button follows either selection.
+        bool canSave = _selectedHashes.Count > 0 || _flattenPanel.CheckedObjectCount > 0;
+        // Select-all / clear act on the object list alone, so their enablement
+        // describes the list and ignores whatever the tree has ticked.
+        bool hasSelectable =
+            _workflow.ImageGroups.Any(g => g.IsSafelyRemovable && _visibleKinds.Contains(g.Kind));
+        bool hasSelected = _selectedHashes.Count > 0;
 
         _saveMenuItem.Enabled = !_isBusy && canSave;
         _saveToolButton.Enabled = !_isBusy && canSave;
@@ -469,19 +457,20 @@ internal sealed partial class MainForm
     void RefreshSelectionStatus()
     {
         if (_isBusy) return;
-        // Each tab reports its own count: they are different operations on
-        // different things, and one number for both would say neither.
-        if (IsFlattenTab)
+
+        // Both selections are on screen at once, so both are reported. They stay
+        // separate sentences rather than one total: deleting and flattening are
+        // different operations on differently counted things — groups across
+        // every file against objects at one place on one page — and a single
+        // number would describe neither.
+        var parts = new List<string>(2);
+        if (_selectedHashes.Count > 0) parts.Add(L10n.StatusSelection(_selectedHashes.Count));
+        int flattenCount = _flattenPanel.CheckedObjectCount;
+        if (flattenCount > 0) parts.Add(L10n.StatusFlattenSelection(flattenCount));
+
+        if (parts.Count > 0)
         {
-            int flattenCount = _flattenPanel.CheckedObjectCount;
-            SetStatus(flattenCount > 0
-                ? L10n.StatusFlattenSelection(flattenCount)
-                : _workflow.OpenDocuments.Count > 0 ? L10n.StatusAnalyzed : L10n.StatusOpenPrompt);
-            return;
-        }
-        if (_selectedHashes.Count > 0)
-        {
-            SetStatus(L10n.StatusSelection(_selectedHashes.Count));
+            SetStatus(string.Join(" / ", parts));
         }
         else
         {

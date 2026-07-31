@@ -135,14 +135,14 @@ internal sealed class TurkishStrings : IStrings
     public string AboutLicenseLink => "Lisans bilgileri";
     public string ContextMenuUsageLocations => "&Kullanım Konumlarını Göster…";
 
-    public string TabFlatten => "Birleştir";
-    public string TabDelete => "Sil";
+    public string FlattenPanelTitle => "Birleştir";
 
     public string FlattenDescription =>
         "Üst üste gelen nesneleri tek bir görüntüde birleştirir. Sayfa aynı görünür, "
         + "ancak içindeki metin artık metin olmaz.";
 
     public string FlattenUnitLabel(int number) => $"Birim {number}";
+    public string FlattenObjectNotOverlapping => "Bu nesne hiçbir şeyle üst üste gelmiyor.";
     public string FlattenNoOverlaps => "Üst üste gelen nesne bulunamadı.";
     public string StatusFlattenSelection(int objectCount) => $"Birleştirilecek nesne: {objectCount}";
     public string AccessibleFlattenPreview => "Önizleme";

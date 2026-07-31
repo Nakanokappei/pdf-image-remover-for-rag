@@ -129,14 +129,14 @@ internal sealed class GermanStrings : IStrings
     public string AboutLicenseLink => "Lizenzinformationen";
     public string ContextMenuUsageLocations => "&Verwendungsorte anzeigen…";
 
-    public string TabFlatten => "Zusammenfügen";
-    public string TabDelete => "Löschen";
+    public string FlattenPanelTitle => "Zusammenfügen";
 
     public string FlattenDescription =>
         "Fügt überlappende Objekte zu einem einzigen Bild zusammen. Die Seite sieht "
         + "unverändert aus, doch der Text darin ist danach kein Text mehr.";
 
     public string FlattenUnitLabel(int number) => $"Einheit {number}";
+    public string FlattenObjectNotOverlapping => "Dieses Objekt überlappt mit nichts.";
     public string FlattenNoOverlaps => "Es wurden keine überlappenden Objekte gefunden.";
     public string StatusFlattenSelection(int objectCount) => $"{objectCount} Objekt(e) zum Zusammenfügen";
     public string AccessibleFlattenPreview => "Vorschau";

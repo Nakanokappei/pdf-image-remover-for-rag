@@ -125,14 +125,14 @@ internal sealed class EnglishStrings : IStrings
     public string AboutLicenseLink => "License information";
     public string ContextMenuUsageLocations => "Show &Usage Locations…";
 
-    public string TabFlatten => "Flatten";
-    public string TabDelete => "Delete";
+    public string FlattenPanelTitle => "Flatten";
 
     public string FlattenDescription =>
         "Bakes overlapping objects into a single image. The page looks the same, "
         + "but the text inside is no longer text.";
 
     public string FlattenUnitLabel(int number) => $"Unit {number}";
+    public string FlattenObjectNotOverlapping => "This object does not overlap anything.";
     public string FlattenNoOverlaps => "No overlapping objects were found.";
     public string StatusFlattenSelection(int objectCount) => $"{objectCount} object(s) to flatten";
     public string AccessibleFlattenPreview => "Preview";

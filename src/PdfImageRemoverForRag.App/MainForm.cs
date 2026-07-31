@@ -62,14 +62,23 @@ internal sealed partial class MainForm : Form
     readonly DataGridViewTextBoxColumn _estimatedSizeColumn = new() { HeaderText = L10n.ColumnEstimatedSize, ReadOnly = true, AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells };
     readonly DataGridViewTextBoxColumn _warningColumn = new() { HeaderText = L10n.ColumnWarning, ReadOnly = true, AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells };
 
-    // --- tabs --------------------------------------------------------------
+    // --- workspace split ---------------------------------------------------
     // Flattening and deleting are opposite operations — one keeps the page's
     // appearance and empties its text layer, the other drops the appearance —
-    // and a single ☑ column cannot mean both. 削除 is the leftmost and the tab
-    // the window opens on: the object list is what the app is for.
-    readonly TabControl _tabs = new() { Dock = DockStyle.Fill };
-    readonly TabPage _deleteTab = new(L10n.TabDelete);
-    readonly TabPage _flattenTab = new(L10n.TabFlatten);
+    // and a single ☑ column cannot mean both. They used to get a tab each, and
+    // that hid flattening: a tab nobody opens is a feature nobody has. They
+    // describe the same objects, so both are on screen at once instead — the
+    // object list fills the window and the flatten tree docks to its right,
+    // the way an image editor keeps its layers panel beside the canvas.
+    //
+    // FixedPanel is Panel2 so widening the window feeds the object list; the
+    // panel is a fixture at the edge, not a share of the width.
+    readonly SplitContainer _workspaceSplit = new()
+    {
+        Dock = DockStyle.Fill,
+        Orientation = Orientation.Vertical,
+        FixedPanel = FixedPanel.Panel2,
+    };
     readonly FlattenPanel _flattenPanel = new() { Dock = DockStyle.Fill };
 
     // --- tile view ---------------------------------------------------------
@@ -275,8 +284,16 @@ internal sealed partial class MainForm : Form
         _tileView.RangeToggleRequested += OnTileRangeToggled;
         _tileView.TileContextRequested += OnTileContextRequested;
 
-        _tabs.SelectedIndexChanged += OnTabChanged;
         _flattenPanel.SelectionChanged += OnFlattenSelectionChanged;
+        // The panel holds no bitmaps and knows nothing of the workspace: it
+        // asks for both while painting, so its rows can never outlive an
+        // eviction and it never has to be told a thumbnail arrived.
+        _flattenPanel.GroupFor = FindGroupFor;
+        _flattenPanel.ThumbnailFor = group => _thumbnails.Grid(group.Hash);
+        _flattenPanel.ViewportChanged += (_, _) => ScheduleThumbnailLoad();
+        // Whichever view is showing, moving the cursor re-aims the panel.
+        _imageListGrid.CurrentCellChanged += (_, _) => ShowFlattenPanelForCurrentRow();
+        _tileView.FocusedGroupChanged += (_, _) => ShowFlattenPanelForCurrentRow();
 
         _usageLocationsMenuItem.Click += OnUsageLocationsClicked;
         _rowContextMenu.Items.Add(_usageLocationsMenuItem);

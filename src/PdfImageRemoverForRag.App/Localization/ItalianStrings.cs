@@ -128,14 +128,14 @@ internal sealed class ItalianStrings : IStrings
     public string AboutLicenseLink => "Informazioni sulle licenze";
     public string ContextMenuUsageLocations => "Mostra &posizioni di utilizzo…";
 
-    public string TabFlatten => "Unisci";
-    public string TabDelete => "Elimina";
+    public string FlattenPanelTitle => "Unisci";
 
     public string FlattenDescription =>
         "Fonde gli oggetti sovrapposti in un'unica immagine. La pagina resta uguale, "
         + "ma il testo al suo interno non è più testo.";
 
     public string FlattenUnitLabel(int number) => $"Unità {number}";
+    public string FlattenObjectNotOverlapping => "Questo oggetto non si sovrappone a nulla.";
     public string FlattenNoOverlaps => "Nessun oggetto sovrapposto trovato.";
     public string StatusFlattenSelection(int objectCount) => $"{objectCount} oggetto/i da unire";
     public string AccessibleFlattenPreview => "Anteprima";

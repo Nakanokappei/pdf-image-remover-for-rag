@@ -15,6 +15,12 @@ namespace PdfImageRemoverForRag.App;
 /// rather than with a disabled one — there is no state to report, the operation
 /// simply does not apply.
 /// </param>
+/// <param name="Check">
+/// Three states, because a unit's box answers "is all of this being flattened"
+/// and that has a third answer. <see cref="CheckState.Indeterminate"/> is drawn
+/// as a dash: with only ticked and cleared to draw, a unit holding one ticked
+/// object out of four looked exactly like a unit holding none.
+/// </param>
 internal readonly record struct LayerVisual(
     bool IsGroup,
     string Title,
@@ -24,7 +30,7 @@ internal readonly record struct LayerVisual(
     string? TextContent,
     bool IsThumbnailPending,
     bool HasCheckBox,
-    bool IsChecked,
+    CheckState Check,
     bool IsExpanded);
 
 /// <summary>
@@ -197,10 +203,8 @@ internal sealed class LayerListView : Panel
         // Checkbox, where the operation applies at all.
         if (visual.HasCheckBox)
         {
-            var box = new Rectangle(x, middle - (Dip(CheckBoxSize) / 2),
-                Dip(CheckBoxSize), Dip(CheckBoxSize));
-            ControlPaint.DrawCheckBox(g, box,
-                ButtonState.Flat | (visual.IsChecked ? ButtonState.Checked : ButtonState.Normal));
+            DrawCheckBox(g, new Rectangle(x, middle - (Dip(CheckBoxSize) / 2),
+                Dip(CheckBoxSize), Dip(CheckBoxSize)), visual.Check);
         }
         x += Dip(CheckBoxSize) + Dip(Gap);
 
@@ -245,6 +249,35 @@ internal sealed class LayerListView : Panel
         // Hairline between rows, so a run of objects reads as separate layers.
         using var line = new Pen(SystemColors.ControlLight);
         g.DrawLine(line, bounds.Left, bounds.Bottom - 1, bounds.Right, bounds.Bottom - 1);
+    }
+
+    /// <summary>
+    /// Draw a checkbox in one of three states. <see cref="ControlPaint"/> knows
+    /// ticked and cleared but has no mixed state, so the dash is drawn by hand
+    /// over a cleared box — which also keeps all three the same size, since the
+    /// themed renderer picks its own.
+    /// </summary>
+    void DrawCheckBox(Graphics g, Rectangle box, CheckState state)
+    {
+        ControlPaint.DrawCheckBox(g, box,
+            ButtonState.Flat | (state == CheckState.Checked
+                ? ButtonState.Checked
+                : ButtonState.Normal));
+        if (state != CheckState.Indeterminate) return;
+
+        // A bar across the middle, inset from the border so it reads as a mark
+        // inside the box rather than as a struck-through box.
+        int inset = Math.Max(Dip(3), box.Width / 4);
+        int thickness = Math.Max(Dip(2), box.Height / 6);
+        var bar = new Rectangle(
+            box.Left + inset,
+            box.Top + ((box.Height - thickness) / 2),
+            Math.Max(1, box.Width - (inset * 2)),
+            thickness);
+        // Theme colour, so the mark survives a high-contrast theme the same way
+        // the tick drawn by ControlPaint does.
+        using var brush = new SolidBrush(SystemColors.ControlText);
+        g.FillRectangle(brush, bar);
     }
 
     static void DrawDisclosure(Graphics g, Rectangle box, bool expanded, Color color)

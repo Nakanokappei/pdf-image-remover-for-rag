@@ -300,7 +300,10 @@ internal sealed class FlattenPanel : UserControl
 
         if (row.Object is null)
         {
-            var ticked = _checked.GetValueOrDefault(unit.Region);
+            // The unit's box answers "is all of this being flattened", so a
+            // part-ticked unit gets the mixed state rather than being rounded
+            // to one of the other two.
+            int ticked = _checked.GetValueOrDefault(unit.Region)?.Count ?? 0;
             return new LayerVisual(
                 IsGroup: true,
                 Title: $"{L10n.FlattenUnitLabel(unit.NumberOnPage)} ({KindSummary(unit.Region)})",
@@ -310,7 +313,9 @@ internal sealed class FlattenPanel : UserControl
                 TextContent: null,
                 IsThumbnailPending: false,
                 HasCheckBox: true,
-                IsChecked: ticked is not null && ticked.Count == unit.Region.Members.Count,
+                Check: ticked == 0 ? CheckState.Unchecked
+                     : ticked == unit.Region.Members.Count ? CheckState.Checked
+                     : CheckState.Indeterminate,
                 IsExpanded: unit.Expanded);
         }
 
@@ -330,7 +335,9 @@ internal sealed class FlattenPanel : UserControl
             TextContent: text,
             IsThumbnailPending: text is null && bitmap is null,
             HasCheckBox: true,
-            IsChecked: _checked.GetValueOrDefault(unit.Region)?.Contains(member) == true,
+            Check: _checked.GetValueOrDefault(unit.Region)?.Contains(member) == true
+                ? CheckState.Checked
+                : CheckState.Unchecked,
             IsExpanded: false);
     }
 

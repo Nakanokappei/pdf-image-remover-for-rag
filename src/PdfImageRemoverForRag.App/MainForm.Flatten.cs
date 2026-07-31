@@ -50,18 +50,26 @@ internal sealed partial class MainForm
     }
 
     /// <summary>
-    /// The list row an object in a unit belongs to. Images are grouped by
-    /// stream hash and the other kinds by their match key, which is exactly
-    /// what a <see cref="PlacedObject.Identity"/> carries — so this is a
-    /// lookup, not a second opinion about identity.
+    /// The list row an object in a unit belongs to, and what the panel needs to
+    /// draw it: the group, its bitmap if one is resident, and whether one can
+    /// ever exist. The last part is why this returns a triple rather than an
+    /// image — a null bitmap alone cannot tell "still rendering" from "never
+    /// will", and the panel guessing at that is how the tile view once came to
+    /// promise a thumbnail forever.
     ///
-    /// Returns null when the object has no row at all: a string shown once is
-    /// not a removable text group, but it is still drawn on the page and still
-    /// belongs to a unit.
+    /// Returns a null group when the object has no row at all: a string shown
+    /// once is not a removable text group, but it is still drawn on the page
+    /// and still belongs to a unit.
     /// </summary>
-    CrossFileImageGroup? FindGroupFor(PlacedObject placed) =>
-        _workflow.ImageGroups.FirstOrDefault(group => group.Kind == placed.Kind
-            && (placed.Kind == RemovableKind.Image
-                ? group.Hash == placed.Identity
-                : group.TextValue == placed.Identity));
+    LayerThumbnail LayerThumbnailFor(PlacedObject placed)
+    {
+        var group = _workflow.ImageGroups.FirstOrDefault(g => g.Matches(placed));
+        if (group is null) return default;
+
+        var bitmap = _thumbnails.Grid(group.Hash);
+        return new LayerThumbnail(
+            group,
+            bitmap ?? (_thumbnails.IsUnrenderable(group.Hash) ? _tilePlaceholderIcon : null),
+            CanEverRender: bitmap is not null || !_thumbnails.IsUnrenderable(group.Hash));
+    }
 }

@@ -286,10 +286,9 @@ internal sealed partial class MainForm : Form
 
         _flattenPanel.SelectionChanged += OnFlattenSelectionChanged;
         // The panel holds no bitmaps and knows nothing of the workspace: it
-        // asks for both while painting, so its rows can never outlive an
-        // eviction and it never has to be told a thumbnail arrived.
-        _flattenPanel.GroupFor = FindGroupFor;
-        _flattenPanel.ThumbnailFor = group => _thumbnails.Grid(group.Hash);
+        // asks while painting, so its rows can never outlive an eviction and it
+        // never has to be told a thumbnail arrived.
+        _flattenPanel.ThumbnailFor = LayerThumbnailFor;
         _flattenPanel.ViewportChanged += (_, _) => ScheduleThumbnailLoad();
         // Whichever view is showing, moving the cursor re-aims the panel.
         _imageListGrid.CurrentCellChanged += (_, _) => ShowFlattenPanelForCurrentRow();

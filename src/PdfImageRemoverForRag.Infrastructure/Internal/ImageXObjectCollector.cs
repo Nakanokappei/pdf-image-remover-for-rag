@@ -122,7 +122,29 @@ internal static class ImageXObjectCollector
     /// Follow one level of indirection: /XObject entries are usually
     /// <see cref="PdfReference"/>s to the actual stream dictionary.
     /// </summary>
-    static PdfDictionary? ResolveDictionary(PdfItem? item) => item switch
+    /// <summary>
+    /// Drop entries from a page's <c>/XObject</c> resources by name — the one
+    /// write this class offers, kept here with the reads so both sides of the
+    /// dictionary are handled the same way.
+    ///
+    /// The names must be collected before calling: a dictionary cannot be
+    /// modified while its entries are being enumerated.
+    /// </summary>
+    public static void RemoveEntries(PdfResources? resources, IReadOnlyCollection<string> names)
+    {
+        if (names.Count == 0) return;
+        var xObjects = resources?.Elements.GetDictionary("/XObject");
+        if (xObjects is null) return;
+
+        foreach (var name in names) xObjects.Elements.Remove(name);
+    }
+
+    /// <summary>
+    /// Follow an indirect reference to the dictionary behind it. Centralised so
+    /// every caller resolves references identically — the reason this class
+    /// exists at all.
+    /// </summary>
+    public static PdfDictionary? ResolveDictionary(PdfItem? item) => item switch
     {
         PdfDictionary d => d,
         PdfReference r => r.Value as PdfDictionary,

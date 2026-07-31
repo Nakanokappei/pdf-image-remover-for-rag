@@ -167,6 +167,11 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
         int totalRemovedOps = 0;
         int regionsFlattened = 0;
         var removedHashes = new HashSet<string>(StringComparer.Ordinal);
+        // Filled while the pages are swept, and acted on once at the end —
+        // deleting an object while its page is still being rewritten would be
+        // pulling the floor up behind us.
+        var doomedImages = new Dictionary<PdfObjectID, PdfDictionary>();
+        var resourceEntriesToDrop = new List<(PdfResources Resources, HashSet<string> Names)>();
         // XImage keeps its stream and is encoded into the document when it is
         // saved, so the images drawn for flattened regions have to outlive the
         // page loop.
@@ -182,7 +187,15 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
                 var page = doc.Pages[i];
                 int pageNumber = i + 1;
                 var pageFlatten = flattenImages.Where(f => f.Region.PageNumber == pageNumber).ToList();
-                var namesToDrop = ResolveNamesForHashes(page.Resources, selectedImageHashes, removedHashes);
+                var namesToDrop = ResolveNamesForHashes(
+                    page.Resources, selectedImageHashes, removedHashes, doomedImages);
+                // Recorded before the page can be skipped below: a page may list
+                // the image without drawing it (a leftover from an earlier pass)
+                // and that entry has to go too.
+                if (namesToDrop.Count > 0 && page.Resources is not null)
+                {
+                    resourceEntriesToDrop.Add((page.Resources, namesToDrop));
+                }
                 if (namesToDrop.Count == 0
                     && selectedTextValues.Count == 0
                     && selectedShapeSignatures.Count == 0
@@ -246,7 +259,7 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
             // "removed" images and 26 of their soft masks were all still there
             // and all still extractable. For a product whose whole purpose is
             // keeping images out of RAG, removing the reference is the job.
-            PruneRemovedImages(doc, selectedImageHashes);
+            PruneRemovedImages(doc, resourceEntriesToDrop, doomedImages);
 
             // Save via a temp file. On disposal-time failure we clean up the
             // temp so the caller never has to reason about half-written state.
@@ -299,14 +312,18 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
         // The region names its image members by stream hash, while the page
         // draws them through resource names, so the same resolution plain
         // removal does is needed here. What is deliberately NOT done is
-        // recording those hashes as removed: the image bytes are still in the
-        // document — inside the rendering, and usually still drawn elsewhere —
-        // and the verifier would otherwise demand their absence everywhere.
+        // recording those hashes as removed, or those objects as doomed: the
+        // image bytes are still in the document — inside the rendering, and
+        // usually still drawn elsewhere — so both collectors are given
+        // throwaways rather than the real ones. Deleting a flattened image
+        // would tear it out of every other page that draws it.
         var imageHashes = new HashSet<string>(
             region.Members.Where(m => m.Kind == RemovableKind.Image).Select(m => m.Identity),
             StringComparer.Ordinal);
         var namesInRegion = ResolveNamesForHashes(
-            page.Resources, imageHashes, new HashSet<string>(StringComparer.Ordinal));
+            page.Resources, imageHashes,
+            new HashSet<string>(StringComparer.Ordinal),
+            new Dictionary<PdfObjectID, PdfDictionary>());
 
         return ContentStreamWalker.RemoveInRegion(
             sequence, region, namesInRegion,
@@ -354,32 +371,14 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
     /// marked not-safely-removable during analysis, and an unsafe group cannot
     /// be selected. Nothing else can still be pointing at these.
     /// </summary>
-    static void PruneRemovedImages(PdfDocument doc, HashSet<string> removedHashes)
+    static void PruneRemovedImages(
+        PdfDocument doc,
+        IReadOnlyList<(PdfResources Resources, HashSet<string> Names)> pageEntries,
+        IReadOnlyDictionary<PdfObjectID, PdfDictionary> doomed)
     {
-        if (removedHashes.Count == 0) return;
-
-        // Object id → the dictionary, so an image referenced from five pages is
-        // deleted once rather than five times.
-        var doomed = new Dictionary<string, PdfDictionary>(StringComparer.Ordinal);
-
-        for (int i = 0; i < doc.PageCount; i++)
+        foreach (var (resources, names) in pageEntries)
         {
-            var xObjects = doc.Pages[i].Resources?.Elements.GetDictionary("/XObject");
-            if (xObjects is null) continue;
-
-            // Collected first: the resource dictionary cannot be modified while
-            // its entries are being enumerated.
-            var namesToDrop = new List<string>();
-            foreach (var entry in ImageXObjectCollector.EnumerateImageEntries(doc.Pages[i].Resources))
-            {
-                if (!removedHashes.Contains(ImageXObjectCollector.ComputeStreamHash(entry.Dictionary)))
-                {
-                    continue;
-                }
-                namesToDrop.Add(entry.ResourceName);
-                doomed[entry.Dictionary.Internals.ObjectID.ToString()] = entry.Dictionary;
-            }
-            foreach (var name in namesToDrop) xObjects.Elements.Remove(name);
+            ImageXObjectCollector.RemoveEntries(resources, names);
         }
 
         foreach (var image in doomed.Values)
@@ -388,7 +387,7 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
             {
                 // A /Mask may also be an array of colour-key ranges rather than
                 // an image; only a stream stands as its own object to delete.
-                if (Dereference(image.Elements[maskKey]) is PdfDictionary mask
+                if (ImageXObjectCollector.ResolveDictionary(image.Elements[maskKey]) is PdfDictionary mask
                     && mask.Elements.GetName("/Subtype") == "/Image")
                 {
                     TryRemoveObject(doc, mask);
@@ -409,17 +408,20 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
         catch { /* left unreferenced; the page no longer points at it */ }
     }
 
-    static PdfItem? Dereference(PdfItem? item) =>
-        item is PdfReference reference ? reference.Value : item;
-
     static HashSet<string> ResolveNamesForHashes(
         PdfResources? resources,
         HashSet<string> targetHashes,
-        HashSet<string> hashesRemoved)
+        HashSet<string> hashesRemoved,
+        Dictionary<PdfObjectID, PdfDictionary> doomed)
     {
         // Every resource-name on this page whose Image XObject carries one of
         // the selected streams. Hashing each entry is the cost of getting the
         // identity right; it is the same work the verifier does per page.
+        //
+        // The dictionaries behind those names are collected on the way past, so
+        // pruning them afterwards does not mean hashing the whole document a
+        // second time. Keyed by object id, so an image drawn on five pages is
+        // deleted once rather than five times.
         var result = new HashSet<string>(StringComparer.Ordinal);
         if (targetHashes.Count == 0) return result;
 
@@ -429,6 +431,7 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
             if (!targetHashes.Contains(hash)) continue;
             result.Add(entry.ResourceName);
             hashesRemoved.Add(hash);
+            doomed[entry.Dictionary.Internals.ObjectID] = entry.Dictionary;
         }
         return result;
     }

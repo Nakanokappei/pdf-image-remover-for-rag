@@ -1,5 +1,3 @@
-using PdfImageRemoverForRag.Core.Models;
-
 namespace PdfImageRemoverForRag.App;
 
 /// <summary>
@@ -10,10 +8,10 @@ namespace PdfImageRemoverForRag.App;
 /// <param name="IsGroup">A unit header rather than one of its objects.</param>
 /// <param name="Subtitle">Where the unit is — file and page — under its title.</param>
 /// <param name="TextContent">For text objects: the string, drawn rather than rasterized.</param>
-/// <param name="HasCheckBox">
-/// False for anything that cannot be flattened, which is drawn without a box
-/// rather than with a disabled one — there is no state to report, the operation
-/// simply does not apply.
+/// <param name="IsThumbnailPending">
+/// A picture is coming but is not here yet, so the row says so. False both when
+/// one is already drawn and when none can ever exist — a format nothing here
+/// can decode must not be left promising a thumbnail forever.
 /// </param>
 /// <param name="Check">
 /// Three states, because a unit's box answers "is all of this being flattened"
@@ -25,11 +23,9 @@ internal readonly record struct LayerVisual(
     bool IsGroup,
     string Title,
     string? Subtitle,
-    RemovableKind Kind,
     Image? Thumbnail,
     string? TextContent,
     bool IsThumbnailPending,
-    bool HasCheckBox,
     CheckState Check,
     bool IsExpanded);
 
@@ -112,35 +108,32 @@ internal sealed class LayerListView : Panel
 
     int Pitch => Dip(RowHeight);
 
-    /// <summary>The row the user last landed on, or -1.</summary>
-    public int SelectedRow => _selectedRow;
-
     /// <summary>
-    /// Replace the contents. The selection does not survive: the rows it
-    /// referred to are gone, and an index kept across a rebuild would point at
-    /// a different object.
+    /// Replace the contents.
     /// </summary>
-    public void SetRowCount(int count)
+    /// <param name="startOver">
+    /// True when the rows now describe something else — the cursor and the
+    /// scroll position are meaningless and are dropped, because an index kept
+    /// across such a rebuild would point at a different object. False for a
+    /// change that keeps the same rows (an expand), where dropping them would
+    /// throw away where the user is looking.
+    /// </param>
+    public void SetRowCount(int count, bool startOver)
     {
         _rowCount = Math.Max(0, count);
         _hoveredRow = -1;
-        _selectedRow = -1;
         AutoScrollMinSize = new Size(0, _rowCount * Pitch);
-        AutoScrollPosition = Point.Empty;
-        Invalidate();
-        ViewportChanged?.Invoke(this, EventArgs.Empty);
-    }
 
-    /// <summary>
-    /// Rebuild after a change that keeps the same rows — a tick, an expand —
-    /// without disturbing where the user is looking.
-    /// </summary>
-    public void RefreshRows(int count)
-    {
-        int keep = _selectedRow;
-        _rowCount = Math.Max(0, count);
-        AutoScrollMinSize = new Size(0, _rowCount * Pitch);
-        _selectedRow = keep < _rowCount ? keep : -1;
+        if (startOver)
+        {
+            _selectedRow = -1;
+            AutoScrollPosition = Point.Empty;
+        }
+        else if (_selectedRow >= _rowCount)
+        {
+            _selectedRow = -1;
+        }
+
         Invalidate();
         ViewportChanged?.Invoke(this, EventArgs.Empty);
     }
@@ -158,6 +151,24 @@ internal sealed class LayerListView : Panel
 
     Rectangle BoundsOf(int row) =>
         new(0, (row * Pitch) + AutoScrollPosition.Y, ClientSize.Width, Pitch);
+
+    // Where the two clickable parts of a row sit. Painting and hit-testing both
+    // ask these, so a click can never land beside the box it is aimed at —
+    // which is what a second copy of the arithmetic would eventually cause, and
+    // the compiler would never notice.
+
+    /// <summary>Objects sit one level in from their unit.</summary>
+    int RowIndent(bool isGroup) => Dip(RowInset) + (isGroup ? 0 : Dip(IndentWidth));
+
+    Rectangle DisclosureRect(Rectangle bounds, bool isGroup) => new(
+        bounds.Left + RowIndent(isGroup),
+        bounds.Top + ((bounds.Height - Dip(DisclosureWidth)) / 2),
+        Dip(DisclosureWidth), Dip(DisclosureWidth));
+
+    Rectangle CheckBoxRect(Rectangle bounds, bool isGroup) => new(
+        DisclosureRect(bounds, isGroup).Right + Dip(Gap),
+        bounds.Top + ((bounds.Height - Dip(CheckBoxSize)) / 2),
+        Dip(CheckBoxSize), Dip(CheckBoxSize));
 
     int RowAt(Point client)
     {
@@ -200,33 +211,18 @@ internal sealed class LayerListView : Panel
         var text = selected ? SystemColors.HighlightText : SystemColors.WindowText;
         var muted = selected ? SystemColors.HighlightText : SystemColors.GrayText;
 
-        int x = bounds.Left + Dip(RowInset);
-        int middle = bounds.Top + (bounds.Height / 2);
-
-        // Objects sit one level in from their unit.
-        if (!visual.IsGroup) x += Dip(IndentWidth);
-
         // Disclosure triangle, groups only.
-        if (visual.IsGroup)
-        {
-            DrawDisclosure(g, new Rectangle(x, middle - (Dip(DisclosureWidth) / 2),
-                Dip(DisclosureWidth), Dip(DisclosureWidth)), visual.IsExpanded, text);
-        }
-        x += Dip(DisclosureWidth) + Dip(Gap);
+        var disclosure = DisclosureRect(bounds, visual.IsGroup);
+        if (visual.IsGroup) DrawDisclosure(g, disclosure, visual.IsExpanded, text);
 
-        // Checkbox, where the operation applies at all.
-        if (visual.HasCheckBox)
-        {
-            DrawCheckBox(g, new Rectangle(x, middle - (Dip(CheckBoxSize) / 2),
-                Dip(CheckBoxSize), Dip(CheckBoxSize)), visual.Check);
-        }
-        x += Dip(CheckBoxSize) + Dip(Gap);
+        DrawCheckBox(g, CheckBoxRect(bounds, visual.IsGroup), visual.Check);
 
         // Thumbnail, objects only — a group is a folder, and in an image editor
         // a layer group shows no picture of its own either.
+        int x = CheckBoxRect(bounds, visual.IsGroup).Right + Dip(Gap);
         if (!visual.IsGroup)
         {
-            var box = new Rectangle(x, middle - (Dip(ThumbnailSize) / 2),
+            var box = new Rectangle(x, bounds.Top + ((bounds.Height - Dip(ThumbnailSize)) / 2),
                 Dip(ThumbnailSize), Dip(ThumbnailSize));
             DrawThumbnail(g, box, visual, muted);
             x += Dip(ThumbnailSize) + Dip(Gap);
@@ -384,26 +380,28 @@ internal sealed class LayerListView : Panel
         if (row < 0) return;
         SetFocusedRow(row);
 
+        // The triangle and the checkbox are the only parts of a row that do
+        // something other than select it, and they are hit-tested through the
+        // very rectangles that placed them. Only the horizontal span is
+        // compared: the glyphs are a third of the row's height, and demanding
+        // the pointer land inside them vertically would shrink a target the
+        // user is already aiming at by eye.
         var visual = _visualFor(row);
         var bounds = BoundsOf(row);
-        int x = bounds.Left + Dip(RowInset) + (visual.IsGroup ? 0 : Dip(IndentWidth));
+        var disclosure = DisclosureRect(bounds, visual.IsGroup);
+        var checkBox = CheckBoxRect(bounds, visual.IsGroup);
 
-        // The triangle and the checkbox are the only parts of a row that do
-        // something other than select it, so they are hit-tested by the same
-        // arithmetic that placed them.
-        if (visual.IsGroup && Between(e.X, x, x + Dip(DisclosureWidth)))
+        if (visual.IsGroup && Spans(e.X, disclosure))
         {
             ExpandToggled?.Invoke(row);
-            return;
         }
-        x += Dip(DisclosureWidth) + Dip(Gap);
-        if (visual.HasCheckBox && Between(e.X, x, x + Dip(CheckBoxSize)))
+        else if (Spans(e.X, checkBox))
         {
             ToggleRow(row);
         }
     }
 
-    static bool Between(int value, int low, int high) => value >= low && value < high;
+    static bool Spans(int x, Rectangle box) => x >= box.Left && x < box.Right;
 
     // =======================================================================
     // Keyboard
@@ -494,7 +492,10 @@ internal sealed class LayerListView : Panel
         int old = _selectedRow;
         _selectedRow = row;
         EnsureVisible(row);
-        Invalidate();
+        // Only the two rows whose appearance changed; EnsureVisible already
+        // invalidates the lot when it had to scroll.
+        if (old >= 0 && old != row) Invalidate(BoundsOf(old));
+        Invalidate(BoundsOf(row));
         if (old != row) RowSelected?.Invoke(row);
 
         // childID is 1-based here: 0 identifies the control itself, and the
@@ -512,6 +513,7 @@ internal sealed class LayerListView : Panel
         else if (top + Pitch > viewBottom) AutoScrollPosition = new Point(0, top + Pitch - ClientSize.Height);
         else return;
 
+        Invalidate();
         ViewportChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -522,7 +524,6 @@ internal sealed class LayerListView : Panel
     internal void ToggleRow(int row)
     {
         if (row < 0 || row >= _rowCount) return;
-        if (!_visualFor(row).HasCheckBox) return;
 
         CheckToggled?.Invoke(row);
         AccessibilityNotifyClients(AccessibleEvents.StateChange, row + 1);
@@ -559,17 +560,23 @@ internal sealed class LayerListView : Panel
         int row = RowAt(e.Location);
         if (row == _hoveredRow) return;
 
+        int old = _hoveredRow;
         _hoveredRow = row;
         _toolTip.SetToolTip(this, row >= 0 ? ToolTipFor?.Invoke(row) ?? string.Empty : string.Empty);
-        Invalidate();
+        // Only the row losing the hover and the one gaining it. Repainting the
+        // whole list on every pointer move re-derives every visible row's
+        // visual, which is where the real cost of a repaint is.
+        if (old >= 0) Invalidate(BoundsOf(old));
+        if (row >= 0) Invalidate(BoundsOf(row));
     }
 
     protected override void OnMouseLeave(EventArgs e)
     {
         base.OnMouseLeave(e);
         if (_hoveredRow < 0) return;
+        int old = _hoveredRow;
         _hoveredRow = -1;
-        Invalidate();
+        Invalidate(BoundsOf(old));
     }
 
     // Both scrolling paths tell the thumbnail loader; the wheel does not raise

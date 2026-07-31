@@ -84,6 +84,12 @@ public class RemovedImagePruningTests : IClassFixture<SamplePdfFixture>
         var reopened = await NewAnalyzer().AnalyzeAsync(dest);
         Assert.DoesNotContain(reopened.ImageGroups, g => g.Kind == RemovableKind.Image);
         Assert.Empty(HashesInPageResources(dest));
+        // And not merely unlisted. Both the resource check above and the
+        // verifier's own ask "does the page still name it"; the promise being
+        // made is that the bytes have left the file, which is a question about
+        // the object table. An extractor walking xrefs reads that, not
+        // resources, so this is the assertion that matches the claim.
+        Assert.Empty(ImageObjectsInFile(dest));
     }
 
     [Fact]
@@ -131,6 +137,25 @@ public class RemovedImagePruningTests : IClassFixture<SamplePdfFixture>
     /// what an object-enumerating reader would find, as opposed to what the
     /// page paints.
     /// </summary>
+    /// <summary>
+    /// Every image object in the saved file, however it is reached — the object
+    /// table, not the page resources. This is what a tool that walks xrefs
+    /// sees, and therefore what "the image is out of the file" has to mean.
+    /// </summary>
+    static List<string> ImageObjectsInFile(string path)
+    {
+        var found = new List<string>();
+        using var doc = PdfReader.Open(path, PdfDocumentOpenMode.Import);
+        foreach (var o in doc.Internals.GetAllObjects())
+        {
+            if (o is PdfDictionary d && d.Elements.GetName("/Subtype") == "/Image")
+            {
+                found.Add(d.Internals.ObjectID.ToString());
+            }
+        }
+        return found;
+    }
+
     static HashSet<string> HashesInPageResources(string path)
     {
         var hashes = new HashSet<string>(StringComparer.Ordinal);

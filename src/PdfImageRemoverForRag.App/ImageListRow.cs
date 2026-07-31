@@ -44,11 +44,21 @@ internal static class ImageListRow
     /// real <see cref="CrossFileImageGroup.TextValue"/> (the removal key and
     /// the tooltip) is unchanged — only what is drawn.
     /// </summary>
-    public static string? ThumbnailText(CrossFileImageGroup group)
+    public static string? ThumbnailText(CrossFileImageGroup group) =>
+        ThumbnailText(group.Kind, group.TextValue);
+
+    /// <summary>
+    /// The same rule for an object that has no group row — a string shown once
+    /// is still drawn on the page, and the flatten panel lists it. Split out so
+    /// the quoting of an all-whitespace string is decided in one place: without
+    /// it such a value paints as an empty box, indistinguishable from a
+    /// thumbnail that failed.
+    /// </summary>
+    public static string? ThumbnailText(RemovableKind kind, string? value)
     {
-        if (group.Kind != RemovableKind.Text) return null;
-        var value = group.TextValue ?? string.Empty;
-        return string.IsNullOrWhiteSpace(value) ? $"\"{value}\"" : value;
+        if (kind != RemovableKind.Text) return null;
+        var text = value ?? string.Empty;
+        return string.IsNullOrWhiteSpace(text) ? $"\"{text}\"" : text;
     }
 
     /// <summary>タイプ cell: image / text / shape, localized.</summary>

@@ -40,4 +40,24 @@ public sealed record CrossFileImageGroup(
 
     /// <summary>Number of files that contain this image.</summary>
     public int FileCount => FileOccurrences.Count;
+
+    /// <summary>
+    /// The value this group is identified by: the stream hash for an image, and
+    /// the match key — shown string or path signature — for the other kinds.
+    /// The same thing <see cref="PlacedObject.Identity"/> carries, which is what
+    /// makes <see cref="Matches"/> a lookup rather than a translation.
+    ///
+    /// This exists so the rule is written once. Getting image identity wrong is
+    /// the mistake that forced a released build to be withdrawn, and the rule
+    /// had started being hand-copied wherever a placement met a group.
+    /// </summary>
+    public string MatchKey => Kind == RemovableKind.Image ? Hash : TextValue ?? string.Empty;
+
+    /// <summary>
+    /// Whether a drawn object belongs to this group. Kind first: an image hash
+    /// and a text string are drawn from different alphabets, but nothing
+    /// guarantees they cannot collide.
+    /// </summary>
+    public bool Matches(PlacedObject placed) =>
+        placed.Kind == Kind && placed.Identity == MatchKey;
 }

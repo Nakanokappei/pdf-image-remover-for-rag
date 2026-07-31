@@ -4,6 +4,22 @@ using PdfImageRemoverForRag.Core.Models;
 namespace PdfImageRemoverForRag.App;
 
 /// <summary>
+/// What the host can say about one object in a unit: the object list row it
+/// belongs to, its small bitmap when one is available, and whether a bitmap can
+/// ever exist for it.
+/// </summary>
+/// <param name="CanEverRender">
+/// False for a format nothing here can decode (JPX / CCITT / JBIG2). The panel
+/// needs this to tell "still rendering" from "never will" — with only a
+/// nullable bitmap it would have to guess, and guessing is how a view comes to
+/// promise a thumbnail that is never coming.
+/// </param>
+internal readonly record struct LayerThumbnail(
+    CrossFileImageGroup? Group,
+    Image? Bitmap,
+    bool CanEverRender);
+
+/// <summary>
 /// The 統合 (Flatten) panel, docked to the right of the object list: the units
 /// the object selected on the left takes part in, laid out like an image
 /// editor's layers panel, with a preview of the page underneath.
@@ -91,11 +107,12 @@ internal sealed class FlattenPanel : UserControl
     /// </summary>
     public event EventHandler? ViewportChanged;
 
-    /// <summary>The list row an object belongs to, supplied by the host.</summary>
-    public Func<PlacedObject, CrossFileImageGroup?>? GroupFor { get; set; }
-
-    /// <summary>A group's small thumbnail, or null when none is resident.</summary>
-    public Func<CrossFileImageGroup, Image?>? ThumbnailFor { get; set; }
+    /// <summary>
+    /// What the host knows about an object: its list row and its thumbnail.
+    /// One call rather than two, so the panel cannot pair a group with a
+    /// bitmap decided under different rules.
+    /// </summary>
+    public Func<PlacedObject, LayerThumbnail>? ThumbnailFor { get; set; }
 
     public FlattenPanel()
     {
@@ -217,7 +234,12 @@ internal sealed class FlattenPanel : UserControl
             : L10n.FlattenDescription;
         if (IsHandleCreated) FitDescriptionHeight();
 
-        ShowFor(null);
+        // Emptied directly rather than through ShowFor: the workspace changed
+        // under a selection that may compare equal to the new one, and that is
+        // exactly the case ShowFor's guard is there to skip.
+        _selectedGroup = null;
+        RebuildRows(resetScroll: true);
+        _preview.Clear();
         SelectionChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -228,6 +250,12 @@ internal sealed class FlattenPanel : UserControl
     /// </summary>
     public void ShowFor(CrossFileImageGroup? group)
     {
+        // The grid raises CurrentCellChanged for a sideways move too, and the
+        // panel describes the ROW. Rebuilding on those would re-filter every
+        // unit in the workspace and throw away the user's scroll position for
+        // a list that is about to look identical.
+        if (ReferenceEquals(_selectedGroup, group)) return;
+
         _selectedGroup = group;
         RebuildRows(resetScroll: true);
 
@@ -260,8 +288,7 @@ internal sealed class FlattenPanel : UserControl
         _emptyMessage.Visible = !anyRows;
         _emptyMessage.Text = EmptyMessage();
 
-        if (resetScroll) _list.SetRowCount(_rows.Count);
-        else _list.RefreshRows(_rows.Count);
+        _list.SetRowCount(_rows.Count, startOver: resetScroll);
     }
 
     /// <summary>
@@ -277,16 +304,12 @@ internal sealed class FlattenPanel : UserControl
     }
 
     /// <summary>
-    /// Whether a unit has a member that IS the selected list row. Images are
-    /// grouped by stream hash and the other kinds by their match key, which is
-    /// exactly what a member's identity carries — so this is a lookup, not a
-    /// second opinion about identity.
+    /// Whether a unit has a member that IS the selected list row. The rule for
+    /// what "is" means lives on the group itself, so this side and the host's
+    /// object-to-row lookup can never disagree about identity.
     /// </summary>
     static bool UnitContains(UnitEntry unit, CrossFileImageGroup group) =>
-        unit.Region.Members.Any(m => m.Kind == group.Kind
-            && (group.Kind == RemovableKind.Image
-                ? m.Identity == group.Hash
-                : m.Identity == group.TextValue));
+        unit.Region.Members.Any(group.Matches);
 
     // =======================================================================
     // Rows
@@ -308,11 +331,9 @@ internal sealed class FlattenPanel : UserControl
                 IsGroup: true,
                 Title: $"{L10n.FlattenUnitLabel(unit.NumberOnPage)} ({KindSummary(unit.Region)})",
                 Subtitle: $"{Path.GetFileName(unit.FilePath)}  {L10n.UsagePageLabel(unit.Region.PageNumber)}",
-                Kind: RemovableKind.Image,
                 Thumbnail: null,
                 TextContent: null,
                 IsThumbnailPending: false,
-                HasCheckBox: true,
                 Check: ticked == 0 ? CheckState.Unchecked
                      : ticked == unit.Region.Members.Count ? CheckState.Checked
                      : CheckState.Indeterminate,
@@ -320,21 +341,19 @@ internal sealed class FlattenPanel : UserControl
         }
 
         var member = row.Object;
-        var group = GroupFor?.Invoke(member);
         // Text draws its string rather than a bitmap, the same rule the table
-        // and the tiles follow — so one object looks the same in all three.
-        string? text = member.Kind == RemovableKind.Text ? member.Identity : null;
-        var bitmap = text is null && group is not null ? ThumbnailFor?.Invoke(group) : null;
+        // and the tiles follow — so one object looks the same in all three, and
+        // so a text row never pays for a lookup whose answer it discards.
+        string? text = ImageListRow.ThumbnailText(member.Kind, member.Identity);
+        var thumbnail = text is null ? ThumbnailFor?.Invoke(member) ?? default : default;
 
         return new LayerVisual(
             IsGroup: false,
             Title: ObjectLabel(member),
             Subtitle: null,
-            Kind: member.Kind,
-            Thumbnail: bitmap,
+            Thumbnail: thumbnail.Bitmap,
             TextContent: text,
-            IsThumbnailPending: text is null && bitmap is null,
-            HasCheckBox: true,
+            IsThumbnailPending: text is null && thumbnail.Bitmap is null && thumbnail.CanEverRender,
             Check: _checked.GetValueOrDefault(unit.Region)?.Contains(member) == true
                 ? CheckState.Checked
                 : CheckState.Unchecked,
@@ -408,7 +427,10 @@ internal sealed class FlattenPanel : UserControl
         }
 
         if (ticked.Count == 0) _checked.Remove(unit.Region);
-        RebuildRows(resetScroll: false);
+        // A tick changes how rows look, never which rows exist — the check
+        // state is read while painting. Rebuilding would re-filter every unit
+        // in the workspace and re-trigger a thumbnail load for no reason.
+        _list.Invalidate();
         SelectionChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -443,15 +465,12 @@ internal sealed class FlattenPanel : UserControl
     {
         if (_checked.Count == 0) return;
         _checked.Clear();
-        RebuildRows(resetScroll: false);
+        _list.Invalidate();
         SelectionChanged?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>How many individual objects are ticked, across every unit.</summary>
     public int CheckedObjectCount => _checked.Values.Sum(set => set.Count);
-
-    /// <summary>Whether the workspace holds anything that could be flattened.</summary>
-    public bool HasAnyObject => _units.Count > 0;
 
     /// <summary>
     /// The groups whose thumbnails the visible rows need. The panel holds no
@@ -460,15 +479,16 @@ internal sealed class FlattenPanel : UserControl
     /// </summary>
     public IReadOnlyList<CrossFileImageGroup> VisibleThumbnailGroups()
     {
-        if (GroupFor is null || _rows.Count == 0) return Array.Empty<CrossFileImageGroup>();
+        if (ThumbnailFor is null || _rows.Count == 0) return Array.Empty<CrossFileImageGroup>();
 
         var (first, count) = _list.VisibleRange();
         var groups = new List<CrossFileImageGroup>(count);
         for (int i = first; i < first + count && i < _rows.Count; i++)
         {
             var member = _rows[i].Object;
+            // Text draws its string, so it needs nothing rendered.
             if (member is null || member.Kind == RemovableKind.Text) continue;
-            var group = GroupFor(member);
+            var group = ThumbnailFor(member).Group;
             if (group is not null) groups.Add(group);
         }
         return groups;

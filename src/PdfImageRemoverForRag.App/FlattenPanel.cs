@@ -67,12 +67,27 @@ internal sealed class FlattenPanel : UserControl
     bool _anyDocuments;
 
     readonly LayerListView _list;
+    // Title and a clear button share a bar, so the command sits with the thing
+    // it acts on. The toolbar's Clear Selection deliberately does not reach in
+    // here — one button that emptied both sides would make an irreversible
+    // operation's target unpredictable — which left ticks made across a dozen
+    // different objects with no way back but saving.
+    readonly Panel _titleBar = new() { Dock = DockStyle.Top };
     readonly Label _title = new()
     {
-        Dock = DockStyle.Top,
+        Dock = DockStyle.Fill,
         AutoSize = false,
         Text = L10n.FlattenPanelTitle,
         TextAlign = ContentAlignment.MiddleLeft,
+        UseMnemonic = false,
+    };
+    readonly Button _clearChecks = new()
+    {
+        Dock = DockStyle.Right,
+        Text = L10n.ToolClearSelection,
+        FlatStyle = FlatStyle.System,
+        AutoSize = false,
+        Enabled = false,
         UseMnemonic = false,
     };
     readonly Label _description = new()
@@ -131,6 +146,11 @@ internal sealed class FlattenPanel : UserControl
 
         _preview.AccessibleName = L10n.AccessibleFlattenPreview;
         _title.Font = new Font(Font, FontStyle.Bold);
+        _clearChecks.AccessibleName = $"{L10n.ToolClearSelection} ({L10n.FlattenPanelTitle})";
+        _clearChecks.Click += (_, _) => ClearChecks();
+
+        _titleBar.Controls.Add(_title);
+        _titleBar.Controls.Add(_clearChecks);
 
         var listSide = new Panel { Dock = DockStyle.Fill };
         listSide.Controls.Add(_list);
@@ -139,10 +159,10 @@ internal sealed class FlattenPanel : UserControl
         _split.Panel2.Controls.Add(_preview);
 
         // Docked children claim their edge in reverse order of addition, so the
-        // fill goes in first and the title ends up outermost.
+        // fill goes in first and the title bar ends up outermost.
         Controls.Add(_split);
         Controls.Add(_description);
-        Controls.Add(_title);
+        Controls.Add(_titleBar);
     }
 
     int Dip(int logical) => LogicalToDeviceUnits(logical);
@@ -161,8 +181,13 @@ internal sealed class FlattenPanel : UserControl
 
     void ApplyDpiDependentLayout()
     {
-        _title.Padding = new Padding(Dip(8), Dip(6), Dip(8), Dip(2));
-        _title.Height = _title.Font.Height + Dip(10);
+        _title.Padding = new Padding(Dip(8), 0, Dip(8), 0);
+        _clearChecks.Width = TextRenderer.MeasureText(_clearChecks.Text, _clearChecks.Font).Width + Dip(24);
+        // One standard button tall, and the bar is sized to it: the button
+        // fills whatever height it is docked into, so the bar is what decides
+        // whether it looks like a button or a slab.
+        _titleBar.Height = Dip(30);
+        _titleBar.Padding = new Padding(0, Dip(3), Dip(8), Dip(3));
         _description.Padding = new Padding(Dip(8), 0, Dip(8), Dip(6));
         FitDescriptionHeight();
         _split.SplitterWidth = Math.Max(4, Dip(4));
@@ -240,7 +265,7 @@ internal sealed class FlattenPanel : UserControl
         _selectedGroup = null;
         RebuildRows(resetScroll: true);
         _preview.Clear();
-        SelectionChanged?.Invoke(this, EventArgs.Empty);
+        RaiseSelectionChanged();
     }
 
     /// <summary>
@@ -431,7 +456,7 @@ internal sealed class FlattenPanel : UserControl
         // state is read while painting. Rebuilding would re-filter every unit
         // in the workspace and re-trigger a thumbnail load for no reason.
         _list.Invalidate();
-        SelectionChanged?.Invoke(this, EventArgs.Empty);
+        RaiseSelectionChanged();
     }
 
     void OnExpandToggled(int index)
@@ -466,11 +491,23 @@ internal sealed class FlattenPanel : UserControl
         if (_checked.Count == 0) return;
         _checked.Clear();
         _list.Invalidate();
-        SelectionChanged?.Invoke(this, EventArgs.Empty);
+        RaiseSelectionChanged();
     }
 
     /// <summary>How many individual objects are ticked, across every unit.</summary>
     public int CheckedObjectCount => _checked.Values.Sum(set => set.Count);
+
+    /// <summary>
+    /// Announce a change of ticks, and keep the panel's own clear button in
+    /// step with them. Every path that touches <c>_checked</c> comes through
+    /// here, so the button can never claim there is something to clear when
+    /// there is not.
+    /// </summary>
+    void RaiseSelectionChanged()
+    {
+        _clearChecks.Enabled = _checked.Count > 0;
+        SelectionChanged?.Invoke(this, EventArgs.Empty);
+    }
 
     /// <summary>
     /// The groups whose thumbnails the visible rows need. The panel holds no

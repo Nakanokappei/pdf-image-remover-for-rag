@@ -97,7 +97,7 @@ Below the toolbar the window is split left and right.
 - **Left — the object list.** The main thing this app does. It switches between a table and tiles, and the removal ticks go here.
 - **Right — the Flatten panel.** It shows where the object on the **currently selected row** overlaps something else. Drag the divider to change its width; that width survives resizing the window.
 
-- **Select All and Clear Selection act on the object list only.** Flattening is chosen a unit at a time in the panel — there is no one-click "flatten every overlap in the document", because that would make the target of an irreversible operation impossible to predict.
+- **The toolbar's Select All and Clear Selection act on the object list only.** Flattening is chosen a unit at a time in the panel — there is no one-click "flatten every overlap in the document", because that would make the target of an irreversible operation impossible to predict. The panel has its own **Clear Selection** at its top right for dropping the flatten ticks.
 - **Remove & Save is available as soon as either side has something ticked.** One save does both.
 - The status bar reports **both** counts, e.g. `3 image group(s) selected for removal / 4 object(s) to flatten`.
 
@@ -196,6 +196,8 @@ Only places where objects of *different* kinds overlap are listed. That gives fo
 4. **Only what you tick is baked in**, and the area that becomes an image is **the bounding box of what you ticked**. Tick just the text, for example, and the image underneath keeps being drawn with the new picture over it.
 5. The preview underneath shows where you are: **that place keeps its colour and everything else is dimmed.** Select a unit's heading for all its members, or an object's row for just that one.
 6. **Saving is the same as for deleting** (**Remove & Save** on the toolbar, or **File → Remove Selected & Save…**). A save with nothing but flattening ticked works fine.
+
+> **Ticks survive moving to another row.** The panel only shows the units for the object you have selected, but ticks made on other objects are still there — the status bar's count is the total. To drop them all, use **Clear Selection at the top right of the panel**; the toolbar's Clear Selection acts on the object list only.
 
 After a save the panel loses only its ticks. What it describes is the source PDF, and the source PDF has not changed. (The object list does the opposite: removed rows leave the list.)
 

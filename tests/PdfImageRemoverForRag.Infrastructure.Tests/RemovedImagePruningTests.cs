@@ -93,6 +93,41 @@ public class RemovedImagePruningTests : IClassFixture<SamplePdfFixture>
     }
 
     [Fact]
+    public async Task RemovingAMaskedImage_TakesItsSoftMaskWithIt()
+    {
+        // The mask is the reason this defect was reported at all: a page's
+        // resources never mention it, so nothing in the app ever saw it, and it
+        // survived every "removal" to be extracted later as a black rectangle.
+        // It is deleted only as its parent's dependant, never on its own.
+        var info = await NewAnalyzer().AnalyzeAsync(_samples.SoftMaskedImagePath);
+        var image = info.ImageGroups.Single(g => g.Kind == RemovableKind.Image);
+
+        // Two image objects before: the picture, and the mask that no listing
+        // shows. If this ever reads 1, the sample stopped exercising the case.
+        Assert.Equal(2, ImageObjectsInFile(_samples.SoftMaskedImagePath).Count);
+
+        var dest = Path.Combine(_samples.TempDirectory, "pruning-smask_cleaned.pdf");
+        await new PdfSharpDocumentCleaner().CleanAsync(
+            _samples.SoftMaskedImagePath, dest,
+            new[] { new ImageRemovalSelection(image.GroupId, image.Occurrences, Hash: image.Hash) });
+
+        Assert.Empty(ImageObjectsInFile(dest));
+    }
+
+    [Fact]
+    public async Task ASoftMask_IsNeverListedAsARemovableObject()
+    {
+        // The other half of the rule. A mask is not something a person put on
+        // the page, so offering it would invite the user to strip an image's
+        // transparency — and a mask ticked on its own has no draw call to
+        // remove anyway.
+        var info = await NewAnalyzer().AnalyzeAsync(_samples.SoftMaskedImagePath);
+
+        var image = Assert.Single(info.ImageGroups, g => g.Kind == RemovableKind.Image);
+        Assert.Equal(1, image.UsageCount);
+    }
+
+    [Fact]
     public async Task TheVerifier_FailsAFileThatStillListsARemovedImage()
     {
         // The original file still holds the image, so verifying it AS IF it

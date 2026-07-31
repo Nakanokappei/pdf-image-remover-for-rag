@@ -66,6 +66,7 @@ public static class SamplePdfWriter
             WriteRepeatedText(Path.Combine(outputDirectory, "repeated-text.pdf")),
             WriteRepeatedShapes(Path.Combine(outputDirectory, "repeated-shapes.pdf")),
             WriteFormEmbeddedImage(Path.Combine(outputDirectory, "form-embedded-image.pdf"), logoPng),
+            WriteSoftMaskedImage(Path.Combine(outputDirectory, "soft-masked-image.pdf")),
         };
         return written;
     }
@@ -259,6 +260,78 @@ public static class SamplePdfWriter
         }
         doc.Save(path);
         return path;
+    }
+
+    static string WriteSoftMaskedImage(string path)
+    {
+        // An image carrying a /SMask: its alpha channel, stored as a separate
+        // image object hanging off the parent's dictionary rather than off the
+        // page's resources. Nothing in the app lists such a mask, and nothing
+        // should — it is not an object a person put on the page. But removing
+        // the parent has to take the mask with it, or it stays behind for any
+        // tool that reads a PDF by walking objects, which is how a real
+        // document's masks turned up in a RAG pipeline as black rectangles.
+        //
+        // This is the only sample producing one, so it is the only cover the
+        // mask-deletion branch has. Built by hand rather than through XImage
+        // because the point is to control the /SMask exactly.
+        using var doc = NewDocument("soft-masked-image sample");
+        var page = doc.AddPage();
+
+        const int width = 64;
+        const int height = 48;
+        var rgb = new byte[width * height * 3];
+        var alpha = new byte[width * height];
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                int i = (y * width) + x;
+                rgb[i * 3] = (byte)(x * 4);
+                rgb[(i * 3) + 1] = 80;
+                rgb[(i * 3) + 2] = (byte)(y * 5);
+                // Opaque down one edge and transparent elsewhere — the shape
+                // that makes a mask read as a near-black rectangle when some
+                // other tool extracts it as a picture in its own right.
+                alpha[i] = (byte)(x < width / 4 ? 255 : 0);
+            }
+        }
+
+        var mask = NewImageXObject(doc, width, height, "/DeviceGray", alpha);
+        var image = NewImageXObject(doc, width, height, "/DeviceRGB", rgb);
+        image.Elements["/SMask"] = mask.Reference;
+
+        var xObjects = new PdfDictionary(doc);
+        xObjects.Elements["/ImSoft"] = image.Reference;
+        page.Resources.Elements["/XObject"] = xObjects;
+
+        // Placed with a plain cm/Do pair, so the analyzer sees exactly one
+        // occurrence at a known rectangle.
+        var content = page.Contents.AppendContent();
+        content.CreateStream(Encoding.ASCII.GetBytes("q 200 0 0 150 60 500 cm /ImSoft Do Q\n"));
+
+        doc.Save(path);
+        return path;
+    }
+
+    /// <summary>
+    /// A bare Image XObject with its samples stored uncompressed. No filter,
+    /// because what this sample exercises is whether the object is removed,
+    /// not whether it can be decoded.
+    /// </summary>
+    static PdfDictionary NewImageXObject(
+        PdfDocument doc, int width, int height, string colorSpace, byte[] samples)
+    {
+        var dict = new PdfDictionary(doc);
+        dict.Elements["/Type"] = new PdfName("/XObject");
+        dict.Elements["/Subtype"] = new PdfName("/Image");
+        dict.Elements["/Width"] = new PdfInteger(width);
+        dict.Elements["/Height"] = new PdfInteger(height);
+        dict.Elements["/ColorSpace"] = new PdfName(colorSpace);
+        dict.Elements["/BitsPerComponent"] = new PdfInteger(8);
+        dict.CreateStream(samples);
+        doc.Internals.AddObject(dict);
+        return dict;
     }
 
     static string WriteScannedPage(string path, byte[] scanPng)

@@ -77,7 +77,7 @@ The window position and size are remembered on exit and restored next time (fall
    - **One** affected file: a save dialog asks for the file name.
    - **Several** affected files: pick a folder; each file is saved as `<name>_cleaned.pdf`.
 
-   ![Choosing the destination folder, with 3 objects marked for removal](images/save-dialog-en.png)
+   ![Choosing the destination folder, with objects marked for removal](images/save-dialog-en.png)
 5. **Done** — the status bar reports how many files were saved and how many draw calls were removed. The removed objects disappear from the list.
 
 ### Opening replaces your current work

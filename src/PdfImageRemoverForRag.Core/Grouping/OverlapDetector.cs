@@ -19,6 +19,13 @@ namespace PdfImageRemoverForRag.Core.Grouping;
 /// Overlap is transitive here: if a label overlaps a bar and the bar overlaps
 /// the axis rule, all three flatten together, because rasterizing part of a
 /// drawing and leaving the rest vector would be visible.
+///
+/// Transitivity is also what makes this easy to get wrong, and both corrections
+/// so far have been of the same shape: ONE object that touches everything drags
+/// the entire page into a single region. A stroked page border did it
+/// (see <c>Intersects</c>) and a filled page background did it
+/// (see <c>IsPageFurniture</c>). When a region turns out to be implausibly
+/// large, look for the object that joined it, not at the pairs that look wrong.
 /// </summary>
 public static class OverlapDetector
 {
@@ -36,8 +43,14 @@ public static class OverlapDetector
     /// Group the page's objects into overlap regions. Objects that do not touch
     /// anything of another kind are not returned.
     /// </summary>
+    /// <param name="page">
+    /// The page's number and size. The size is not decoration: a shape as big as
+    /// the paper is the page's background, and without knowing how big the paper
+    /// is there is no way to tell one from a drawing (see
+    /// <see cref="IsPageFurniture"/>).
+    /// </param>
     public static IReadOnlyList<OverlapRegion> Detect(
-        int pageNumber, IReadOnlyList<PlacedObject> objects)
+        PageDimensions page, IReadOnlyList<PlacedObject> objects)
     {
         if (objects.Count < 2) return Array.Empty<OverlapRegion>();
 
@@ -47,10 +60,15 @@ public static class OverlapDetector
         var parent = new int[objects.Count];
         for (int i = 0; i < parent.Length; i++) parent[i] = i;
 
+        // Decided once per object rather than inside the O(n^2) sweep.
+        var furniture = new bool[objects.Count];
+        for (int i = 0; i < objects.Count; i++) furniture[i] = IsPageFurniture(objects[i], page);
+
         for (int i = 0; i < objects.Count; i++)
         {
             for (int j = i + 1; j < objects.Count; j++)
             {
+                if (furniture[i] || furniture[j]) continue;
                 if (Intersects(objects[i], objects[j])) Union(parent, i, j);
             }
         }
@@ -73,7 +91,7 @@ public static class OverlapDetector
         {
             if (members.Count < 2) continue;
             if (members.Select(m => m.Kind).Distinct().Count() < 2) continue;
-            regions.Add(BuildRegion(pageNumber, members));
+            regions.Add(BuildRegion(page.PageNumber, members));
         }
 
         // Stable order: top-left first, reading order down the page (PDF Y grows
@@ -164,6 +182,40 @@ public static class OverlapDetector
         var (al, ab, ar, at) = Padded(a);
         var (bl, bb, br, bt) = Padded(b);
         return al < br && bl < ar && ab < bt && bb < at;
+    }
+
+    /// <summary>
+    /// True when the object is part of the page rather than something drawn on
+    /// it: a shape covering essentially the whole sheet.
+    ///
+    /// A slide's background panel is such a shape, and it is a fill, so the rule
+    /// above — anything that paints over what is behind it joins on any shared
+    /// area — makes it touch every object on the page. On a real 29-page deck
+    /// that turned each page into ONE region of 118 objects, which is not a
+    /// place where a picture and some text overlap; it is the page. The
+    /// stroke-only rule already handles the same disease in a page BORDER, and
+    /// this is the filled form of it.
+    ///
+    /// Only shapes are treated this way. A full-page image with text over it —
+    /// a scan, a full-bleed photograph on a slide — is exactly what flattening
+    /// is for, and is left alone.
+    ///
+    /// Such a shape is not merely prevented from joining: it cannot be a member
+    /// either, because a region needs two objects and nothing else will pull it
+    /// in. That is the intent — rasterizing it would rasterize the whole page,
+    /// and no text on that page would stay text.
+    /// </summary>
+    static bool IsPageFurniture(PlacedObject o, PageDimensions page)
+    {
+        if (o.Kind != RemovableKind.Shape) return false;
+        if (page.WidthPoints <= 0 || page.HeightPoints <= 0) return false;
+
+        // The same threshold, and the same reasoning, as a full-page image:
+        // "covers the page" cannot mean exactly 100 % when a couple of points of
+        // margin are normal.
+        var (left, bottom, right, top) = Padded(o);
+        return (right - left) / page.WidthPoints >= FullPageImageDetector.CoverageThreshold
+            && (top - bottom) / page.HeightPoints >= FullPageImageDetector.CoverageThreshold;
     }
 
     /// <summary>True when <paramref name="inner"/>'s rectangle sits within <paramref name="outer"/>'s.</summary>

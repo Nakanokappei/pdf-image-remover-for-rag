@@ -184,6 +184,7 @@ Only places where objects of *different* kinds overlap are listed. That gives fo
 - **Text over text is excluded.** Baking it would turn words into a picture and gain nothing.
 - "Overlap" covers both containment and partial overlap.
 - **A shape that only strokes its path** (a frame, a rule, an outline) joins in only when it lies **entirely inside** the other object. A border around the page crosses every paragraph on it, but that is furniture, not an overlap. A filled shape — a shaded heading band, say — joins as soon as it touches.
+- **A shape covering the whole page** — a slide background, say — counts as the page itself and joins nothing. It is filled, so it would otherwise touch every object on the page and make one unit out of the whole sheet. **Images are not affected**: text over a scan or a full-bleed photograph still flattens.
 - Contents of shared drawing components (Form XObjects) are excluded, for the same reason they are "Not removable" in the object list.
 
 ### How to use it

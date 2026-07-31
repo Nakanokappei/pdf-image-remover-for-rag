@@ -183,7 +183,7 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
                 // make sense for "repeated noise to delete" (2+ characters, shown
                 // 2+ times) would hide exactly the text flattening exists for.
                 overlapRegions.AddRange(OverlapDetector.Detect(
-                    pageNumber, PlacedObjectsOf(directImages, drawCalls, textHits, shapeHits)));
+                    pageDims[^1], PlacedObjectsOf(directImages, drawCalls, textHits, shapeHits)));
 
                 // Form XObjects — enumerate the Image XObjects inside them.
                 // The image is drawn wherever the Form's Do call is placed,

@@ -1,3 +1,5 @@
+using System.Drawing.Drawing2D;
+
 namespace PdfImageRemoverForRag.App;
 
 /// <summary>
@@ -301,25 +303,41 @@ internal sealed class LayerListView : Panel
 
     static void DrawDisclosure(Graphics g, Rectangle box, bool expanded, Color color)
     {
-        // Right-pointing when closed, down-pointing when open — the convention
-        // every file tree and layers panel uses.
+        // A stroked chevron, not a filled triangle. Windows 11's own tree and
+        // navigation controls draw one, and at this size a solid wedge is a blot
+        // where a line reads as a direction. Down when open, right when closed —
+        // the convention every file tree and layers panel keeps.
+        float centreX = box.Left + (box.Width / 2f);
+        float centreY = box.Top + (box.Height / 2f);
+        // Long arm across the chevron's back, short arm to its point: the ratio
+        // is what makes it a chevron rather than a corner.
+        float across = box.Width * 0.30f;
+        float depth = box.Height * 0.17f;
         var points = expanded
             ? new[]
             {
-                new Point(box.Left, box.Top + (box.Height / 4)),
-                new Point(box.Right, box.Top + (box.Height / 4)),
-                new Point(box.Left + (box.Width / 2), box.Bottom - (box.Height / 4)),
+                new PointF(centreX - across, centreY - depth),
+                new PointF(centreX, centreY + depth),
+                new PointF(centreX + across, centreY - depth),
             }
             : new[]
             {
-                new Point(box.Left + (box.Width / 4), box.Top),
-                new Point(box.Right - (box.Width / 4), box.Top + (box.Height / 2)),
-                new Point(box.Left + (box.Width / 4), box.Bottom),
+                new PointF(centreX - depth, centreY - across),
+                new PointF(centreX + depth, centreY),
+                new PointF(centreX - depth, centreY + across),
             };
-        using var brush = new SolidBrush(color);
+
+        // Rounded cap and join, and a width tied to the box, so the mark keeps
+        // its proportions at every DPI instead of thinning out at 200 %.
+        using var pen = new Pen(color, Math.Max(1f, box.Width / 10f))
+        {
+            StartCap = LineCap.Round,
+            EndCap = LineCap.Round,
+            LineJoin = LineJoin.Round,
+        };
         var saved = g.SmoothingMode;
-        g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-        g.FillPolygon(brush, points);
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        g.DrawLines(pen, points);
         g.SmoothingMode = saved;
     }
 

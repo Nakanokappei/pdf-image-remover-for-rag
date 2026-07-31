@@ -456,6 +456,7 @@ internal sealed class FlattenPanel : UserControl
         // state is read while painting. Rebuilding would re-filter every unit
         // in the workspace and re-trigger a thumbnail load for no reason.
         _list.Invalidate();
+        ShowPreviewFor(row);
         RaiseSelectionChanged();
     }
 
@@ -476,10 +477,23 @@ internal sealed class FlattenPanel : UserControl
     void ShowPreviewFor(Row row)
     {
         var unit = _units[row.UnitIndex];
-        var boxes = row.Object is null
-            ? unit.Region.Members.Select(RectOf).ToArray()
-            : new[] { RectOf(row.Object) };
-        _preview.Show(unit.FilePath, unit.Region.PageNumber, boxes);
+
+        // The outline answers "what would become an image", so it follows the
+        // TICKS, not the cursor. It used to follow whichever row had focus, and
+        // since clicking a checkbox also moves focus, ticking a unit, unticking
+        // one of its objects and ticking it back left the outline showing that
+        // one object — the ticks were back to all, the picture was not.
+        //
+        // The focused row still decides it while the unit has nothing ticked:
+        // there the question really is "where is this one?".
+        var ticked = _checked.GetValueOrDefault(unit.Region);
+        var shown = ticked is { Count: > 0 }
+            ? unit.Region.Members.Where(ticked.Contains)     // members' order, not click order
+            : row.Object is null
+                ? unit.Region.Members
+                : new[] { row.Object };
+        _preview.Show(
+            unit.FilePath, unit.Region.PageNumber, shown.Select(RectOf).ToArray());
     }
 
     static RectangleF RectOf(PlacedObject o) =>
@@ -491,6 +505,9 @@ internal sealed class FlattenPanel : UserControl
         if (_checked.Count == 0) return;
         _checked.Clear();
         _list.Invalidate();
+        // The outline was showing what was ticked, and nothing is now.
+        int focused = _list.FocusedRow;
+        if (focused >= 0 && focused < _rows.Count) ShowPreviewFor(_rows[focused]);
         RaiseSelectionChanged();
     }
 

@@ -100,6 +100,7 @@ async Task<bool> RunChecklistAsync(string pdfPath)
     Console.WriteLine($"  page count match       : {report.PageCountMatches}");
     Console.WriteLine($"  non-empty file         : {report.NonEmptyFileSize}");
     Console.WriteLine($"  no Do for removed      : {report.NoDoOperatorsForRemovedImages}");
+    Console.WriteLine($"  removed gone from res. : {report.RemovedImagesGoneFromResources}");
     Console.WriteLine($"  retained groups remain : {report.NonRemovedImageGroupsRetained}");
     Console.WriteLine($"  no runtime exceptions  : {report.NoRuntimeExceptions}");
     foreach (var w in report.Warnings) Console.WriteLine($"  ! {w}");

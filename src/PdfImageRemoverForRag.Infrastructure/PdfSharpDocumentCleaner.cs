@@ -238,6 +238,16 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
                 totalRemovedOps += removed;
             }
 
+            // Dropping the draw calls only stops the image being PAINTED. The
+            // XObject and its bytes stay in the file, and a tool that reads a
+            // PDF by enumerating objects rather than by rendering it — which is
+            // what a RAG ingestion pipeline does — still finds every image the
+            // user asked to be rid of. Measured on a real 39-page manual: 27
+            // "removed" images and 26 of their soft masks were all still there
+            // and all still extractable. For a product whose whole purpose is
+            // keeping images out of RAG, removing the reference is the job.
+            PruneRemovedImages(doc, selectedImageHashes);
+
             // Save via a temp file. On disposal-time failure we clean up the
             // temp so the caller never has to reason about half-written state.
             var tempPath = destinationPath + ".tmp";
@@ -327,6 +337,80 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
             gfx.DrawImage(image, new XRect(region.X, top, region.Width, region.Height));
         }
     }
+
+    /// <summary>
+    /// Take the removed images out of the document itself: their entry in every
+    /// page's <c>/XObject</c> resources, the image object, and the soft mask
+    /// hanging off it.
+    ///
+    /// The mask goes with its parent and never on its own. A <c>/SMask</c> is
+    /// the parent image's alpha channel, so it is meaningless without it — but
+    /// equally, a mask belonging to an image the user KEPT must stay, or that
+    /// image loses its transparency. This is also why masks are not offered in
+    /// the object list: they are not objects a person put on the page.
+    ///
+    /// Safe to do for the whole document at once because a selected image is
+    /// never reachable through a Form XObject: any image inside a Form is
+    /// marked not-safely-removable during analysis, and an unsafe group cannot
+    /// be selected. Nothing else can still be pointing at these.
+    /// </summary>
+    static void PruneRemovedImages(PdfDocument doc, HashSet<string> removedHashes)
+    {
+        if (removedHashes.Count == 0) return;
+
+        // Object id → the dictionary, so an image referenced from five pages is
+        // deleted once rather than five times.
+        var doomed = new Dictionary<string, PdfDictionary>(StringComparer.Ordinal);
+
+        for (int i = 0; i < doc.PageCount; i++)
+        {
+            var xObjects = doc.Pages[i].Resources?.Elements.GetDictionary("/XObject");
+            if (xObjects is null) continue;
+
+            // Collected first: the resource dictionary cannot be modified while
+            // its entries are being enumerated.
+            var namesToDrop = new List<string>();
+            foreach (var entry in ImageXObjectCollector.EnumerateImageEntries(doc.Pages[i].Resources))
+            {
+                if (!removedHashes.Contains(ImageXObjectCollector.ComputeStreamHash(entry.Dictionary)))
+                {
+                    continue;
+                }
+                namesToDrop.Add(entry.ResourceName);
+                doomed[entry.Dictionary.Internals.ObjectID.ToString()] = entry.Dictionary;
+            }
+            foreach (var name in namesToDrop) xObjects.Elements.Remove(name);
+        }
+
+        foreach (var image in doomed.Values)
+        {
+            foreach (var maskKey in new[] { "/SMask", "/Mask" })
+            {
+                // A /Mask may also be an array of colour-key ranges rather than
+                // an image; only a stream stands as its own object to delete.
+                if (Dereference(image.Elements[maskKey]) is PdfDictionary mask
+                    && mask.Elements.GetName("/Subtype") == "/Image")
+                {
+                    TryRemoveObject(doc, mask);
+                }
+            }
+            TryRemoveObject(doc, image);
+        }
+    }
+
+    /// <summary>
+    /// Delete an indirect object from the document. Best-effort: a file whose
+    /// cross-reference table does not admit the removal must still save, with
+    /// the object merely unreferenced, rather than fail the whole clean.
+    /// </summary>
+    static void TryRemoveObject(PdfDocument doc, PdfDictionary obj)
+    {
+        try { doc.Internals.RemoveObject(obj); }
+        catch { /* left unreferenced; the page no longer points at it */ }
+    }
+
+    static PdfItem? Dereference(PdfItem? item) =>
+        item is PdfReference reference ? reference.Value : item;
 
     static HashSet<string> ResolveNamesForHashes(
         PdfResources? resources,

@@ -38,6 +38,7 @@ public sealed class PdfSharpDocumentVerifier : IPdfDocumentVerifier
         bool pageCountOk = false;
         bool nonEmpty = false;
         bool noDoForRemoved = true;
+        bool removedGoneFromResources = true;
         bool retainedPresent = true;
         bool noExceptions = true;
 
@@ -79,6 +80,16 @@ public sealed class PdfSharpDocumentVerifier : IPdfDocumentVerifier
                     if (retainedNames.Count > 0) retainedFoundAny = true;
 
                     if (removedNames.Count == 0) continue;
+
+                    // Present in the resources at all is already a failure: the
+                    // bytes are in the file and an object-enumerating reader
+                    // will hand them to whatever consumes the document.
+                    removedGoneFromResources = false;
+                    foreach (var name in removedNames)
+                    {
+                        warnings.Add($"page {i + 1} still lists removed image {name} in /XObject");
+                    }
+
                     var content = PageContentAccessor.ReadMergedBytes(page);
                     var sequence = ContentReader.ReadContent(content);
                     foreach (var name in removedNames)
@@ -111,6 +122,7 @@ public sealed class PdfSharpDocumentVerifier : IPdfDocumentVerifier
             PageCountMatches: pageCountOk,
             NonEmptyFileSize: nonEmpty,
             NoDoOperatorsForRemovedImages: noDoForRemoved,
+            RemovedImagesGoneFromResources: removedGoneFromResources,
             NonRemovedImageGroupsRetained: retainedPresent,
             NoRuntimeExceptions: noExceptions,
             Warnings: warnings);

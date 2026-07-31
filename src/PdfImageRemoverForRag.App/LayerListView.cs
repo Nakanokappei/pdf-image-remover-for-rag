@@ -44,6 +44,15 @@ internal readonly record struct LayerVisual(
 ///
 /// Rows are a uniform height so hit-testing is arithmetic rather than a walk,
 /// and only the visible span is ever painted.
+///
+/// **Accessibility.** Because the rows are painted rather than hosted, they do
+/// not exist as controls for a screen reader or the keyboard, so both are added
+/// back by hand — the same treatment <see cref="TileView"/> needed, and for the
+/// same reason. <see cref="CreateAccessibilityInstance"/> publishes one child
+/// per row, and the control is focusable so the arrow keys move a cursor and
+/// Space ticks the row under it. This is MSAA, which NVDA and JAWS read;
+/// Narrator wants UIA fragments, whose API surface is internal to WinForms in
+/// .NET 8 and cannot be implemented from outside (see docs/known-limitations).
 /// </summary>
 internal sealed class LayerListView : Panel
 {
@@ -89,8 +98,13 @@ internal sealed class LayerListView : Panel
         _visualFor = visualFor;
         AutoScroll = true;
         DoubleBuffered = true;
+        // Selectable + TabStop make the list reachable by keyboard; without
+        // them a Panel cannot take focus and this could only be used with a
+        // mouse.
         SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint
-               | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+               | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw
+               | ControlStyles.Selectable, true);
+        TabStop = true;
         BackColor = SystemColors.Window;
     }
 
@@ -247,8 +261,17 @@ internal sealed class LayerListView : Panel
         }
 
         // Hairline between rows, so a run of objects reads as separate layers.
-        using var line = new Pen(SystemColors.ControlLight);
-        g.DrawLine(line, bounds.Left, bounds.Bottom - 1, bounds.Right, bounds.Bottom - 1);
+        using (var line = new Pen(SystemColors.ControlLight))
+        {
+            g.DrawLine(line, bounds.Left, bounds.Bottom - 1, bounds.Right, bounds.Bottom - 1);
+        }
+
+        // Where the keyboard is. Drawn only while the list has focus, so a
+        // mouse user is not shown a cursor they are not driving.
+        if (selected && Focused)
+        {
+            ControlPaint.DrawFocusRectangle(g, Rectangle.Inflate(bounds, -Dip(2), -Dip(2)));
+        }
     }
 
     /// <summary>
@@ -353,11 +376,13 @@ internal sealed class LayerListView : Panel
     protected override void OnMouseDown(MouseEventArgs e)
     {
         base.OnMouseDown(e);
+        // Clicking has to bring the keyboard cursor with it, or Space would
+        // afterwards tick a row nobody is looking at.
+        Focus();
+
         int row = RowAt(e.Location);
         if (row < 0) return;
-
-        _selectedRow = row;
-        Invalidate();
+        SetFocusedRow(row);
 
         var visual = _visualFor(row);
         var bounds = BoundsOf(row);
@@ -374,14 +399,159 @@ internal sealed class LayerListView : Panel
         x += Dip(DisclosureWidth) + Dip(Gap);
         if (visual.HasCheckBox && Between(e.X, x, x + Dip(CheckBoxSize)))
         {
-            CheckToggled?.Invoke(row);
-            return;
+            ToggleRow(row);
         }
-
-        RowSelected?.Invoke(row);
     }
 
     static bool Between(int value, int low, int high) => value >= low && value < high;
+
+    // =======================================================================
+    // Keyboard
+    // =======================================================================
+
+    /// <summary>Claim the arrow / paging / Space keys so they drive the rows.</summary>
+    protected override bool IsInputKey(Keys keyData) => (keyData & Keys.KeyCode) switch
+    {
+        Keys.Left or Keys.Right or Keys.Up or Keys.Down
+            or Keys.Home or Keys.End or Keys.PageUp or Keys.PageDown
+            or Keys.Space => true,
+        _ => base.IsInputKey(keyData),
+    };
+
+    protected override void OnGotFocus(EventArgs e)
+    {
+        base.OnGotFocus(e);
+        // Land the cursor on the first visible row the first time focus arrives.
+        if (_selectedRow < 0 && _rowCount > 0) SetFocusedRow(VisibleRange().First);
+        else Invalidate();
+    }
+
+    protected override void OnLostFocus(EventArgs e)
+    {
+        base.OnLostFocus(e);
+        Invalidate();
+    }
+
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        base.OnKeyDown(e);
+        if (_rowCount == 0) return;
+
+        int row = _selectedRow < 0 ? VisibleRange().First : _selectedRow;
+        int page = Math.Max(1, ClientSize.Height / Pitch);
+
+        switch (e.KeyCode)
+        {
+            case Keys.Up: SetFocusedRow(row - 1); break;
+            case Keys.Down: SetFocusedRow(row + 1); break;
+            case Keys.Home: SetFocusedRow(0); break;
+            case Keys.End: SetFocusedRow(_rowCount - 1); break;
+            case Keys.PageUp: SetFocusedRow(row - page); break;
+            case Keys.PageDown: SetFocusedRow(row + page); break;
+            case Keys.Space: ToggleRow(row); break;
+            // Left and Right fold a group, mirroring every tree control. On an
+            // object row Left goes up to the group it belongs to, which is the
+            // only "out" move this two-level list has.
+            case Keys.Left: CollapseOrGoToGroup(row); break;
+            case Keys.Right: ExpandGroup(row); break;
+            default: return;
+        }
+        e.Handled = true;
+    }
+
+    void CollapseOrGoToGroup(int row)
+    {
+        var visual = _visualFor(row);
+        if (visual.IsGroup)
+        {
+            if (visual.IsExpanded) ExpandToggled?.Invoke(row);
+            return;
+        }
+        // Walk back to this object's group header.
+        for (int i = row - 1; i >= 0; i--)
+        {
+            if (!_visualFor(i).IsGroup) continue;
+            SetFocusedRow(i);
+            return;
+        }
+    }
+
+    void ExpandGroup(int row)
+    {
+        var visual = _visualFor(row);
+        if (visual.IsGroup && !visual.IsExpanded) ExpandToggled?.Invoke(row);
+    }
+
+    /// <summary>
+    /// Move the cursor: scroll it into view, repaint the rows that changed, and
+    /// tell UI Automation the focus moved so a screen reader follows.
+    /// </summary>
+    internal void SetFocusedRow(int row)
+    {
+        if (_rowCount == 0) return;
+        row = Math.Clamp(row, 0, _rowCount - 1);
+
+        int old = _selectedRow;
+        _selectedRow = row;
+        EnsureVisible(row);
+        Invalidate();
+        if (old != row) RowSelected?.Invoke(row);
+
+        // childID is 1-based here: 0 identifies the control itself, and the
+        // framework maps an OS childID back to GetChild(childID - 1).
+        AccessibilityNotifyClients(AccessibleEvents.Focus, row + 1);
+    }
+
+    void EnsureVisible(int row)
+    {
+        int top = row * Pitch;
+        int viewTop = Math.Max(0, -AutoScrollPosition.Y);
+        int viewBottom = viewTop + ClientSize.Height;
+
+        if (top < viewTop) AutoScrollPosition = new Point(0, top);
+        else if (top + Pitch > viewBottom) AutoScrollPosition = new Point(0, top + Pitch - ClientSize.Height);
+        else return;
+
+        ViewportChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Tick or clear the row's checkbox — the same path the mouse takes, so the
+    /// two input routes can never drift apart.
+    /// </summary>
+    internal void ToggleRow(int row)
+    {
+        if (row < 0 || row >= _rowCount) return;
+        if (!_visualFor(row).HasCheckBox) return;
+
+        CheckToggled?.Invoke(row);
+        AccessibilityNotifyClients(AccessibleEvents.StateChange, row + 1);
+    }
+
+    // =======================================================================
+    // Accessibility surface (read by LayerListAccessibleObject)
+    // =======================================================================
+
+    internal int RowCount => _rowCount;
+    internal int FocusedRow => _selectedRow;
+    internal Rectangle RowScreenBounds(int row) => RectangleToScreen(BoundsOf(row));
+    internal int RowIndexAt(Point clientPoint) => RowAt(clientPoint);
+    internal LayerVisual RowVisual(int row) => _visualFor(row);
+
+    /// <summary>
+    /// What a screen reader reads for a row: its name, then the file and page
+    /// underneath it when there is one. No extra vocabulary — the role carries
+    /// "check box" and the state carries ticked / part-ticked / expanded, each
+    /// in the reader's own words.
+    /// </summary>
+    internal string RowAccessibleName(int row)
+    {
+        var visual = _visualFor(row);
+        return visual.Subtitle is null ? visual.Title : $"{visual.Title}, {visual.Subtitle}";
+    }
+
+    protected override AccessibleObject CreateAccessibilityInstance()
+        => new LayerListAccessibleObject(this);
 
     protected override void OnMouseMove(MouseEventArgs e)
     {

@@ -119,6 +119,21 @@ including Narrator.
     framework then provides UIA) — a medium-sized rewrite, kept as a separate
     task for if and when Narrator support becomes a requirement.
 
+- **The Flatten panel's layers list has the same ceiling, for the same reason.**
+  Its rows are painted onto one control, so it carries the same custom
+  `AccessibleObject`: a List with one CheckButton per row, each named after the
+  unit or object it stands for, and reporting checked, **mixed** (a unit with
+  only some of its objects ticked) and expanded / collapsed.
+  - **NVDA and JAWS can read and operate it**, verified on real hardware through
+    the MSAA tree: taking focus and invoking a row's default action move the
+    cursor and tick the row, and a part-ticked unit reports `STATE_SYSTEM_MIXED`.
+  - **The keyboard operates it fully** — Tab to enter, up/down/Home/End/PageUp/
+    PageDown to move, Space to tick, left/right to fold a unit (left from an
+    object row goes up to its unit), with a visible focus rectangle.
+  - **Narrator has no equivalent alternative here**, unlike the tile view: the
+    Flatten panel is the only way to reach flattening. Removal — what the app is
+    named for — remains fully accessible through the table.
+
 ## Security posture
 
 - Nothing a PDF asks for is ever executed (JavaScript, Launch/URI actions,

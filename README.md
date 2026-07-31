@@ -2,9 +2,9 @@
 
 A Windows 11 desktop tool that removes unnecessary images, repeated text, and vector shapes from PDFs before you feed them into a RAG pipeline.
 
-Company logos, headers, footers, watermarks, and page rules degrade retrieval quality and inflate preprocessing cost once a PDF lands in a RAG / Dify pipeline. This tool lists every removable object in your PDFs, lets you check what you want gone, and writes new PDFs with those objects' draw calls removed. **The original files are never overwritten.**
+Company logos, headers, footers, watermarks, and page rules degrade retrieval quality and inflate preprocessing cost once a PDF lands in a RAG / Dify pipeline. This tool lists every removable object in your PDFs, lets you check what you want gone, and writes new PDFs without them. A removed image is taken out of the file itself, not merely stopped from being painted — otherwise a pipeline that reads a PDF by enumerating its objects still finds it. **The original files are never overwritten.**
 
-Some text cannot simply be deleted — a chart's axis labels, a caption over a photograph — because the picture breaks without it. For those, the **Flatten** tab bakes the overlapping objects into a single image: the page looks exactly the same, and the text in that place stops being text.
+Some text cannot simply be deleted — a chart's axis labels, a caption over a photograph — because the picture breaks without it. For those, the **Flatten** panel bakes the overlapping objects into a single image: the page looks exactly the same, and the text in that place stops being text.
 
 Everything runs locally — files never leave your PC, and no data is collected.
 
@@ -22,10 +22,10 @@ Everything runs locally — files never leave your PC, and no data is collected.
 
 - **Open several PDFs at once.** Identical objects are merged into one row across files — one checkbox removes a shared logo from every file.
 - **Two views.** A spreadsheet-style table (sortable on any column, resizable columns) and a thumbnail tile view, always in the same order.
-- **Flatten overlaps into an image** (the Flatten tab). Where objects of different kinds overlap — image + text, image + shape, text + shape — the place can be replaced by a rendering of itself, so the page keeps its appearance while that text leaves the text layer. A tree of document → page → unit → object picks what goes in, down to the individual object, with a preview beside it. One save flattens and then removes, in that order.
+- **Flatten overlaps into an image** (the Flatten panel, docked beside the object list). Where objects of different kinds overlap — image + text, image + shape, text + shape — the place can be replaced by a rendering of itself, so the page keeps its appearance while that text leaves the text layer. Selecting a row in the object list shows the units that object takes part in, laid out like an image editor's layers panel: a unit is a layer group and the objects inside it are its layers, each with a thumbnail, a name and a checkbox. A preview underneath shows where on the page it is. One save flattens and then removes, in that order.
 - **Thumbnails for everything.** Images are decoded, text is drawn as text, shapes are rendered from their actual path in their actual color.
 - **Filter by kind** (View → Shown Types) to work on images, text, or shapes alone.
-- **Safety first.** Saves go through a temp file that is verified (re-opens, page count matches, removed objects gone, kept objects present) before it becomes the final `_cleaned.pdf`. Objects inside a shared Form XObject are marked unremovable; full-page (scanned) images are flagged with a warning.
+- **Safety first.** Saves go through a temp file that is verified (re-opens, page count matches, removed images absent from both the content streams and the page resources, kept objects present) before it becomes the final `_cleaned.pdf`. Objects inside a shared Form XObject are marked unremovable; full-page (scanned) images are flagged with a warning.
 - **16 UI languages**, following the OS display language: English, Japanese, Simplified Chinese, Traditional Chinese, Korean, German, French, Spanish, Italian, Portuguese, Russian, Indonesian, Malay, Hindi, Turkish, Vietnamese. There is no in-app language switch — it follows Windows. The manual exists in English and Japanese only; every other language opens the English page.
 - **Handles large documents.** A 31 MB, 176-page file with 2,015 removable objects opens in seconds. Thumbnails are cached on disk and only the ones on screen are held in memory, so opening many large PDFs costs disk rather than RAM.
 - **High-DPI aware** (PerMonitorV2), verified at 200 % scaling.
@@ -61,7 +61,7 @@ export DOTNET_ROOT="$HOME/.dotnet"
 DOTNET="$HOME/.dotnet/dotnet"
 
 "$DOTNET" build PdfImageRemoverForRag.sln -c Release   # build (0 warnings)
-"$DOTNET" test  PdfImageRemoverForRag.sln -c Release   # 165 tests (90 Core + 75 Infrastructure)
+"$DOTNET" test  PdfImageRemoverForRag.sln -c Release   # 170 tests (90 Core + 80 Infrastructure)
 "$DOTNET" run --project scripts/GenerateSamples -c Release -- samples/   # regenerate sample PDFs
 
 # Windows binaries from macOS:
@@ -77,7 +77,7 @@ The app runs on Windows only — never try to launch it on macOS.
 src/PdfImageRemoverForRag.Core/            net8.0          Models, grouping, formatting, validation, abstractions
 src/PdfImageRemoverForRag.Infrastructure/  net8.0          PDFsharp / PdfPig implementations (GDI-free)
 src/PdfImageRemoverForRag.App/             net8.0-windows  WinForms UI (all GDI+ drawing lives here)
-tests/                                     xunit           71 unit + 35 integration tests
+tests/                                     xunit           90 unit + 80 integration tests
 scripts/GenerateSamples/                   Sample-PDF generator (shared with the test fixture)
 scripts/PdfImageRemoverForRag.Poc/         Technical-verification driver over Infrastructure
 ```

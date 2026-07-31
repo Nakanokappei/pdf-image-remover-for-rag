@@ -20,8 +20,9 @@ Limitations of the current version. Read together with the README.
 | --- | --- |
 | **Digital signatures** | Removing content invalidates any existing signature. Signed PDFs are not supported in any guaranteed way. |
 | **PDF/A conformance** | Not guaranteed to survive editing. |
-| **How draw calls are removed** | Only the target image's `Do` operator is removed; the surrounding `q`/`cm`/`Q` operators remain as harmless no-ops. The image object itself may remain in `/Resources`, but with zero usages it no longer appears when the file is re-analyzed. |
-| **Visual confirmation** | The automatic post-save verification is basic (the file opens, page count matches, removed objects are gone, retained objects remain). Final visual confirmation is left to the user. |
+| **How draw calls are removed** | The target image's `Do` operator is removed and the surrounding `q`/`cm`/`Q` operators remain as harmless no-ops. The image itself is then taken out of every page's `/XObject` resources and deleted from the document, together with its `/SMask` or `/Mask` child. Removing the draw call alone was not enough: it stops the image being *painted*, while a reader that enumerates objects instead of rendering pages — which is what a RAG ingestion pipeline does — still found every "removed" image in the file. |
+| **Soft masks of images you keep** | A `/SMask` is an image's alpha channel and belongs to its parent, so it is neither listed as a removable object nor removable on its own — deleting it would strip the transparency from an image you chose to keep. Object-enumerating readers may still surface such masks as spurious images, typically near-black rectangles matching their parents' pixel dimensions. Remove the parent image and its mask goes with it. |
+| **Visual confirmation** | The automatic post-save verification is basic (the file opens, page count matches, removed images are absent from both the content streams and the page resources, retained objects remain). Final visual confirmation is left to the user. |
 
 ## Text removal
 
@@ -63,8 +64,8 @@ Limitations of the current version. Read together with the README.
 
 ## Features that are out of scope
 
-- After-removal preview (the Flatten tab previews the page **as it is**, not as it would be)
-- Removing only specific pages or specific occurrences **on the Delete side** (removal there is per group, all occurrences; the Flatten side is per instance by design)
+- After-removal preview (the Flatten panel previews the page **as it is**, not as it would be)
+- Removing only specific pages or specific occurrences **from the object list** (removal there is per group, all occurrences; the Flatten side is per instance by design)
 - Batch processing of multiple PDFs from the command line
 - OCR, AI-based logo classification, similar-image search
 - Settings screen, dark mode, auto-update, installer

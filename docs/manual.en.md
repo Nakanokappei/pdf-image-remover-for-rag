@@ -25,10 +25,11 @@ Only **Text** has an occurrence filter. Images and shapes are listed in full.
 
 ### Two ways to go about it
 
-The window is split into a **[Delete]** tab and a **[Flatten]** tab.
+The window is split left and right, and **both halves are visible at once.**
 
 | | Delete | Flatten |
 | --- | --- | --- |
+| Where | The **left** of the window (the object list) | The **right** of the window (the Flatten panel) |
 | What it does | Takes the objects you pick out of the file | Bakes overlapping objects into a single image |
 | How the page looks | That much less on it | **Unchanged** |
 | Good for | Logos, headers, watermarks, ruling lines | A chart's axis labels, a caption over a photo — text that **breaks the picture if you delete it, but gets in the way of retrieval if you keep it** |
@@ -89,13 +90,16 @@ To work on several files together, **select them all in one Open action.**
 
 ## 4. Reading the screen
 
-### The tabs
+### How the window is laid out
 
-Below the toolbar are the **[Delete]** and **[Flatten]** tabs. The window opens on Delete. **Ctrl+Tab** switches between them.
+Below the toolbar the window is split left and right.
 
-- **Select All and Clear Selection act on the tab in front.** Objects on the tab you cannot see are never quietly drawn into the job.
-- **Remove & Save is available as soon as either tab has something ticked.** One save does both.
-- The count in the status bar likewise describes the tab in front.
+- **Left — the object list.** The main thing this app does. It switches between a table and tiles, and the removal ticks go here.
+- **Right — the Flatten panel.** It shows where the object on the **currently selected row** overlaps something else. Drag the divider to change its width; that width survives resizing the window.
+
+- **Select All and Clear Selection act on the object list only.** Flattening is chosen a unit at a time in the panel — there is no one-click "flatten every overlap in the document", because that would make the target of an irreversible operation impossible to predict.
+- **Remove & Save is available as soon as either side has something ticked.** One save does both.
+- The status bar reports **both** counts, e.g. `3 image group(s) selected for removal / 4 object(s) to flatten`.
 
 ### Toolbar
 
@@ -103,8 +107,8 @@ Below the toolbar are the **[Delete]** and **[Flatten]** tabs. The window opens 
 | --- | --- |
 | Open PDF | Choose and open PDFs (multi-select allowed) |
 | Remove & Save | Save PDFs with the checked objects removed and the checked overlaps flattened |
-| Select All | Check every visible object on the tab in front |
-| Clear Selection | Uncheck everything on the tab in front |
+| Select All | Check every visible object in the object list |
+| Clear Selection | Uncheck everything in the object list |
 
 ### Table columns
 
@@ -153,7 +157,7 @@ At least one kind must stay visible, so the last remaining check cannot be turne
 
 ---
 
-## 5. Flattening an overlap into an image (the Flatten tab)
+## 5. Flattening an overlap into an image (the Flatten panel)
 
 ### What it is for
 
@@ -169,7 +173,7 @@ Three things separate it from deleting:
 | How the page looks | That much less on it | Unchanged |
 | Number of images | Fewer | The same, or one more |
 
-> **Deleting first makes flattening impossible** — the material to bake is gone. Within a single save this is handled for you: **flattening runs before removal**, so ticking things on both tabs and saving once is fine.
+> **Deleting first makes flattening impossible** — the material to bake is gone. Within a single save this is handled for you: **flattening runs before removal**, so ticking things on both sides and saving once is fine.
 
 ### What counts as an overlap
 
@@ -180,19 +184,20 @@ Only places where objects of *different* kinds overlap are listed. That gives fo
 - **Text over text is excluded.** Baking it would turn words into a picture and gain nothing.
 - "Overlap" covers both containment and partial overlap.
 - **A shape that only strokes its path** (a frame, a rule, an outline) joins in only when it lies **entirely inside** the other object. A border around the page crosses every paragraph on it, but that is furniture, not an overlap. A filled shape — a shaded heading band, say — joins as soon as it touches.
-- Contents of shared drawing components (Form XObjects) are excluded, for the same reason they are "Not removable" on the Delete tab.
+- Contents of shared drawing components (Form XObjects) are excluded, for the same reason they are "Not removable" in the object list.
 
 ### How to use it
 
-1. Open the **[Flatten] tab**.
-2. The tree on the left runs **document → page → unit → object**. A "unit" is one place that becomes one image.
-3. **Checkboxes are on the units and the objects.** Ticking a unit takes everything under it; you can also tick objects individually. Documents and pages have no checkbox — those levels only organise the list.
+1. **Select the row of the object you want to look at, in the list on the left.** The Flatten panel then shows **only the units that object takes part in**.
+   - An object that overlaps nothing gets "This object does not overlap anything." Most objects in a document are like that.
+   - With no row selected the panel is empty.
+2. The panel is laid out **like an image editor's layers panel**: a **unit** is a layer group and the **objects** inside it are its layers, each with a thumbnail, a name and a checkbox. A unit's heading names the file and page it is on, and the triangle at its left folds it away.
+3. **Ticking a unit takes everything under it**; you can also tick objects individually. A unit with only some of its objects ticked shows a **dash in its box** — the in-between state.
 4. **Only what you tick is baked in**, and the area that becomes an image is **the bounding box of what you ticked**. Tick just the text, for example, and the image underneath keeps being drawn with the new picture over it.
-5. The preview on the right shows where the selected node is: **that place keeps its colour and everything else is dimmed.**
-   - A document shows page 1, a page shows all its units, a unit shows all its objects, an object shows just itself.
+5. The preview underneath shows where you are: **that place keeps its colour and everything else is dimmed.** Select a unit's heading for all its members, or an object's row for just that one.
 6. **Saving is the same as for deleting** (**Remove & Save** on the toolbar, or **File → Remove Selected & Save…**). A save with nothing but flattening ticked works fine.
 
-After a save the flatten tree **keeps its rows and loses only its ticks.** Those rows describe the source PDF, and the source PDF has not changed. (The Delete tab does the opposite: removed rows leave the list.)
+After a save the panel loses only its ticks. What it describes is the source PDF, and the source PDF has not changed. (The object list does the opposite: removed rows leave the list.)
 
 ### Worth knowing
 

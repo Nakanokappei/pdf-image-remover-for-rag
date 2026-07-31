@@ -131,6 +131,8 @@ internal sealed class ChineseSimplifiedStrings : IStrings
     public string FlattenUnitLabel(int number) => $"拼合单元 {number}";
     public string FlattenObjectNotOverlapping => "该对象没有与任何内容重叠。";
     public string FlattenNoOverlaps => "未找到重叠的对象。";
+    public string FlattenWholePageWarning =>
+        "勾选的范围几乎覆盖整页。合并后本页将变成一张图片，其中的文字将不再是文本。";
     public string StatusFlattenSelection(int objectCount) => $"已选择 {objectCount} 个对象进行拼合";
     public string AccessibleFlattenPreview => "预览";
 

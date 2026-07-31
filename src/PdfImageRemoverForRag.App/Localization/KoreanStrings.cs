@@ -131,6 +131,8 @@ internal sealed class KoreanStrings : IStrings
     public string FlattenUnitLabel(int number) => $"병합 단위 {number}";
     public string FlattenObjectNotOverlapping => "이 개체는 아무것과도 겹치지 않습니다.";
     public string FlattenNoOverlaps => "겹쳐 있는 개체가 없습니다.";
+    public string FlattenWholePageWarning =>
+        "선택한 범위가 페이지 거의 전체입니다. 병합하면 이 페이지는 한 장의 이미지가 되고 글자는 모두 텍스트가 아니게 됩니다.";
     public string StatusFlattenSelection(int objectCount) => $"개체 {objectCount}개를 병합";
     public string AccessibleFlattenPreview => "미리 보기";
 

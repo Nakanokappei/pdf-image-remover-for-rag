@@ -133,6 +133,8 @@ internal sealed class ChineseTraditionalStrings : IStrings
     public string FlattenUnitLabel(int number) => $"平面化單元 {number}";
     public string FlattenObjectNotOverlapping => "該物件沒有與任何內容重疊。";
     public string FlattenNoOverlaps => "找不到重疊的物件。";
+    public string FlattenWholePageWarning =>
+        "勾選的範圍幾乎涵蓋整頁。合併後本頁將變成一張圖片，其中的文字將不再是文字。";
     public string StatusFlattenSelection(int objectCount) => $"已選取 {objectCount} 個物件進行平面化";
     public string AccessibleFlattenPreview => "預覽";
 

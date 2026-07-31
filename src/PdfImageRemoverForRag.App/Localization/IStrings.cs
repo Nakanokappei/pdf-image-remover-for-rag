@@ -222,6 +222,14 @@ internal interface IStrings
     string FlattenNoOverlaps { get; }
 
     /// <summary>
+    /// Shown when what the user has ticked would cover essentially the whole
+    /// page. Flattening that leaves none of the page's text as text, which is a
+    /// reasonable thing to want and a ruinous thing to do by accident — the
+    /// preview outline spanning the paper was the only hint before this.
+    /// </summary>
+    string FlattenWholePageWarning { get; }
+
+    /// <summary>
     /// Status bar while objects are checked for flattening. Counts objects, not
     /// units, because that is what the user ticks.
     /// </summary>

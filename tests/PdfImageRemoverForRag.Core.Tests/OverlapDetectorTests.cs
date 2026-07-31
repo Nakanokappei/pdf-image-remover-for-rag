@@ -361,7 +361,7 @@ public class OverlapDetectorTests
         })[0];
 
         var checkedOnly = OverlapDetector.RegionCovering(
-            detected.PageNumber,
+            detected.Page,
             detected.Members.Where(m => m.Kind == RemovableKind.Text).ToArray());
 
         Assert.Equal(150, checkedOnly.X, 3);
@@ -372,9 +372,62 @@ public class OverlapDetectorTests
     }
 
     [Fact]
+    public void ARegionTheSizeOfThePage_IsFlaggedAsCoveringIt()
+    {
+        // Flattening this turns the sheet into a picture and leaves none of its
+        // text as text. Legitimate to ask for, disastrous by accident, so the UI
+        // needs to be able to say so before the save.
+        var region = OverlapDetector.RegionCovering(Page, new[]
+        {
+            Image(0, 0, 800, 600, "full bleed"),
+            Text(60, 500, 200, 12),
+        });
+
+        Assert.True(OverlapDetector.CoversWholePage(region));
+    }
+
+    [Fact]
+    public void AnOrdinaryRegion_IsNotFlagged()
+    {
+        var region = OverlapDetector.RegionCovering(Page, new[]
+        {
+            Image(100, 100, 300, 200),
+            Text(120, 120, 80, 12),
+        });
+
+        Assert.False(OverlapDetector.CoversWholePage(region));
+    }
+
+    [Fact]
+    public void ARegionWideEnoughButNotTall_IsNotFlagged()
+    {
+        // Both dimensions have to be covered. A banner across the top of the
+        // page is not the page, and warning about it would train the user to
+        // ignore the warning.
+        var region = OverlapDetector.RegionCovering(Page, new[]
+        {
+            Image(0, 560, 800, 40, "banner"),
+            Text(60, 570, 200, 12),
+        });
+
+        Assert.False(OverlapDetector.CoversWholePage(region));
+    }
+
+    [Fact]
+    public void WithoutThePageSize_NothingIsFlagged()
+    {
+        // A region built before the page size was plumbed through cannot answer
+        // the question, and must not answer it wrongly.
+        var region = new OverlapRegion(
+            1, 0, 0, 800, 600, Array.Empty<PlacedObject>());
+
+        Assert.False(OverlapDetector.CoversWholePage(region));
+    }
+
+    [Fact]
     public void RegionCovering_RefusesAnEmptySelection()
     {
         Assert.Throws<ArgumentException>(() =>
-            OverlapDetector.RegionCovering(1, Array.Empty<PlacedObject>()));
+            OverlapDetector.RegionCovering(Page, Array.Empty<PlacedObject>()));
     }
 }

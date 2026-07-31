@@ -138,6 +138,8 @@ internal sealed class PortugueseStrings : IStrings
     public string FlattenUnitLabel(int number) => $"Unidade {number}";
     public string FlattenObjectNotOverlapping => "Este objeto não se sobrepõe a nada.";
     public string FlattenNoOverlaps => "Não foram encontrados objetos sobrepostos.";
+    public string FlattenWholePageWarning =>
+        "Os objetos marcados cobrem quase toda a página. Ao achatá-los, a página vira uma única imagem e nenhum texto continua sendo texto.";
     public string StatusFlattenSelection(int objectCount) => $"{objectCount} objeto(s) para achatar";
     public string AccessibleFlattenPreview => "Pré-visualização";
 

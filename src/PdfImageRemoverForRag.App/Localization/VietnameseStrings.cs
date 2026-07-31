@@ -140,6 +140,8 @@ internal sealed class VietnameseStrings : IStrings
     public string FlattenUnitLabel(int number) => $"Nhóm {number}";
     public string FlattenObjectNotOverlapping => "Đối tượng này không chồng lên bất kỳ đối tượng nào.";
     public string FlattenNoOverlaps => "Không tìm thấy đối tượng nào chồng lên nhau.";
+    public string FlattenWholePageWarning =>
+        "Các đối tượng đã chọn phủ gần hết trang. Khi gộp lại, trang này sẽ thành một ảnh duy nhất và không còn chữ nào là văn bản.";
     public string StatusFlattenSelection(int objectCount) => $"{objectCount} đối tượng sẽ được gộp";
     public string AccessibleFlattenPreview => "Xem trước";
 

@@ -140,6 +140,8 @@ internal sealed class FrenchStrings : IStrings
     public string FlattenUnitLabel(int number) => $"Unité {number}";
     public string FlattenObjectNotOverlapping => "Cet objet ne chevauche rien.";
     public string FlattenNoOverlaps => "Aucun objet superposé n'a été trouvé.";
+    public string FlattenWholePageWarning =>
+        "Les objets cochés couvrent presque toute la page. En les aplatissant, la page devient une seule image et plus aucun texte ne reste du texte.";
     public string StatusFlattenSelection(int objectCount) => $"{objectCount} objet(s) à aplatir";
     public string AccessibleFlattenPreview => "Aperçu";
 

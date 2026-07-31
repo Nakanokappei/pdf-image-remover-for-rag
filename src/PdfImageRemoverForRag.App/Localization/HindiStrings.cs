@@ -136,6 +136,8 @@ internal sealed class HindiStrings : IStrings
     public string FlattenUnitLabel(int number) => $"इकाई {number}";
     public string FlattenObjectNotOverlapping => "यह वस्तु किसी से नहीं मिलती।";
     public string FlattenNoOverlaps => "एक-दूसरे पर आने वाली कोई वस्तु नहीं मिली।";
+    public string FlattenWholePageWarning =>
+        "चुनी गई वस्तुएँ लगभग पूरे पृष्ठ को ढक रही हैं। इन्हें चित्र बनाने पर यह पृष्ठ एक ही चित्र बन जाएगा और इसका कोई भी लेख टेक्स्ट नहीं रहेगा।";
     public string StatusFlattenSelection(int objectCount) => $"मिलाने के लिए {objectCount} वस्तुएँ";
     public string AccessibleFlattenPreview => "पूर्वावलोकन";
 

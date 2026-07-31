@@ -138,6 +138,8 @@ internal sealed class GermanStrings : IStrings
     public string FlattenUnitLabel(int number) => $"Einheit {number}";
     public string FlattenObjectNotOverlapping => "Dieses Objekt überlappt mit nichts.";
     public string FlattenNoOverlaps => "Es wurden keine überlappenden Objekte gefunden.";
+    public string FlattenWholePageWarning =>
+        "Die markierten Objekte bedecken fast die ganze Seite. Beim Zusammenfassen wird die Seite zu einem einzigen Bild, und kein Text bleibt Text.";
     public string StatusFlattenSelection(int objectCount) => $"{objectCount} Objekt(e) zum Zusammenfügen";
     public string AccessibleFlattenPreview => "Vorschau";
 

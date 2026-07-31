@@ -91,7 +91,7 @@ public static class OverlapDetector
         {
             if (members.Count < 2) continue;
             if (members.Select(m => m.Kind).Distinct().Count() < 2) continue;
-            regions.Add(BuildRegion(page.PageNumber, members));
+            regions.Add(BuildRegion(page, members));
         }
 
         // Stable order: top-left first, reading order down the page (PDF Y grows
@@ -124,18 +124,33 @@ public static class OverlapDetector
     /// is the union of the checked ones — never the whole region as detected.
     /// </summary>
     public static OverlapRegion RegionCovering(
-        int pageNumber, IReadOnlyList<PlacedObject> members)
+        PageDimensions page, IReadOnlyList<PlacedObject> members)
     {
         if (members.Count == 0)
         {
             throw new ArgumentException(
                 "A region needs at least one member to cover.", nameof(members));
         }
-        return BuildRegion(pageNumber, members);
+        return BuildRegion(page, members);
     }
 
+    /// <summary>
+    /// True when this area is effectively the page. Flattening it turns the
+    /// whole sheet into a picture and leaves none of its text as text — which is
+    /// a legitimate thing to ask for and a terrible thing to do by accident, so
+    /// it is worth saying out loud before the save rather than after.
+    ///
+    /// Same threshold as a full-page image, and for the same reason: "the whole
+    /// page" cannot mean exactly 100 % when a couple of points of margin are
+    /// normal.
+    /// </summary>
+    public static bool CoversWholePage(OverlapRegion region) =>
+        region.PageWidthPoints > 0 && region.PageHeightPoints > 0
+        && region.Width / region.PageWidthPoints >= FullPageImageDetector.CoverageThreshold
+        && region.Height / region.PageHeightPoints >= FullPageImageDetector.CoverageThreshold;
+
     /// <summary>The union of the members' rectangles, as the region to raster.</summary>
-    static OverlapRegion BuildRegion(int pageNumber, IReadOnlyList<PlacedObject> members)
+    static OverlapRegion BuildRegion(PageDimensions page, IReadOnlyList<PlacedObject> members)
     {
         double left = double.MaxValue, bottom = double.MaxValue;
         double right = double.MinValue, top = double.MinValue;
@@ -155,7 +170,9 @@ public static class OverlapDetector
             .ThenBy(m => m.X)
             .ThenBy(m => m.Y)
             .ToArray();
-        return new OverlapRegion(pageNumber, left, bottom, right - left, top - bottom, ordered);
+        return new OverlapRegion(
+            page.PageNumber, left, bottom, right - left, top - bottom, ordered,
+            page.WidthPoints, page.HeightPoints);
     }
 
     /// <summary>

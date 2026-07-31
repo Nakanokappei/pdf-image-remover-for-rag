@@ -97,6 +97,16 @@ internal sealed class FlattenPanel : UserControl
         Text = L10n.FlattenDescription,
         UseMnemonic = false,
     };
+    // Only ever visible when it has something to say: an always-present strip
+    // of empty red would train the eye to skip it.
+    readonly Label _wholePageWarning = new()
+    {
+        Dock = DockStyle.Top,
+        AutoSize = false,
+        Text = L10n.FlattenWholePageWarning,
+        Visible = false,
+        UseMnemonic = false,
+    };
     readonly Label _emptyMessage = new()
     {
         Dock = DockStyle.Fill,
@@ -145,6 +155,7 @@ internal sealed class FlattenPanel : UserControl
         _list.ViewportChanged += (_, e) => ViewportChanged?.Invoke(this, e);
 
         _preview.AccessibleName = L10n.AccessibleFlattenPreview;
+        _wholePageWarning.ForeColor = MainForm.WarningTextColour;
         _title.Font = new Font(Font, FontStyle.Bold);
         _clearChecks.AccessibleName = $"{L10n.ToolClearSelection} ({L10n.FlattenPanelTitle})";
         _clearChecks.Click += (_, _) => ClearChecks();
@@ -161,6 +172,7 @@ internal sealed class FlattenPanel : UserControl
         // Docked children claim their edge in reverse order of addition, so the
         // fill goes in first and the title bar ends up outermost.
         Controls.Add(_split);
+        Controls.Add(_wholePageWarning);
         Controls.Add(_description);
         Controls.Add(_titleBar);
     }
@@ -205,15 +217,47 @@ internal sealed class FlattenPanel : UserControl
     }
 
     /// <summary>
-    /// The description wraps, and this panel is narrow and user-resizable, so
-    /// its height has to be re-measured whenever the width changes.
+    /// The description and the warning both wrap, and this panel is narrow and
+    /// user-resizable, so their heights have to be re-measured whenever the
+    /// width changes.
     /// </summary>
     void FitDescriptionHeight()
     {
-        _description.Height = TextRenderer.MeasureText(
-            _description.Text, _description.Font,
+        _description.Height = WrappedHeight(_description);
+        if (_wholePageWarning.Visible) _wholePageWarning.Height = WrappedHeight(_wholePageWarning);
+    }
+
+    int WrappedHeight(Label label) =>
+        TextRenderer.MeasureText(
+            label.Text, label.Font,
             new Size(Math.Max(Dip(100), Width - Dip(16)), int.MaxValue),
             TextFormatFlags.WordBreak).Height + Dip(8);
+
+    /// <summary>
+    /// Show the warning when what is ticked would cover essentially the whole
+    /// page — on any page, since one such unit is enough to lose a page of text.
+    ///
+    /// It reads the TICKED objects, not the units as detected: the area that
+    /// becomes a picture is the bounding box of what the user chose, and a
+    /// region can be whole-page as found yet a corner of it once narrowed down.
+    /// </summary>
+    void RefreshWholePageWarning()
+    {
+        bool covers = false;
+        foreach (var unit in _units)
+        {
+            if (!_checked.TryGetValue(unit.Region, out var ticked) || ticked.Count == 0) continue;
+            var members = unit.Region.Members.Where(ticked.Contains).ToArray();
+            if (OverlapDetector.CoversWholePage(
+                    OverlapDetector.RegionCovering(unit.Region.Page, members)))
+            {
+                covers = true;
+                break;
+            }
+        }
+        if (covers == _wholePageWarning.Visible) return;
+        _wholePageWarning.Visible = covers;
+        if (covers) _wholePageWarning.Height = WrappedHeight(_wholePageWarning);
     }
 
     protected override void OnResize(EventArgs e)
@@ -523,6 +567,7 @@ internal sealed class FlattenPanel : UserControl
     void RaiseSelectionChanged()
     {
         _clearChecks.Enabled = _checked.Count > 0;
+        RefreshWholePageWarning();
         SelectionChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -568,7 +613,7 @@ internal sealed class FlattenPanel : UserControl
                 regions = new List<OverlapRegion>();
                 byFile[unit.FilePath] = regions;
             }
-            regions.Add(OverlapDetector.RegionCovering(unit.Region.PageNumber, members));
+            regions.Add(OverlapDetector.RegionCovering(unit.Region.Page, members));
         }
         return byFile.ToDictionary(
             kv => kv.Key,

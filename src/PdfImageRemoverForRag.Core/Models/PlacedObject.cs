@@ -44,10 +44,23 @@ public sealed record OverlapMember(RemovableKind Kind, string Identity);
 /// therefore be flattened into a single raster image: the page, the union of
 /// the members' rectangles, and the members themselves.
 /// </summary>
+/// <param name="PageWidthPoints">
+/// The page's width. Carried on the region rather than looked up, because the
+/// one question that needs it — is this area effectively the whole page? — is
+/// asked wherever a region is held, and a region without its page's size cannot
+/// answer it. Zero means the size was not supplied.
+/// </param>
+/// <param name="PageHeightPoints">The page's height; see the width.</param>
 public sealed record OverlapRegion(
     int PageNumber,
     double X,
     double Y,
     double Width,
     double Height,
-    IReadOnlyList<PlacedObject> Members);
+    IReadOnlyList<PlacedObject> Members,
+    double PageWidthPoints = 0,
+    double PageHeightPoints = 0)
+{
+    /// <summary>The page this region is on, size included.</summary>
+    public PageDimensions Page => new(PageNumber, PageWidthPoints, PageHeightPoints);
+}

@@ -137,6 +137,8 @@ internal sealed class ItalianStrings : IStrings
     public string FlattenUnitLabel(int number) => $"Unità {number}";
     public string FlattenObjectNotOverlapping => "Questo oggetto non si sovrappone a nulla.";
     public string FlattenNoOverlaps => "Nessun oggetto sovrapposto trovato.";
+    public string FlattenWholePageWarning =>
+        "Gli oggetti selezionati coprono quasi tutta la pagina. Unendoli, la pagina diventa una sola immagine e nessun testo resta testo.";
     public string StatusFlattenSelection(int objectCount) => $"{objectCount} oggetto/i da unire";
     public string AccessibleFlattenPreview => "Anteprima";
 

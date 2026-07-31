@@ -145,6 +145,8 @@ internal sealed class RussianStrings : IStrings
     public string FlattenUnitLabel(int number) => $"Группа {number}";
     public string FlattenObjectNotOverlapping => "Этот объект ни с чем не перекрывается.";
     public string FlattenNoOverlaps => "Перекрывающиеся объекты не найдены.";
+    public string FlattenWholePageWarning =>
+        "Отмеченные объекты занимают почти всю страницу. После объединения страница станет одним изображением, и весь её текст перестанет быть текстом.";
     public string StatusFlattenSelection(int objectCount) => $"Объектов для объединения: {objectCount}";
     public string AccessibleFlattenPreview => "Предварительный просмотр";
 

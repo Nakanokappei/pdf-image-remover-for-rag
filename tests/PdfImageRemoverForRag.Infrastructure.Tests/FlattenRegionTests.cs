@@ -92,7 +92,7 @@ public class FlattenRegionTests : IClassFixture<SamplePdfFixture>
         var info = await NewAnalyzer().AnalyzeAsync(_samples.ImageAndTextPath);
         var detected = Assert.Single(info.OverlapRegions);
         var textOnly = OverlapDetector.RegionCovering(
-            detected.PageNumber,
+            detected.Page,
             detected.Members.Where(m => m.Kind == RemovableKind.Text).ToArray());
         var originalImageHash = detected.Members.First(m => m.Kind == RemovableKind.Image).Identity;
 
@@ -167,6 +167,27 @@ public class FlattenRegionTests : IClassFixture<SamplePdfFixture>
             .CleanAsync(_samples.ImageAndTextPath, dest, NothingToRemove(), new[] { region });
 
         Assert.Empty(result.RemovedGroupHashes);
+    }
+
+    [Fact]
+    public async Task ARegionThatIsTheWholePage_SaysSo()
+    {
+        // The one case the whole-page warning exists for, end to end: a scan
+        // with a caption typed over it. Flattening that leaves the page without
+        // any text at all, so the UI has to be able to say so beforehand.
+        var info = await NewAnalyzer().AnalyzeAsync(_samples.FullPageOverlapPath);
+        var region = Assert.Single(info.OverlapRegions);
+
+        Assert.True(OverlapDetector.CoversWholePage(region));
+    }
+
+    [Fact]
+    public async Task AnOrdinaryRegion_DoesNotClaimToBeTheWholePage()
+    {
+        var info = await NewAnalyzer().AnalyzeAsync(_samples.ImageAndTextPath);
+        var region = Assert.Single(info.OverlapRegions);
+
+        Assert.False(OverlapDetector.CoversWholePage(region));
     }
 
     [Fact]

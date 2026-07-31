@@ -144,6 +144,8 @@ internal sealed class TurkishStrings : IStrings
     public string FlattenUnitLabel(int number) => $"Birim {number}";
     public string FlattenObjectNotOverlapping => "Bu nesne hiçbir şeyle üst üste gelmiyor.";
     public string FlattenNoOverlaps => "Üst üste gelen nesne bulunamadı.";
+    public string FlattenWholePageWarning =>
+        "İşaretlenen nesneler sayfanın neredeyse tamamını kaplıyor. Birleştirildiğinde sayfa tek bir görüntüye dönüşür ve hiçbir metin metin olarak kalmaz.";
     public string StatusFlattenSelection(int objectCount) => $"Birleştirilecek nesne: {objectCount}";
     public string AccessibleFlattenPreview => "Önizleme";
 

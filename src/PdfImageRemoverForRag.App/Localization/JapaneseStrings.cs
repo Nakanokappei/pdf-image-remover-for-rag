@@ -130,6 +130,8 @@ internal sealed class JapaneseStrings : IStrings
     public string FlattenUnitLabel(int number) => $"統合単位 {number}";
     public string FlattenObjectNotOverlapping => "このオブジェクトは何とも重なっていません。";
     public string FlattenNoOverlaps => "重なっているオブジェクトはありません。";
+    public string FlattenWholePageWarning =>
+        "チェックした範囲がページのほぼ全体です。統合するとこのページは 1 枚の画像になり、文字はすべてテキストでなくなります。";
     public string StatusFlattenSelection(int objectCount) => $"{objectCount} 個のオブジェクトを統合";
     public string AccessibleFlattenPreview => "プレビュー";
 

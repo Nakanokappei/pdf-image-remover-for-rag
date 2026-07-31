@@ -184,7 +184,14 @@ internal sealed partial class MainForm : Form
     // Windows' standard error red, dark enough to stay legible on the white row
     // and on the blue selection highlight. High contrast drops the red — the
     // theme owns all colors there, and the warning text carries the meaning.
-    static Color WarningText => HighContrast ? SystemColors.WindowText : Color.FromArgb(0xC4, 0x2B, 0x1C);
+    static Color WarningText => WarningTextColour;
+
+    /// <summary>
+    /// The one red in the app. Shared with the Flatten panel so the two places
+    /// that warn about losing a whole page of content look like one warning.
+    /// </summary>
+    internal static Color WarningTextColour =>
+        HighContrast ? SystemColors.WindowText : Color.FromArgb(0xC4, 0x2B, 0x1C);
 
     // Width reserved at the right of every header for the sort glyph, so any
     // column can become the sort key without its caption being clipped. Sized to

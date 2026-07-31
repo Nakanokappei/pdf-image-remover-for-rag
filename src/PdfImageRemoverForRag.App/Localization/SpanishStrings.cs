@@ -141,6 +141,8 @@ internal sealed class SpanishStrings : IStrings
     public string FlattenUnitLabel(int number) => $"Unidad {number}";
     public string FlattenObjectNotOverlapping => "Este objeto no se superpone con nada.";
     public string FlattenNoOverlaps => "No se encontraron objetos superpuestos.";
+    public string FlattenWholePageWarning =>
+        "Los objetos marcados cubren casi toda la página. Al aplanarlos, la página se convierte en una sola imagen y ningún texto sigue siendo texto.";
     public string StatusFlattenSelection(int objectCount) => $"{objectCount} objeto(s) para acoplar";
     public string AccessibleFlattenPreview => "Vista previa";
 

@@ -134,6 +134,8 @@ internal sealed class EnglishStrings : IStrings
     public string FlattenUnitLabel(int number) => $"Unit {number}";
     public string FlattenObjectNotOverlapping => "This object does not overlap anything.";
     public string FlattenNoOverlaps => "No overlapping objects were found.";
+    public string FlattenWholePageWarning =>
+        "The ticked objects cover almost the whole page. Flattening them turns the page into a single image, and none of its text stays text.";
     public string StatusFlattenSelection(int objectCount) => $"{objectCount} object(s) to flatten";
     public string AccessibleFlattenPreview => "Preview";
 

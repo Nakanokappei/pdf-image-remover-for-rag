@@ -63,6 +63,7 @@ public static class SamplePdfWriter
             WriteImageAndText(Path.Combine(outputDirectory, "image-and-text.pdf"), photoPng),
             WriteRotatedPage(Path.Combine(outputDirectory, "rotated-page.pdf"), photoPng),
             WriteScannedPage(Path.Combine(outputDirectory, "scanned-page.pdf"), scanPng),
+            WriteFullPageOverlap(Path.Combine(outputDirectory, "full-page-overlap.pdf"), scanPng),
             WriteJpegImage(Path.Combine(outputDirectory, "jpeg-image.pdf")),
             WriteRepeatedText(Path.Combine(outputDirectory, "repeated-text.pdf")),
             WriteRepeatedShapes(Path.Combine(outputDirectory, "repeated-shapes.pdf")),
@@ -187,6 +188,31 @@ public static class SamplePdfWriter
                 "After image removal the text should remain readable.");
         }
         page.Rotate = 90;
+        doc.Save(path);
+        return path;
+    }
+
+    /// <summary>
+    /// A scan with a caption typed over it: an overlap region that covers the
+    /// whole page.
+    /// </summary>
+    /// <remarks>
+    /// Flattening this turns the sheet into a single picture and leaves none of
+    /// its text as text — the case the whole-page warning exists for, and one no
+    /// other sample produces. <see cref="WriteScannedPage"/> is the same scan
+    /// with nothing on it, so it stays a full-page IMAGE and not a region.
+    /// </remarks>
+    static string WriteFullPageOverlap(string path, byte[] scanPng)
+    {
+        using var doc = NewDocument("full-page-overlap sample");
+        var page = doc.AddPage();
+        using var gfx = XGraphics.FromPdfPage(page);
+        using var scan = XImage.FromStream(new MemoryStream(scanPng));
+        gfx.DrawImage(scan, 0, 0, page.Width.Point, page.Height.Point);
+        gfx.DrawString(
+            "Scanned page with a caption over it",
+            new XFont("Segoe WP", 12, XFontStyleEx.Regular),
+            XBrushes.Black, 60, 100);
         doc.Save(path);
         return path;
     }

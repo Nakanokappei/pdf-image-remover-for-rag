@@ -209,7 +209,7 @@ After a save the panel loses only its ticks. What it describes is the source PDF
 - **Text in a flattened area can no longer be selected or copied.** That is the point of the feature. Your original PDF is untouched, so you can always open it again.
 - Flattened areas are rendered at 200 dpi, which makes the file larger.
 - **A place that cannot be rendered is left exactly as it was.** Deleting the objects and then failing to draw their replacement would punch a hole in the page.
-- If a unit covers nearly the whole page, the preview outline will span the paper. Flattening it turns that whole page into one image, and none of its text stays text.
+- **When what you have ticked covers nearly the whole page, the panel says so in red.** Flattening it turns that whole page into one image, and none of its text stays text. It is not forbidden — a scan with a caption typed over it is exactly that case, done knowingly.
 
 ---
 

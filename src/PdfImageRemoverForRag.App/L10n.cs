@@ -215,6 +215,7 @@ internal static class L10n
     public static string FlattenUnitLabel(int number) => S.FlattenUnitLabel(number);
     public static string FlattenObjectNotOverlapping => S.FlattenObjectNotOverlapping;
     public static string FlattenNoOverlaps => S.FlattenNoOverlaps;
+    public static string FlattenWholePageWarning => S.FlattenWholePageWarning;
     public static string StatusFlattenSelection(int objectCount) => S.StatusFlattenSelection(objectCount);
     public static string AccessibleFlattenPreview => S.AccessibleFlattenPreview;
 

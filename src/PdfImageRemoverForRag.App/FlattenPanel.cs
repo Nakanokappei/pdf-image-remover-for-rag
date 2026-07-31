@@ -670,7 +670,8 @@ internal sealed class FlattenPanel : UserControl
 
             var display = FitInside(_page.Bitmap.Size, area);
             var boxes = PageHighlightPainter.MapToDisplay(
-                display, _page.PageWidthPoints, _page.PageHeightPoints, _boxesInPoints, Dip(4));
+                display, _page.PageWidthPoints, _page.PageHeightPoints, _page.RotationDegrees,
+                _boxesInPoints, Dip(4));
             e.Graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
             PageHighlightPainter.DrawPage(e.Graphics, _page.Bitmap, display, boxes);
             using (var frame = new Pen(SystemColors.ControlDark))

@@ -1,5 +1,6 @@
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using PdfImageRemoverForRag.Core.Models;
 
 namespace PdfImageRemoverForRag.App;
 
@@ -104,7 +105,10 @@ internal static class PageHighlightPainter
 
     /// <summary>
     /// Map bounding boxes in PDF points onto the displayed page rectangle. The
-    /// PDF origin is bottom-left and the display's is top-left, so Y is flipped.
+    /// boxes are in content space (origin bottom-left) while the rendered page
+    /// is drawn the way a viewer shows it, so each box goes through
+    /// <see cref="PageRotation"/> — which at <paramref name="rotationDegrees"/>
+    /// zero is the plain Y flip this always did.
     /// Boxes thinner than <paramref name="minimumExtent"/> device pixels are
     /// grown symmetrically — a rule has no thickness and a line of text is a
     /// couple of pixels tall on a page thumbnail, so either would otherwise be
@@ -114,6 +118,7 @@ internal static class PageHighlightPainter
         Rectangle destination,
         double pageWidthPoints,
         double pageHeightPoints,
+        int rotationDegrees,
         IReadOnlyList<RectangleF> boxesInPoints,
         float minimumExtent)
     {
@@ -122,16 +127,24 @@ internal static class PageHighlightPainter
             return Array.Empty<RectangleF>();
         }
 
-        double sx = destination.Width / pageWidthPoints;
-        double sy = destination.Height / pageHeightPoints;
+        // Scaled against the page as DISPLAYED: on a quarter turn the rendered
+        // bitmap is the page on its side, so its width answers to the page's
+        // height.
+        var (displayWidth, displayHeight) =
+            PageRotation.DisplaySize(pageWidthPoints, pageHeightPoints, rotationDegrees);
+        double sx = destination.Width / displayWidth;
+        double sy = destination.Height / displayHeight;
         var rects = new List<RectangleF>(boxesInPoints.Count);
         foreach (var box in boxesInPoints)
         {
+            var displayed = PageRotation.ToDisplay(
+                new PageRegion(box.X, box.Y, box.Width, box.Height),
+                pageWidthPoints, pageHeightPoints, rotationDegrees);
             var rect = new RectangleF(
-                destination.X + (float)(box.X * sx),
-                destination.Y + (float)((pageHeightPoints - (box.Y + box.Height)) * sy),
-                (float)(box.Width * sx),
-                (float)(box.Height * sy));
+                destination.X + (float)(displayed.X * sx),
+                destination.Y + (float)(displayed.Y * sy),
+                (float)(displayed.Width * sx),
+                (float)(displayed.Height * sy));
             if (rect.Width < minimumExtent) rect.Inflate((minimumExtent - rect.Width) / 2, 0);
             if (rect.Height < minimumExtent) rect.Inflate(0, (minimumExtent - rect.Height) / 2);
             // A box drawn partly off the page must not make the repaint read

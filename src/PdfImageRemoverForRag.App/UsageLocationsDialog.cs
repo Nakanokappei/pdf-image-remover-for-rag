@@ -224,7 +224,8 @@ internal sealed class UsageLocationsDialog : Form
         /// </summary>
         IReadOnlyList<RectangleF> LocationRects(Rectangle disp, RenderedPage page, UsageRow row) =>
             PageHighlightPainter.MapToDisplay(
-                disp, page.PageWidthPoints, page.PageHeightPoints, row.BoxesInPoints, Dip(4));
+                disp, page.PageWidthPoints, page.PageHeightPoints, page.RotationDegrees,
+                row.BoxesInPoints, Dip(4));
 
         static Rectangle FitInside(Size imageSize, Rectangle area)
         {

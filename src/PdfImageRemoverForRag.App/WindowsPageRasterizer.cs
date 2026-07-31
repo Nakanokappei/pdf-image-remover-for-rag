@@ -72,23 +72,28 @@ internal sealed class WindowsPageRasterizer : IPageRasterizer
             ct.ThrowIfCancellationRequested();
             using var page = document.GetPage((uint)(pageNumber - 1));
 
-            var media = page.Dimensions.MediaBox;
-            double pageHeightDips = media.Height > 0 ? media.Height : page.Size.Height;
-            if (pageHeightDips <= 0) return null;
+            int rotation = RotationDegrees(page.Rotation);
+            var (pageWidth, pageHeight) = PageSizeInPoints(page, rotation);
+            if (pageWidth <= 0 || pageHeight <= 0) return null;
 
-            // PDF space has its origin at the bottom-left and the renderer's has
-            // it at the top-left, so the region's top edge is measured down from
-            // the page's top.
-            double left = region.X * DipsPerPoint;
-            double width = region.Width * DipsPerPoint;
-            double height = region.Height * DipsPerPoint;
-            double top = pageHeightDips - ((region.Y + region.Height) * DipsPerPoint);
-
-            var sourceRect = new Windows.Foundation.Rect(left, top, width, height);
-            int wanted = PixelWidthFor(region, targetDpi);
+            // This renderer draws the page the way a viewer shows it — turned by
+            // /Rotate, origin at the top-left — while the region arrives in the
+            // content's own space. Asking in the wrong one is not a small error:
+            // on a quarter-turned page the rectangle lands off the paper and
+            // comes back blank, which the flatten path reads as "cannot render"
+            // and skips.
+            var displayed = PageRotation.ToDisplay(region, pageWidth, pageHeight, rotation);
+            var sourceRect = new Windows.Foundation.Rect(
+                displayed.X * DipsPerPoint, displayed.Y * DipsPerPoint,
+                displayed.Width * DipsPerPoint, displayed.Height * DipsPerPoint);
+            int wanted = PixelWidthFor(displayed, targetDpi);
 
             using var bitmap = await RenderAtWidthAsync(page, sourceRect, wanted, ct);
             if (bitmap is null) return null;
+
+            // Handed back the way the CONTENT has it, because that is the space
+            // the caller draws it back into.
+            TurnBackToContentOrientation(bitmap, rotation);
 
             using var png = new MemoryStream();
             bitmap.Save(png, ImageFormat.Png);
@@ -185,9 +190,56 @@ internal sealed class WindowsPageRasterizer : IPageRasterizer
     }
 
     /// <summary>
+    /// The page's own size in PDF points — content space, so a quarter turn is
+    /// undone rather than applied.
+    /// </summary>
+    static (double Width, double Height) PageSizeInPoints(PdfPage page, int rotationDegrees)
+    {
+        const double PointsPerDip = 72.0 / 96.0;
+        var media = page.Dimensions.MediaBox;
+        if (media.Width > 0 && media.Height > 0)
+        {
+            // The media box is the page as authored, untouched by /Rotate.
+            return (media.Width * PointsPerDip, media.Height * PointsPerDip);
+        }
+
+        // Size is the page as DISPLAYED, so on a quarter turn its sides are
+        // already swapped. Swapping is its own inverse, so the same call that
+        // produces a display size turns this one back into content space.
+        var (width, height) = PageRotation.DisplaySize(
+            page.Size.Width, page.Size.Height, rotationDegrees);
+        return (width * PointsPerDip, height * PointsPerDip);
+    }
+
+    static int RotationDegrees(PdfPageRotation rotation) => rotation switch
+    {
+        PdfPageRotation.Rotate90 => 90,
+        PdfPageRotation.Rotate180 => 180,
+        PdfPageRotation.Rotate270 => 270,
+        _ => 0,
+    };
+
+    /// <summary>
+    /// Turn a rendering of a rotated page back the way its content stream has
+    /// it, undoing what the viewer applied.
+    /// </summary>
+    static void TurnBackToContentOrientation(Bitmap bitmap, int rotationDegrees)
+    {
+        var back = PageRotation.Normalize(rotationDegrees) switch
+        {
+            90 => RotateFlipType.Rotate270FlipNone,
+            180 => RotateFlipType.Rotate180FlipNone,
+            270 => RotateFlipType.Rotate90FlipNone,
+            _ => RotateFlipType.RotateNoneFlipNone,
+        };
+        if (back != RotateFlipType.RotateNoneFlipNone) bitmap.RotateFlip(back);
+    }
+
+    /// <summary>
     /// Pixel width for the requested resolution, reduced if either side would
     /// otherwise exceed <see cref="MaxPixelsOnLongSide"/>. Never rounds up past
-    /// the requested DPI.
+    /// the requested DPI. Takes the region as the renderer will lay it out, so
+    /// on a quarter-turned page the width asked for is the turned one.
     /// </summary>
     static int PixelWidthFor(PageRegion region, int targetDpi)
     {

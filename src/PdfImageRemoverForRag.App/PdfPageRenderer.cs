@@ -9,7 +9,16 @@ namespace PdfImageRemoverForRag.App;
 /// caller can map a point-space bounding box (an image occurrence) onto the
 /// pixels. The caller owns and disposes the bitmap.
 /// </summary>
-internal sealed record RenderedPage(Bitmap Bitmap, double PageWidthPoints, double PageHeightPoints);
+/// <param name="PageWidthPoints">Page width in content space — not turned by <c>/Rotate</c>.</param>
+/// <param name="PageHeightPoints">Page height in content space — not turned by <c>/Rotate</c>.</param>
+/// <param name="RotationDegrees">
+/// The page's <c>/Rotate</c> entry. The bitmap is drawn the way a viewer shows
+/// the page, so a caller mapping content-space boxes onto it has to turn them
+/// the same way (<see cref="PageRotation"/>); the size above deliberately stays
+/// in content space, which is the space the boxes arrive in.
+/// </param>
+internal sealed record RenderedPage(
+    Bitmap Bitmap, double PageWidthPoints, double PageHeightPoints, int RotationDegrees = 0);
 
 /// <summary>
 /// Rasterizes whole PDF pages with the OS's own PDF renderer
@@ -77,7 +86,14 @@ internal sealed class PdfPageRenderer
 
             using var memory = new MemoryStream(bytes);
             using var decoded = Image.FromStream(memory);
-            return new RenderedPage(new Bitmap(decoded), pageWidth, pageHeight);
+            int rotation = page.Rotation switch
+            {
+                PdfPageRotation.Rotate90 => 90,
+                PdfPageRotation.Rotate180 => 180,
+                PdfPageRotation.Rotate270 => 270,
+                _ => 0,
+            };
+            return new RenderedPage(new Bitmap(decoded), pageWidth, pageHeight, rotation);
         }
         catch
         {

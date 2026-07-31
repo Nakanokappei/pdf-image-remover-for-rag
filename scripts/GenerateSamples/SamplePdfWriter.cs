@@ -61,6 +61,7 @@ public static class SamplePdfWriter
             WriteRepeatedLogo(Path.Combine(outputDirectory, "repeated-logo.pdf"), logoPng),
             WriteMultipleImages(Path.Combine(outputDirectory, "multiple-images.pdf"), logoPng, photoPng, iconPng),
             WriteImageAndText(Path.Combine(outputDirectory, "image-and-text.pdf"), photoPng),
+            WriteRotatedPage(Path.Combine(outputDirectory, "rotated-page.pdf"), photoPng),
             WriteScannedPage(Path.Combine(outputDirectory, "scanned-page.pdf"), scanPng),
             WriteJpegImage(Path.Combine(outputDirectory, "jpeg-image.pdf")),
             WriteRepeatedText(Path.Combine(outputDirectory, "repeated-text.pdf")),
@@ -158,6 +159,34 @@ public static class SamplePdfWriter
         DrawParagraph(gfx, "Image and text overlay",
             "The paragraph glyphs are drawn on top of the raster image.",
             "After image removal the text should remain readable.");
+        doc.Save(path);
+        return path;
+    }
+
+    /// <summary>
+    /// The same page as <see cref="WriteImageAndText"/>, carrying <c>/Rotate 90</c>.
+    /// </summary>
+    /// <remarks>
+    /// A rotated page is where "content space" stops being a formality: a viewer
+    /// turns the paper, this program does not, and the two only agree as long as
+    /// every side keeps to its own space. Drawing the content BEFORE setting the
+    /// entry keeps the content stream identical to the unrotated sample's, so a
+    /// test can put the two documents' analysis side by side and any difference
+    /// is the rotation's doing.
+    /// </remarks>
+    static string WriteRotatedPage(string path, byte[] photoPng)
+    {
+        using var doc = NewDocument("rotated-page sample");
+        var page = doc.AddPage();
+        using (var gfx = XGraphics.FromPdfPage(page))
+        {
+            using var photo = XImage.FromStream(new MemoryStream(photoPng));
+            gfx.DrawImage(photo, 40, 120, 500, 300);
+            DrawParagraph(gfx, "Image and text overlay",
+                "The paragraph glyphs are drawn on top of the raster image.",
+                "After image removal the text should remain readable.");
+        }
+        page.Rotate = 90;
         doc.Save(path);
         return path;
     }

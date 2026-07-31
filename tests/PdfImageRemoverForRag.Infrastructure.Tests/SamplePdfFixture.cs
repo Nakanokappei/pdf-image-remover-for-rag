@@ -16,6 +16,7 @@ public sealed class SamplePdfFixture : IDisposable
     public string RepeatedLogoPath => Path.Combine(TempDirectory, "repeated-logo.pdf");
     public string MultipleImagesPath => Path.Combine(TempDirectory, "multiple-images.pdf");
     public string ImageAndTextPath => Path.Combine(TempDirectory, "image-and-text.pdf");
+    public string RotatedPagePath => Path.Combine(TempDirectory, "rotated-page.pdf");
     public string ScannedPagePath => Path.Combine(TempDirectory, "scanned-page.pdf");
     public string JpegImagePath => Path.Combine(TempDirectory, "jpeg-image.pdf");
     public string RepeatedTextPath => Path.Combine(TempDirectory, "repeated-text.pdf");

@@ -1,9 +1,7 @@
-using PdfImageRemoverForRag.Core.Abstractions;
 using PdfImageRemoverForRag.Core.Errors;
 using PdfImageRemoverForRag.Core.Grouping;
 using PdfImageRemoverForRag.Core.Models;
 using PdfImageRemoverForRag.Infrastructure;
-using PdfImageRemoverForRag.Scripts.GenerateSamples;
 using Xunit;
 using PdfPigDoc = UglyToad.PdfPig.PdfDocument;
 
@@ -12,11 +10,8 @@ namespace PdfImageRemoverForRag.Infrastructure.Tests;
 // End-to-end flattening: an overlap region is replaced by a picture of itself,
 // so the text stops being text while the page still looks the same.
 //
-// The renderer is a stand-in that returns a flat colour. That is not a shortcut
-// around the real one — it is the reason IPageRasterizer is an interface in
-// Core. The rewrite (what gets deleted, what gets drawn, in what order) is what
-// can go wrong here, and it can be checked on any operating system; whether the
-// pixels look right is a question for the machine that has the OS renderer.
+// The renderer is <see cref="FlatColourRasterizer"/>, which explains there why
+// standing in for the real one is the arrangement rather than a shortcut.
 public class FlattenRegionTests : IClassFixture<SamplePdfFixture>
 {
     readonly SamplePdfFixture _samples;
@@ -27,43 +22,6 @@ public class FlattenRegionTests : IClassFixture<SamplePdfFixture>
     }
 
     static PdfSharpDocumentAnalyzer NewAnalyzer() => new(new PdfPigThumbnailProvider());
-
-    /// <summary>
-    /// Renders every region as one flat colour, and records what it was asked
-    /// for so the request itself can be asserted on.
-    /// </summary>
-    sealed class FlatColourRasterizer : IPageRasterizer
-    {
-        readonly bool _succeeds;
-
-        public FlatColourRasterizer(bool succeeds = true)
-        {
-            _succeeds = succeeds;
-        }
-
-        public List<(int PageNumber, PageRegion Region, int Dpi)> Requests { get; } = new();
-
-        public Task<byte[]?> RenderRegionAsync(
-            string pdfFilePath, int pageNumber, PageRegion region, int targetDpi,
-            CancellationToken ct = default)
-        {
-            Requests.Add((pageNumber, region, targetDpi));
-            if (!_succeeds) return Task.FromResult<byte[]?>(null);
-
-            // Pixel dimensions in proportion to the region, so a wrong aspect
-            // ratio in the caller would show up as a distorted placement.
-            int width = Math.Max(1, (int)Math.Round(region.Width));
-            int height = Math.Max(1, (int)Math.Round(region.Height));
-            var rgb = new byte[width * height * 3];
-            for (int i = 0; i < rgb.Length; i += 3)
-            {
-                rgb[i] = 0x40;
-                rgb[i + 1] = 0x80;
-                rgb[i + 2] = 0xC0;
-            }
-            return Task.FromResult<byte[]?>(MinimalPng.EncodeRgb(width, height, rgb));
-        }
-    }
 
     string Destination(string name) => Path.Combine(_samples.TempDirectory, name);
 

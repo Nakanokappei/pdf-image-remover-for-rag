@@ -36,6 +36,12 @@ public interface IPageRasterizer
     /// The area to render, in PDF points with the origin at the page's
     /// bottom-left — the same space image occurrences use. Implementations
     /// convert to whatever their renderer wants.
+    ///
+    /// A page carrying <c>/Rotate</c> is where that conversion earns its keep:
+    /// a renderer draws such a page turned, so the rectangle has to be mapped
+    /// (<see cref="PageRotation"/>) and the result turned back — the returned
+    /// image is always oriented like the CONTENT, because the caller draws it
+    /// into content coordinates.
     /// </param>
     /// <param name="targetDpi">
     /// Resolution to render at. Implementations may render below it to stay

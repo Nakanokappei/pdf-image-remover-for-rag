@@ -39,7 +39,7 @@ internal sealed class HindiStrings : IStrings
     // Column headers sit in narrow table columns, so these are deliberately
     // short: "उपयोग" for usage count and "अनु. आकार" for estimated size.
     public string ColumnThumbnail => "थंबनेल";
-    public string ColumnImageId => "ऑब्जेक्ट ID";
+    public string ColumnObjectId => "ऑब्जेक्ट ID";
     public string ColumnType => "प्रकार";
     public string TypeImage => "छवि";
     public string TypeText => "टेक्स्ट";
@@ -75,11 +75,11 @@ internal sealed class HindiStrings : IStrings
     public string StatusSaving => "सहेजा जा रहा है…";
     public string StatusSaveFailed => "सहेजना विफल रहा";
 
-    public string StatusSaved(int fileCount, int drawCallsRemoved) =>
-        $"{fileCount} फ़ाइल सहेजी गईं — {drawCallsRemoved} ड्रॉ कॉल हटाए गए, सत्यापन ठीक रहा";
+    public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
+        $"{fileCount} फ़ाइल सहेजी गईं — {drawCallsRemoved} ड्रॉ कॉल हटाए गए, {regionsFlattened} क्षेत्र चित्र में बदले गए, सत्यापन ठीक रहा";
 
     public string StatusSelection(int selectedCount) =>
-        $"{selectedCount} छवि समूह हटाने के लिए चुने गए";
+        $"{selectedCount} ऑब्जेक्ट हटाने के लिए चुने गए";
 
     public string WarningNotRemovable => "हटाया नहीं जा सकता";
 
@@ -144,7 +144,8 @@ internal sealed class HindiStrings : IStrings
     public string ErrorSameAsSource =>
         "स्रोत PDF पर सहेजा नहीं जा सकता। कोई दूसरा नाम चुनें।";
 
-    public string ErrorNoSelection => "हटाने के लिए कोई छवि नहीं चुनी गई है।";
+    public string ErrorNoSelection =>
+        "हटाने या चित्र में बदलने के लिए कुछ भी नहीं चुना गया है।";
 
     public string VerificationCleanerSummary(int pagesModified, int drawCallsRemoved) =>
         $"(क्लीनर: {pagesModified} पेज, {drawCallsRemoved} ड्रॉ कॉल) ";

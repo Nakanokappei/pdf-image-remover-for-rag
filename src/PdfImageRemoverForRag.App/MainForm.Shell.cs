@@ -1,11 +1,3 @@
-using System.Diagnostics;
-using System.Drawing.Drawing2D;
-using System.Runtime.InteropServices;
-using Microsoft.Extensions.Logging;
-using PdfImageRemoverForRag.Core.Errors;
-using PdfImageRemoverForRag.Core.Formatting;
-using PdfImageRemoverForRag.Core.Models;
-
 namespace PdfImageRemoverForRag.App;
 
 internal sealed partial class MainForm

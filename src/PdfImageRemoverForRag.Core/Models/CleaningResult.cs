@@ -10,6 +10,13 @@ namespace PdfImageRemoverForRag.Core.Models;
 /// flattened region are deliberately absent: their bytes are still in the
 /// document, and the verifier would otherwise demand their absence.
 /// </param>
+/// <param name="DrawCallsRemoved">
+/// Draw calls the run DELETED — nothing else takes their place. The ones
+/// flattening lifts out are not counted here, because flattening puts a
+/// picture of them straight back: they show up in
+/// <see cref="RegionsFlattened"/> instead. Reporting the two as one number
+/// told a user who had only flattened that objects had been deleted.
+/// </param>
 /// <param name="RegionsFlattened">
 /// How many overlap regions were replaced by a raster image. Lower than the
 /// number asked for when a region could not be rendered, or when nothing was

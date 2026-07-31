@@ -40,7 +40,7 @@ internal sealed class GermanStrings : IStrings
     // ("Verwendungsanzahl", "Komprimierungsverfahren", "Geschätzte Größe") do
     // not fit the table. Shortened: Anzahl, Kompr., Gesch. Größe.
     public string ColumnThumbnail => "Vorschau";
-    public string ColumnImageId => "Objekt-ID";
+    public string ColumnObjectId => "Objekt-ID";
     public string ColumnType => "Typ";
     public string TypeImage => "Bild";
     public string TypeText => "Text";
@@ -76,11 +76,11 @@ internal sealed class GermanStrings : IStrings
     public string StatusSaving => "Wird gespeichert…";
     public string StatusSaveFailed => "Speichern fehlgeschlagen";
 
-    public string StatusSaved(int fileCount, int drawCallsRemoved) =>
-        $"{fileCount} Datei(en) gespeichert — {drawCallsRemoved} Zeichenbefehl(e) entfernt, Prüfung OK";
+    public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
+        $"{fileCount} Datei(en) gespeichert — {drawCallsRemoved} Zeichenbefehl(e) entfernt, {regionsFlattened} Bereich(e) in ein Bild umgewandelt, Prüfung OK";
 
     public string StatusSelection(int selectedCount) =>
-        $"{selectedCount} Bildgruppe(n) zum Entfernen ausgewählt";
+        $"{selectedCount} Objekt(e) zum Entfernen ausgewählt";
 
     public string WarningNotRemovable => "Nicht entfernbar";
 
@@ -146,7 +146,8 @@ internal sealed class GermanStrings : IStrings
     public string ErrorSameAsSource =>
         "Die Quell-PDF kann nicht überschrieben werden. Wählen Sie einen anderen Namen.";
 
-    public string ErrorNoSelection => "Es sind keine Bilder zum Entfernen ausgewählt.";
+    public string ErrorNoSelection =>
+        "Es ist nichts zum Entfernen oder Umwandeln ausgewählt.";
 
     public string VerificationCleanerSummary(int pagesModified, int drawCallsRemoved) =>
         $"(Bereinigung: {pagesModified} Seiten, {drawCallsRemoved} Zeichenbefehle) ";

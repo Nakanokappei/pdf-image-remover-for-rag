@@ -1,10 +1,5 @@
-using System.Diagnostics;
-using System.Drawing.Drawing2D;
-using System.Runtime.InteropServices;
-using Microsoft.Extensions.Logging;
 using PdfImageRemoverForRag.Core.Errors;
 using PdfImageRemoverForRag.Core.Formatting;
-using PdfImageRemoverForRag.Core.Models;
 
 namespace PdfImageRemoverForRag.App;
 
@@ -21,12 +16,12 @@ internal sealed partial class MainForm
         var savedHashes = _selectedHashes.ToArray();
         if (await SaveSelectedAsync())
         {
-            _selectedHashes.Clear();          // 選択をクリア
-            _workflow.RemoveGroups(savedHashes); // ✓された行を削除
+            _selectedHashes.Clear();
+            _workflow.RemoveGroups(savedHashes);  // drop the rows that were saved away
             RefreshThumbnailImages(_workflow.ImageGroups);
-            RebuildDisplay();                 // 再ソート（現在の並び順で）
-            AutoSizeContentColumns();         // 残ったデータに合わせて再フィット
-            FocusFirstRow();                  // フォーカス行を先頭行へ
+            RebuildDisplay();                     // re-sort in the current order
+            AutoSizeContentColumns();             // re-fit to what is left
+            FocusFirstRow();
             // The flatten tree keeps its rows: they describe the SOURCE file,
             // which is untouched, and every one of them is still there to
             // flatten. Only the ticks are cleared, so a second save does not
@@ -40,8 +35,6 @@ internal sealed partial class MainForm
             var savedStatus = _statusLabel.Text ?? string.Empty;
             _flattenPanel.ClearChecks();
             SetStatus(savedStatus);
-            // Keep the "保存しました" status set by SaveSelectedAsync — do not
-            // overwrite it with the selection/workspace message.
         }
     }
 
@@ -54,7 +47,7 @@ internal sealed partial class MainForm
         firstRow.Selected = true;
         // Land the current cell on a non-checkbox column so focus doesn't sit
         // on the ☑ cell (which would toggle on a stray space press).
-        var focusCell = firstRow.Cells[_imageIdColumn.Index];
+        var focusCell = firstRow.Cells[_objectIdColumn.Index];
         if (focusCell.Visible) _imageListGrid.CurrentCell = focusCell;
         _imageListGrid.FirstDisplayedScrollingRowIndex = 0;
     }
@@ -82,7 +75,8 @@ internal sealed partial class MainForm
         {
             var result = await _workflow.RemoveAndSaveAsync(
                 _selectedHashes.ToArray(), source => destinations[source], flattenByFile);
-            SetStatus(L10n.StatusSaved(result.Files.Count, result.TotalDrawCallsRemoved));
+            SetStatus(L10n.StatusSaved(
+                result.Files.Count, result.TotalDrawCallsRemoved, result.TotalRegionsFlattened));
             return true;
         }
         catch (PdfCleanerException ex)

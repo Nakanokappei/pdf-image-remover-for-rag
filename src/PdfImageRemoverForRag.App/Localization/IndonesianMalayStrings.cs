@@ -44,7 +44,7 @@ internal sealed class IndonesianMalayStrings : IStrings
     public string ToolClearSelection => "Bersihkan Pilihan";
 
     public string ColumnThumbnail => "Miniatur";
-    public string ColumnImageId => "ID Objek";
+    public string ColumnObjectId => "ID Objek";
     public string ColumnType => "Jenis";
     public string TypeImage => "Gambar";
     public string TypeText => "Teks";
@@ -80,11 +80,11 @@ internal sealed class IndonesianMalayStrings : IStrings
     public string StatusSaving => "Menyimpan…";
     public string StatusSaveFailed => "Gagal menyimpan";
 
-    public string StatusSaved(int fileCount, int drawCallsRemoved) =>
-        $"{fileCount} file disimpan — {drawCallsRemoved} panggilan gambar dihapus, verifikasi OK";
+    public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
+        $"{fileCount} file disimpan — {drawCallsRemoved} panggilan gambar dihapus, {regionsFlattened} area dijadikan gambar, verifikasi OK";
 
     public string StatusSelection(int selectedCount) =>
-        $"{selectedCount} grup gambar dipilih untuk dihapus";
+        $"{selectedCount} objek dipilih untuk dihapus";
 
     public string WarningNotRemovable => "Tidak dapat dihapus";
 
@@ -150,7 +150,8 @@ internal sealed class IndonesianMalayStrings : IStrings
     public string ErrorSameAsSource =>
         "Tidak dapat menyimpan dengan menimpa PDF sumber. Pilih nama lain.";
 
-    public string ErrorNoSelection => "Tidak ada gambar yang dipilih untuk dihapus.";
+    public string ErrorNoSelection =>
+        "Tidak ada yang dipilih untuk dihapus atau dijadikan gambar.";
 
     public string VerificationCleanerSummary(int pagesModified, int drawCallsRemoved) =>
         $"(pembersih: {pagesModified} halaman, {drawCallsRemoved} panggilan gambar) ";

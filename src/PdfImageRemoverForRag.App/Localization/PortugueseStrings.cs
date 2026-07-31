@@ -40,7 +40,7 @@ internal sealed class PortugueseStrings : IStrings
     // Column captions are deliberately short: "Miniatura", "Usos",
     // "Tam. Est." are abbreviated so the narrow table columns do not ellipsize.
     public string ColumnThumbnail => "Miniatura";
-    public string ColumnImageId => "ID do Objeto";
+    public string ColumnObjectId => "ID do Objeto";
     public string ColumnType => "Tipo";
     public string TypeImage => "Imagem";
     public string TypeText => "Texto";
@@ -76,11 +76,11 @@ internal sealed class PortugueseStrings : IStrings
     public string StatusSaving => "Salvando…";
     public string StatusSaveFailed => "Falha ao salvar";
 
-    public string StatusSaved(int fileCount, int drawCallsRemoved) =>
-        $"{fileCount} arquivo(s) salvo(s) — {drawCallsRemoved} chamada(s) de desenho removida(s), verificação OK";
+    public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
+        $"{fileCount} arquivo(s) salvo(s) — {drawCallsRemoved} chamada(s) de desenho removida(s), {regionsFlattened} região(ões) convertida(s) em imagem, verificação OK";
 
     public string StatusSelection(int selectedCount) =>
-        $"{selectedCount} grupo(s) de imagens selecionado(s) para remoção";
+        $"{selectedCount} objeto(s) selecionado(s) para remoção";
 
     public string WarningNotRemovable => "Não removível";
 
@@ -146,7 +146,8 @@ internal sealed class PortugueseStrings : IStrings
     public string ErrorSameAsSource =>
         "Não é possível salvar sobre o PDF de origem. Escolha outro nome.";
 
-    public string ErrorNoSelection => "Nenhuma imagem está selecionada para remoção.";
+    public string ErrorNoSelection =>
+        "Nada foi selecionado para remover ou converter em imagem.";
 
     public string VerificationCleanerSummary(int pagesModified, int drawCallsRemoved) =>
         $"(limpeza: {pagesModified} páginas, {drawCallsRemoved} chamadas de desenho) ";

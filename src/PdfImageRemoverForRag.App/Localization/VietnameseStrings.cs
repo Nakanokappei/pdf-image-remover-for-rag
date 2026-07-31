@@ -42,7 +42,7 @@ internal sealed class VietnameseStrings : IStrings
     // ("Lần dùng", not "Số lần sử dụng"), ColumnCompression ("Nén", not
     // "Kiểu nén"), ColumnEstimatedSize ("Ước tính", not "Dung lượng ước tính").
     public string ColumnThumbnail => "Ảnh nhỏ";
-    public string ColumnImageId => "Mã đối tượng";
+    public string ColumnObjectId => "Mã đối tượng";
     public string ColumnType => "Loại";
     public string TypeImage => "Hình ảnh";
     public string TypeText => "Văn bản";
@@ -78,11 +78,11 @@ internal sealed class VietnameseStrings : IStrings
     public string StatusSaving => "Đang lưu…";
     public string StatusSaveFailed => "Lưu không thành công";
 
-    public string StatusSaved(int fileCount, int drawCallsRemoved) =>
-        $"Đã lưu {fileCount} tệp — đã xóa {drawCallsRemoved} lệnh vẽ, kiểm tra hợp lệ";
+    public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
+        $"Đã lưu {fileCount} tệp — đã xóa {drawCallsRemoved} lệnh vẽ, đã gộp {regionsFlattened} vùng, kiểm tra hợp lệ";
 
     public string StatusSelection(int selectedCount) =>
-        $"Đã chọn {selectedCount} nhóm ảnh để xóa";
+        $"Đã chọn {selectedCount} đối tượng để xóa";
 
     public string WarningNotRemovable => "Không thể xóa";
 
@@ -148,7 +148,8 @@ internal sealed class VietnameseStrings : IStrings
     public string ErrorSameAsSource =>
         "Không thể lưu đè lên tệp PDF nguồn. Vui lòng chọn tên khác.";
 
-    public string ErrorNoSelection => "Chưa chọn hình ảnh nào để xóa.";
+    public string ErrorNoSelection =>
+        "Chưa chọn gì để xóa hoặc gộp.";
 
     public string VerificationCleanerSummary(int pagesModified, int drawCallsRemoved) =>
         $"(xử lý: {pagesModified} trang, {drawCallsRemoved} lệnh vẽ) ";

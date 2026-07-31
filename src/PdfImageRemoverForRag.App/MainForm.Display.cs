@@ -1,8 +1,5 @@
 using System.Diagnostics;
-using System.Drawing.Drawing2D;
-using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
-using PdfImageRemoverForRag.Core.Errors;
 using PdfImageRemoverForRag.Core.Formatting;
 using PdfImageRemoverForRag.Core.Models;
 
@@ -38,7 +35,7 @@ internal sealed partial class MainForm
 
     /// <summary>
     /// Rebuild the table and tile views from the current workspace, honouring
-    /// the 表示列 type filter and the active sort. Thumbnails are assumed
+    /// the 表示する種類 filter and the active sort. Thumbnails are assumed
     /// already current (see <see cref="RefreshThumbnailImages"/>).
     /// </summary>
     void RebuildDisplay()
@@ -104,7 +101,7 @@ internal sealed partial class MainForm
     IComparable SortKey(CrossFileImageGroup group)
     {
         if (_sortColumn == _deleteColumn) return _selectedHashes.Contains(group.Hash) ? 0 : 1;
-        if (_sortColumn == _imageIdColumn) return group.GroupId;
+        if (_sortColumn == _objectIdColumn) return group.GroupId;
         if (_sortColumn == _typeColumn) return (int)group.Kind;
         if (_sortColumn == _sizeColumn) return SizeSortValue(group);
         if (_sortColumn == _usageCountColumn) return group.UsageCount;

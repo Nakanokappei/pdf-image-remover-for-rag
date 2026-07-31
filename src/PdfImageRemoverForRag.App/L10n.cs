@@ -140,7 +140,7 @@ internal static class L10n
     // --- object list columns -----------------------------------------------
 
     public static string ColumnThumbnail => S.ColumnThumbnail;
-    public static string ColumnImageId => S.ColumnImageId;
+    public static string ColumnObjectId => S.ColumnObjectId;
     public static string ColumnType => S.ColumnType;
     public static string TypeImage => S.TypeImage;
     public static string TypeText => S.TypeText;
@@ -176,8 +176,8 @@ internal static class L10n
     public static string StatusSaving => S.StatusSaving;
     public static string StatusSaveFailed => S.StatusSaveFailed;
 
-    public static string StatusSaved(int fileCount, int drawCallsRemoved) =>
-        S.StatusSaved(fileCount, drawCallsRemoved);
+    public static string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
+        S.StatusSaved(fileCount, drawCallsRemoved, regionsFlattened);
 
     public static string StatusSelection(int selectedCount) => S.StatusSelection(selectedCount);
 

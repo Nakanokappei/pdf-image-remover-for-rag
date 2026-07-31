@@ -46,7 +46,7 @@ internal sealed class Windows11ToolStripRenderer : ToolStripProfessionalRenderer
         }
 
         var g = e.Graphics;
-        // Scale inset/radius to the toolbar's DPI (e.g. 300% on the VM).
+        // Scale inset/radius to the toolbar's DPI (200% on the test VM).
         int deviceDpi = (e.ToolStrip ?? e.Item.Owner)?.DeviceDpi ?? 96;
         double scale = deviceDpi / 96.0;
         int inset = (int)Math.Round(InsetLogical * scale);

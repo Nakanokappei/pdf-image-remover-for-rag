@@ -36,7 +36,7 @@ internal sealed class EnglishStrings : IStrings
     public string ToolClearSelection => "Clear Selection";
 
     public string ColumnThumbnail => "Thumbnail";
-    public string ColumnImageId => "Object ID";
+    public string ColumnObjectId => "Object ID";
     public string ColumnType => "Type";
     public string TypeImage => "Image";
     public string TypeText => "Text";
@@ -72,11 +72,11 @@ internal sealed class EnglishStrings : IStrings
     public string StatusSaving => "Saving…";
     public string StatusSaveFailed => "Save failed";
 
-    public string StatusSaved(int fileCount, int drawCallsRemoved) =>
-        $"Saved {fileCount} file(s) — {drawCallsRemoved} draw call(s) removed, verification OK";
+    public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
+        $"Saved {fileCount} file(s) — {drawCallsRemoved} draw call(s) removed, {regionsFlattened} region(s) flattened, verification OK";
 
     public string StatusSelection(int selectedCount) =>
-        $"{selectedCount} image group(s) selected for removal";
+        $"{selectedCount} object(s) selected for removal";
 
     public string WarningNotRemovable => "Not removable";
 
@@ -142,7 +142,8 @@ internal sealed class EnglishStrings : IStrings
     public string ErrorSameAsSource =>
         "Cannot save over the source PDF. Choose a different name.";
 
-    public string ErrorNoSelection => "No images are selected for removal.";
+    public string ErrorNoSelection =>
+        "Nothing is selected to remove or flatten.";
 
     public string VerificationCleanerSummary(int pagesModified, int drawCallsRemoved) =>
         $"(cleaner: {pagesModified} pages, {drawCallsRemoved} draw calls) ";

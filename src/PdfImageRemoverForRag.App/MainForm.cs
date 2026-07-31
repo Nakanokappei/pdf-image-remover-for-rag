@@ -10,10 +10,12 @@ namespace PdfImageRemoverForRag.App;
 
 /// <summary>
 /// The single-window UI: menu bar (ファイル / 表示 / ヘルプ), an icon toolbar,
-/// an image list switchable between table and tile views, and a status bar.
-/// Multiple PDFs can be open at once; identical images across files show as
-/// one row/tile, and the per-file breakdown lives in the ファイル column and
-/// its tooltip rather than a header panel. This class does layout and event
+/// a status bar, and between them a workspace split into the object list —
+/// every removable image, text string and shape, switchable between table and
+/// tile views — and the flatten panel beside it. Multiple PDFs can be open at
+/// once; an object that occurs in several of them shows as ONE row/tile, and
+/// the per-file breakdown lives in the 使用箇所を表示 window a row's
+/// right-click menu opens. This class does layout and event
 /// wiring only — analysis, cleaning, and verification live in
 /// <see cref="PdfCleaningWorkflow"/>, display formatting in
 /// <see cref="ImageListRow"/>, and all user-visible strings in
@@ -31,7 +33,7 @@ internal sealed partial class MainForm : Form
     readonly ToolStripMenuItem _exitMenuItem = new(L10n.MenuExit);
     readonly ToolStripMenuItem _tableViewMenuItem = new(L10n.MenuTableView) { Checked = true, CheckOnClick = false };
     readonly ToolStripMenuItem _tileViewMenuItem = new(L10n.MenuTileView) { Checked = false, CheckOnClick = false };
-    // 表示列 submenu: per-type visibility filters. All three start checked;
+    // 表示する種類 submenu: per-kind visibility filters. All three start checked;
     // CheckOnClick is off so MainForm can veto turning off the last one.
     readonly ToolStripMenuItem _shownTypesMenuItem = new(L10n.MenuShownTypes);
     readonly ToolStripMenuItem _showImagesMenuItem = new(L10n.MenuShowImages) { Checked = true, CheckOnClick = false };
@@ -48,19 +50,21 @@ internal sealed partial class MainForm : Form
     readonly ToolStripButton _clearSelectionToolButton = new() { Enabled = false };
 
     // --- table view (§11.3) ------------------------------------------------
-    // Every column except ファイル sizes to the wider of its header and its
-    // content (AllCells); ファイル gets a fixed width of ~20 full-width
-    // characters, computed in ConfigureImageListGrid.
+    // No AutoSizeMode here: ConfigureImageListGrid gives every column its mode
+    // (None for the fixed ones, Fill for 警告) and AutoSizeContentColumns then
+    // fits them to content. An AutoSizeMode set on the field would be silently
+    // overwritten, and it would read as if the columns sized themselves — they
+    // do not, and cannot: an auto-sized column is not user-resizable.
     readonly DataGridView _imageListGrid = new();
-    readonly DataGridViewCheckBoxColumn _deleteColumn = new() { HeaderText = L10n.ColumnDelete, AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells };
-    readonly DataGridViewImageColumn _thumbnailColumn = new() { HeaderText = L10n.ColumnThumbnail, ImageLayout = DataGridViewImageCellLayout.Zoom, AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells };
-    readonly DataGridViewTextBoxColumn _imageIdColumn = new() { HeaderText = L10n.ColumnImageId, ReadOnly = true, AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells };
-    readonly DataGridViewTextBoxColumn _typeColumn = new() { HeaderText = L10n.ColumnType, ReadOnly = true, AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells };
-    readonly DataGridViewTextBoxColumn _sizeColumn = new() { HeaderText = L10n.ColumnSize, ReadOnly = true, AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells };
-    readonly DataGridViewTextBoxColumn _usageCountColumn = new() { HeaderText = L10n.ColumnUsageCount, ReadOnly = true, AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells };
-    readonly DataGridViewTextBoxColumn _compressionColumn = new() { HeaderText = L10n.ColumnCompression, ReadOnly = true, AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells };
-    readonly DataGridViewTextBoxColumn _estimatedSizeColumn = new() { HeaderText = L10n.ColumnEstimatedSize, ReadOnly = true, AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells };
-    readonly DataGridViewTextBoxColumn _warningColumn = new() { HeaderText = L10n.ColumnWarning, ReadOnly = true, AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells };
+    readonly DataGridViewCheckBoxColumn _deleteColumn = new() { HeaderText = L10n.ColumnDelete };
+    readonly DataGridViewImageColumn _thumbnailColumn = new() { HeaderText = L10n.ColumnThumbnail, ImageLayout = DataGridViewImageCellLayout.Zoom };
+    readonly DataGridViewTextBoxColumn _objectIdColumn = new() { HeaderText = L10n.ColumnObjectId, ReadOnly = true };
+    readonly DataGridViewTextBoxColumn _typeColumn = new() { HeaderText = L10n.ColumnType, ReadOnly = true };
+    readonly DataGridViewTextBoxColumn _sizeColumn = new() { HeaderText = L10n.ColumnSize, ReadOnly = true };
+    readonly DataGridViewTextBoxColumn _usageCountColumn = new() { HeaderText = L10n.ColumnUsageCount, ReadOnly = true };
+    readonly DataGridViewTextBoxColumn _compressionColumn = new() { HeaderText = L10n.ColumnCompression, ReadOnly = true };
+    readonly DataGridViewTextBoxColumn _estimatedSizeColumn = new() { HeaderText = L10n.ColumnEstimatedSize, ReadOnly = true };
+    readonly DataGridViewTextBoxColumn _warningColumn = new() { HeaderText = L10n.ColumnWarning, ReadOnly = true };
 
     // --- workspace split ---------------------------------------------------
     // Flattening and deleting are opposite operations — one keeps the page's
@@ -99,7 +103,7 @@ internal sealed partial class MainForm : Form
     readonly ToolStripProgressBar _progressIndicator = new() { Style = ProgressBarStyle.Marquee, Visible = false };
 
     // --- state -------------------------------------------------------------
-    // Selection is keyed by image hash (not GroupId) because ids are
+    // Selection is keyed by the object's hash (not GroupId) because ids are
     // re-assigned whenever a file is added and the sort order shifts.
     readonly HashSet<string> _selectedHashes = new(StringComparer.Ordinal);
     // Bitmaps for what is on screen, backed by the on-disk store. Bounded by
@@ -131,7 +135,7 @@ internal sealed partial class MainForm : Form
     // Supplies the file context the analyzer's reports lack.
     readonly OpenProgressReporter _openProgress = new();
 
-    // Which object types the table / tile view currently shows (表示列 filter).
+    // Which object kinds the table / tile view currently shows (表示する種類).
     // At least one kind is always present.
     readonly HashSet<RemovableKind> _visibleKinds = new()
     {

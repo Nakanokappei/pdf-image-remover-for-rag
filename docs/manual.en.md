@@ -99,7 +99,7 @@ Below the toolbar the window is split left and right.
 
 - **The toolbar's Select All and Clear Selection act on the object list only.** Flattening is chosen a unit at a time in the panel — there is no one-click "flatten every overlap in the document", because that would make the target of an irreversible operation impossible to predict. The panel has its own **Clear Selection** at its top right for dropping the flatten ticks.
 - **Remove & Save is available as soon as either side has something ticked.** One save does both.
-- The status bar reports **both** counts, e.g. `3 image group(s) selected for removal / 4 object(s) to flatten`.
+- The status bar reports **both** counts, e.g. `3 object(s) selected for removal / 4 object(s) to flatten`.
 
 ### Toolbar
 

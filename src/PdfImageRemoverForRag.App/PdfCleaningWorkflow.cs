@@ -9,10 +9,16 @@ using PdfImageRemoverForRag.Core.Models;
 namespace PdfImageRemoverForRag.App;
 
 /// <summary>One saved output file inside a <see cref="BatchSaveResult"/>.</summary>
-internal sealed record SavedFile(string SourcePath, string DestinationPath, int DrawCallsRemoved);
+internal sealed record SavedFile(
+    string SourcePath, string DestinationPath, int DrawCallsRemoved, int RegionsFlattened);
 
-/// <summary>Aggregate outcome of a multi-file save run.</summary>
-internal sealed record BatchSaveResult(IReadOnlyList<SavedFile> Files, int TotalDrawCallsRemoved);
+/// <summary>
+/// Aggregate outcome of a multi-file save run. The two totals stay apart all
+/// the way to the status bar: one save run can delete, flatten, or both, and a
+/// single number could not say which of them happened.
+/// </summary>
+internal sealed record BatchSaveResult(
+    IReadOnlyList<SavedFile> Files, int TotalDrawCallsRemoved, int TotalRegionsFlattened);
 
 /// <summary>
 /// UI-free orchestration of the multi-document workspace: open PDFs are
@@ -201,6 +207,7 @@ internal sealed class PdfCleaningWorkflow
 
         var savedFiles = new List<SavedFile>();
         int totalRemoved = 0;
+        int totalFlattened = 0;
         var stopwatch = Stopwatch.StartNew();
 
         foreach (var document in _documents)
@@ -231,12 +238,14 @@ internal sealed class PdfCleaningWorkflow
                 .ConfigureAwait(false);
             savedFiles.Add(saved);
             totalRemoved += saved.DrawCallsRemoved;
+            totalFlattened += saved.RegionsFlattened;
         }
 
         _logger.LogInformation(
-            "saved: files={Files} drawCallsRemoved={Removed} elapsedMs={ElapsedMs}",
-            savedFiles.Count, totalRemoved, stopwatch.ElapsedMilliseconds);
-        return new BatchSaveResult(savedFiles, totalRemoved);
+            "saved: files={Files} drawCallsRemoved={Removed} regionsFlattened={Flattened} " +
+            "elapsedMs={ElapsedMs}",
+            savedFiles.Count, totalRemoved, totalFlattened, stopwatch.ElapsedMilliseconds);
+        return new BatchSaveResult(savedFiles, totalRemoved, totalFlattened);
     }
 
     /// <summary>First few warnings, plus a count of the rest.</summary>
@@ -317,7 +326,8 @@ internal sealed class PdfCleaningWorkflow
             }
 
             File.Move(tempPath, destinationPath, overwrite: true);
-            return new SavedFile(document.FilePath, destinationPath, result.DrawCallsRemoved);
+            return new SavedFile(document.FilePath, destinationPath,
+                result.DrawCallsRemoved, result.RegionsFlattened);
         }
         catch (Exception ex)
         {

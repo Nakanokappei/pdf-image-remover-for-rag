@@ -9,7 +9,7 @@ namespace PdfImageRemoverForRag.App;
 /// the licence link.
 ///
 /// Layout uses nested auto-sizing panels, NOT absolute coordinates. An earlier
-/// version positioned every control by hand and clipped every string at 300%
+/// version positioned every control by hand and clipped every string at 200%
 /// DPI: the fonts scaled but the hand-written bounds did not. With AutoSize
 /// throughout, the only measurements left are the icon box and the wrap width,
 /// and both go through <see cref="Control.LogicalToDeviceUnits(int)"/> when the
@@ -201,7 +201,7 @@ internal sealed class AboutDialog : Form
         // MaximumSize with width only lets the label grow downward as it wraps.
         _descriptionLabel.MaximumSize = new Size(LogicalToDeviceUnits(WrapWidth), 0);
 
-        // A 2px rule stays a hairline at 300% unless it is scaled too.
+        // A 2px rule stays a hairline at 200% unless it is scaled too.
         _separator.Height = LogicalToDeviceUnits(2);
     }
 

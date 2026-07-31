@@ -12,8 +12,9 @@ namespace PdfImageRemoverForRag.App;
 internal static class ToolbarIcons
 {
     /// <summary>
-    /// Source bitmap size. Rendered at 48px (16 logical × 300%) so the icon is
-    /// crisp at high DPI; the toolbar scales it down to its ImageScalingSize
+    /// Source bitmap size. Rendered at 48px — 16 logical pixels at 300%, so it
+    /// still downscales rather than stretches on any display the app is likely
+    /// to meet (the test VM runs at 200%); the toolbar scales it to its ImageScalingSize
     /// (LogicalToDeviceUnits(16)) for the current DPI.
     /// </summary>
     public const int IconSize = 48;

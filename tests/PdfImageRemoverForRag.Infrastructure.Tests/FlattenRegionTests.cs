@@ -46,6 +46,13 @@ public class FlattenRegionTests : IClassFixture<SamplePdfFixture>
         Assert.Equal(1, result.RegionsFlattened);
         Assert.Equal(1, result.PagesModified);
 
+        // Nothing was DELETED. Flattening lifts draw calls out of the content
+        // stream too, but it puts a picture of them straight back, so counting
+        // them as removals told a user who had only flattened that objects had
+        // been thrown away. The two totals are reported apart all the way to
+        // the status bar; this is where they part company.
+        Assert.Equal(0, result.DrawCallsRemoved);
+
         // Read back with the other parser: the flattened strings are not text
         // any more, and something is drawn where they were.
         using var pig = PdfPigDoc.Open(dest);

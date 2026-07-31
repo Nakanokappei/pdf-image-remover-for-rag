@@ -1,11 +1,3 @@
-using System.Diagnostics;
-using System.Drawing.Drawing2D;
-using System.Runtime.InteropServices;
-using Microsoft.Extensions.Logging;
-using PdfImageRemoverForRag.Core.Errors;
-using PdfImageRemoverForRag.Core.Formatting;
-using PdfImageRemoverForRag.Core.Models;
-
 namespace PdfImageRemoverForRag.App;
 
 internal sealed partial class MainForm
@@ -99,7 +91,7 @@ internal sealed partial class MainForm
 
 
     // =======================================================================
-    // DPI — scale custom-drawn/sized UI to the monitor (e.g. 300% on the VM)
+    // DPI — scale custom-drawn/sized UI to the monitor (200% on the test VM)
     // =======================================================================
 
     protected override void OnHandleCreated(EventArgs e)
@@ -188,8 +180,8 @@ internal sealed partial class MainForm
         ConfigureImageListGrid();
 
         // Table and tile views share one host panel; visibility is toggled
-        // by the 表示 menu. Per-file details live in the ファイル column, so it
-        // needs no header of its own.
+        // by the 表示 menu. Neither needs a header of its own: what a header
+        // would say about one file is wrong as soon as several are open.
         var viewHost = new Panel { Dock = DockStyle.Fill };
         viewHost.Controls.Add(_imageListGrid);
         viewHost.Controls.Add(_tileView);
@@ -256,7 +248,7 @@ internal sealed partial class MainForm
         _thumbnailColumn.DefaultCellStyle.NullValue = null;
 
         _imageListGrid.Columns.AddRange(
-            _deleteColumn, _thumbnailColumn, _imageIdColumn, _typeColumn, _sizeColumn,
+            _deleteColumn, _thumbnailColumn, _objectIdColumn, _typeColumn, _sizeColumn,
             _usageCountColumn, _compressionColumn, _estimatedSizeColumn, _warningColumn);
 
         // Give the ☑ column a spoken name: its glyph header reads as "ballot box"
@@ -278,7 +270,7 @@ internal sealed partial class MainForm
         // refines them on open / file-open.
         SetColumnWidth(_deleteColumn, 46);
         SetColumnWidth(_thumbnailColumn, 100);
-        SetColumnWidth(_imageIdColumn, 76);
+        SetColumnWidth(_objectIdColumn, 76);
         SetColumnWidth(_typeColumn, 60);
         SetColumnWidth(_sizeColumn, 92);
         SetColumnWidth(_usageCountColumn, 64);
@@ -406,8 +398,15 @@ internal sealed partial class MainForm
     }
 
     /// <summary>Scale a 96-DPI logical pixel value to the current device DPI
-    /// (300% on the test VM), so custom drawing/sizing is not 3× too small.</summary>
+    /// (200% on the test VM), so custom drawing/sizing is not half size.</summary>
     int Dip(int logical) => LogicalToDeviceUnits(logical);
+
+    /// <summary>
+    /// Above this many rows, column fitting measures only the rows on screen.
+    /// AllCells measures every cell of every column — 2,015 rows x 9 columns is
+    /// ~18,000 text measurements and takes long enough to look like a hang.
+    /// </summary>
+    const int AllCellsMeasurementLimit = 300;
 
     /// <summary>
     /// Size each fixed-width column to the larger of (a) its widest DATA cell and
@@ -418,13 +417,6 @@ internal sealed partial class MainForm
     /// Called on open / file-open / close / post-save — not on sort or filter,
     /// so a manual drag survives until the data set next changes.
     /// </summary>
-    /// <summary>
-    /// Above this many rows, column fitting measures only the rows on screen.
-    /// AllCells measures every cell of every column — 2,015 rows x 9 columns is
-    /// ~18,000 text measurements and takes long enough to look like a hang.
-    /// </summary>
-    const int AllCellsMeasurementLimit = 300;
-
     void AutoSizeContentColumns()
     {
         // GetPreferredWidth is DPI-aware and covers the header caption + the

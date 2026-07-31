@@ -35,7 +35,7 @@ internal sealed class ChineseSimplifiedStrings : IStrings
     public string ToolClearSelection => "清除选择";
 
     public string ColumnThumbnail => "缩略图";
-    public string ColumnImageId => "对象 ID";
+    public string ColumnObjectId => "对象 ID";
     public string ColumnType => "类型";
     public string TypeImage => "图像";
     public string TypeText => "文本";
@@ -71,11 +71,11 @@ internal sealed class ChineseSimplifiedStrings : IStrings
     public string StatusSaving => "正在保存…";
     public string StatusSaveFailed => "保存失败";
 
-    public string StatusSaved(int fileCount, int drawCallsRemoved) =>
-        $"已保存 {fileCount} 个文件（删除了 {drawCallsRemoved} 处绘制调用，保存后验证正常）";
+    public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
+        $"已保存 {fileCount} 个文件（删除 {drawCallsRemoved} 处绘制调用，图像化 {regionsFlattened} 处，保存后验证正常）";
 
     public string StatusSelection(int selectedCount) =>
-        $"已选择 {selectedCount} 组图像待删除";
+        $"已选择 {selectedCount} 个对象待删除";
 
     public string WarningNotRemovable => "无法删除";
 
@@ -139,7 +139,8 @@ internal sealed class ChineseSimplifiedStrings : IStrings
     public string ErrorSameAsSource =>
         "无法覆盖源 PDF 进行保存。请指定其他文件名。";
 
-    public string ErrorNoSelection => "未选择任何待删除的图像。";
+    public string ErrorNoSelection =>
+        "没有选择要删除的对象，也没有选择要图像化的范围。";
 
     public string VerificationCleanerSummary(int pagesModified, int drawCallsRemoved) =>
         $"（删除处理：{pagesModified} 页、{drawCallsRemoved} 处绘制调用）";

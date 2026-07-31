@@ -43,7 +43,7 @@ internal sealed class SpanishStrings : IStrings
     // ColumnUsageCount ("Usos" instead of "Número de usos") and
     // ColumnEstimatedSize ("Tam. est." instead of "Tamaño estimado").
     public string ColumnThumbnail => "Miniatura";
-    public string ColumnImageId => "ID de objeto";
+    public string ColumnObjectId => "ID de objeto";
     public string ColumnType => "Tipo";
     public string TypeImage => "Imagen";
     public string TypeText => "Texto";
@@ -79,11 +79,11 @@ internal sealed class SpanishStrings : IStrings
     public string StatusSaving => "Guardando…";
     public string StatusSaveFailed => "Error al guardar";
 
-    public string StatusSaved(int fileCount, int drawCallsRemoved) =>
-        $"Se guardaron {fileCount} archivo(s) — se quitaron {drawCallsRemoved} llamada(s) de dibujo, verificación correcta";
+    public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
+        $"Se guardaron {fileCount} archivo(s) — se quitaron {drawCallsRemoved} llamada(s) de dibujo, se convirtieron {regionsFlattened} área(s) en imagen, verificación correcta";
 
     public string StatusSelection(int selectedCount) =>
-        $"{selectedCount} grupo(s) de imágenes seleccionado(s) para quitar";
+        $"{selectedCount} objeto(s) seleccionado(s) para quitar";
 
     public string WarningNotRemovable => "No se puede quitar";
 
@@ -149,7 +149,8 @@ internal sealed class SpanishStrings : IStrings
     public string ErrorSameAsSource =>
         "No se puede guardar sobre el PDF de origen. Elija otro nombre.";
 
-    public string ErrorNoSelection => "No hay imágenes seleccionadas para quitar.";
+    public string ErrorNoSelection =>
+        "No hay nada seleccionado para quitar ni para convertir en imagen.";
 
     public string VerificationCleanerSummary(int pagesModified, int drawCallsRemoved) =>
         $"(depurador: {pagesModified} páginas, {drawCallsRemoved} llamadas de dibujo) ";

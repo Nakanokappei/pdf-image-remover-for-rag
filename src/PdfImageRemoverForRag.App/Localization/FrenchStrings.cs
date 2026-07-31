@@ -42,7 +42,7 @@ internal sealed class FrenchStrings : IStrings
     // ColumnUsageCount ("Occurrences"), ColumnCompression ("Compression"),
     // ColumnEstimatedSize ("Taille estimée").
     public string ColumnThumbnail => "Aperçu";
-    public string ColumnImageId => "ID objet";
+    public string ColumnObjectId => "ID objet";
     public string ColumnType => "Type";
     public string TypeImage => "Image";
     public string TypeText => "Texte";
@@ -78,11 +78,11 @@ internal sealed class FrenchStrings : IStrings
     public string StatusSaving => "Enregistrement…";
     public string StatusSaveFailed => "Échec de l'enregistrement";
 
-    public string StatusSaved(int fileCount, int drawCallsRemoved) =>
-        $"{fileCount} fichier(s) enregistré(s) — {drawCallsRemoved} appel(s) de dessin supprimé(s), vérification OK";
+    public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
+        $"{fileCount} fichier(s) enregistré(s) — {drawCallsRemoved} appel(s) de dessin supprimé(s), {regionsFlattened} zone(s) aplatie(s), vérification OK";
 
     public string StatusSelection(int selectedCount) =>
-        $"{selectedCount} groupe(s) d'images sélectionné(s) pour suppression";
+        $"{selectedCount} objet(s) sélectionné(s) pour suppression";
 
     public string WarningNotRemovable => "Non supprimable";
 
@@ -148,7 +148,8 @@ internal sealed class FrenchStrings : IStrings
     public string ErrorSameAsSource =>
         "Impossible d'enregistrer par-dessus le PDF source. Choisissez un autre nom.";
 
-    public string ErrorNoSelection => "Aucune image n'est sélectionnée pour suppression.";
+    public string ErrorNoSelection =>
+        "Aucun objet à supprimer ni aucune zone à aplatir n'est sélectionné.";
 
     public string VerificationCleanerSummary(int pagesModified, int drawCallsRemoved) =>
         $"(nettoyage : {pagesModified} pages, {drawCallsRemoved} appels de dessin) ";

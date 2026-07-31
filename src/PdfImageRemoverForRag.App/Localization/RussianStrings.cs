@@ -47,7 +47,7 @@ internal sealed class RussianStrings : IStrings
     // ColumnEstimatedSize ("Оценочный размер" -> "Прибл. размер"),
     // ColumnWarning ("Предупреждение" -> "Предупр.").
     public string ColumnThumbnail => "Эскиз";
-    public string ColumnImageId => "ID объекта";
+    public string ColumnObjectId => "ID объекта";
     public string ColumnType => "Тип";
     public string TypeImage => "Изображение";
     public string TypeText => "Текст";
@@ -83,8 +83,8 @@ internal sealed class RussianStrings : IStrings
     public string StatusSaving => "Сохранение…";
     public string StatusSaveFailed => "Не удалось сохранить";
 
-    public string StatusSaved(int fileCount, int drawCallsRemoved) =>
-        $"Файлов сохранено: {fileCount} — удалено фрагментов отрисовки: {drawCallsRemoved}, проверка пройдена";
+    public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
+        $"Файлов сохранено: {fileCount} — удалено фрагментов отрисовки: {drawCallsRemoved}, сведено областей: {regionsFlattened}, проверка пройдена";
 
     public string StatusSelection(int selectedCount) =>
         $"Выбрано объектов для удаления: {selectedCount}";
@@ -153,7 +153,8 @@ internal sealed class RussianStrings : IStrings
     public string ErrorSameAsSource =>
         "Нельзя сохранить поверх исходного PDF. Выберите другое имя.";
 
-    public string ErrorNoSelection => "Не выбрано ни одного изображения для удаления.";
+    public string ErrorNoSelection =>
+        "Не выбрано ничего для удаления или сведения.";
 
     public string VerificationCleanerSummary(int pagesModified, int drawCallsRemoved) =>
         $"(очистка — страниц: {pagesModified}, фрагментов отрисовки: {drawCallsRemoved}) ";

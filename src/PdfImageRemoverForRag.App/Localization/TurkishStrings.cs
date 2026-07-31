@@ -46,7 +46,7 @@ internal sealed class TurkishStrings : IStrings
     // (Nesne kimliği), "Kullanım" (Kullanım sayısı) and "Tah. boyut"
     // (Tahmini boyut).
     public string ColumnThumbnail => "Küçük resim";
-    public string ColumnImageId => "Nesne ID";
+    public string ColumnObjectId => "Nesne ID";
     public string ColumnType => "Tür";
     public string TypeImage => "Görüntü";
     public string TypeText => "Metin";
@@ -82,11 +82,11 @@ internal sealed class TurkishStrings : IStrings
     public string StatusSaving => "Kaydediliyor…";
     public string StatusSaveFailed => "Kaydetme başarısız";
 
-    public string StatusSaved(int fileCount, int drawCallsRemoved) =>
-        $"{fileCount} dosya kaydedildi — {drawCallsRemoved} çizim çağrısı kaldırıldı, doğrulama başarılı";
+    public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
+        $"{fileCount} dosya kaydedildi — {drawCallsRemoved} çizim çağrısı kaldırıldı, {regionsFlattened} alan görüntüye dönüştürüldü, doğrulama başarılı";
 
     public string StatusSelection(int selectedCount) =>
-        $"{selectedCount} nesne grubu kaldırılmak üzere seçildi";
+        $"{selectedCount} nesne kaldırılmak üzere seçildi";
 
     public string WarningNotRemovable => "Kaldırılamaz";
 
@@ -152,7 +152,8 @@ internal sealed class TurkishStrings : IStrings
     public string ErrorSameAsSource =>
         "Kaynak PDF'in üzerine kaydedilemez. Farklı bir ad seçin.";
 
-    public string ErrorNoSelection => "Kaldırılmak üzere seçilmiş görüntü yok.";
+    public string ErrorNoSelection =>
+        "Kaldırılacak veya görüntüye dönüştürülecek hiçbir şey seçilmedi.";
 
     public string VerificationCleanerSummary(int pagesModified, int drawCallsRemoved) =>
         $"(temizleyici: {pagesModified} sayfa, {drawCallsRemoved} çizim çağrısı) ";

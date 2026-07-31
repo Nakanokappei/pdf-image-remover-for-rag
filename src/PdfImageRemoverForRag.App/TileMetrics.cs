@@ -6,8 +6,8 @@ namespace PdfImageRemoverForRag.App;
 /// Every one of these must be put through <c>Dip()</c> before it reaches a
 /// coordinate. The tile view is measured entirely by hand — it paints its own
 /// tiles rather than hosting controls — so WinForms never scales any of it.
-/// Left unscaled the tiles came out a third of their size at 300 %, which
-/// crushed the text inside them and shrank the margin into nothing.
+/// Left unscaled the tiles came out half their size on the 200 % test VM,
+/// which crushed the text inside them and shrank the margin into nothing.
 /// </summary>
 internal static class TileMetrics
 {

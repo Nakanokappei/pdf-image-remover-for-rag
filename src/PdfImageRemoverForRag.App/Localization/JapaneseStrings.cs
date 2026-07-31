@@ -7,13 +7,13 @@ internal sealed class JapaneseStrings : IStrings
 
     public string MenuFile => "ファイル(&F)";
     public string MenuOpen => "開く(&O)…";
-    public string MenuSave => "選択画像を削除して保存(&S)…";
+    public string MenuSave => "選択項目を削除して保存(&S)…";
     public string MenuCloseAll => "すべて閉じる(&C)";
     public string MenuExit => "終了(&X)";
     public string MenuView => "表示(&V)";
     public string MenuTableView => "表形式(&T)";
     public string MenuTileView => "タイル形式(&I)";
-    public string MenuShownTypes => "表示列(&D)";
+    public string MenuShownTypes => "表示する種類(&D)";
     public string MenuShowImages => "画像";
     public string MenuShowShapes => "図形";
     public string MenuShowText => "テキスト";
@@ -33,7 +33,7 @@ internal sealed class JapaneseStrings : IStrings
     public string ToolClearSelection => "選択解除";
 
     public string ColumnThumbnail => "サムネイル";
-    public string ColumnImageId => "オブジェクトID";
+    public string ColumnObjectId => "オブジェクトID";
     public string ColumnType => "タイプ";
     public string TypeImage => "画像";
     public string TypeText => "テキスト";
@@ -69,8 +69,8 @@ internal sealed class JapaneseStrings : IStrings
     public string StatusSaving => "保存しています…";
     public string StatusSaveFailed => "保存に失敗しました";
 
-    public string StatusSaved(int fileCount, int drawCallsRemoved) =>
-        $"{fileCount} ファイルを保存しました（{drawCallsRemoved} 箇所を削除、保存後検証 OK）";
+    public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
+        $"{fileCount} ファイルを保存しました（削除 {drawCallsRemoved} 箇所 / 画像化 {regionsFlattened} 箇所、保存後検証 OK）";
 
     public string StatusSelection(int selectedCount) =>
         $"削除対象：{selectedCount} 件を選択中";
@@ -89,7 +89,7 @@ internal sealed class JapaneseStrings : IStrings
 
     public string OpenDialogTitle => "PDFを開く";
     public string PdfFileFilter => "PDF ファイル (*.pdf)|*.pdf";
-    public string SaveDialogTitle => "選択画像を削除して保存";
+    public string SaveDialogTitle => "選択項目を削除して保存";
 
     public string OutputFolderDescription =>
         "削除後の PDF を保存するフォルダーを選択してください。各ファイルは「元ファイル名_cleaned.pdf」で保存されます。";
@@ -138,7 +138,8 @@ internal sealed class JapaneseStrings : IStrings
     public string ErrorSameAsSource =>
         "元 PDF と同じパスへの保存はできません。別名を指定してください。";
 
-    public string ErrorNoSelection => "削除対象の画像が指定されていません。";
+    public string ErrorNoSelection =>
+        "削除する項目も、画像化する範囲も選ばれていません。";
 
     public string VerificationCleanerSummary(int pagesModified, int drawCallsRemoved) =>
         $"（削除処理: {pagesModified} ページ / {drawCallsRemoved} 箇所）";

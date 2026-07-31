@@ -39,7 +39,7 @@ internal sealed class ItalianStrings : IStrings
     // Column captions sit in narrow columns: "Dim.", "Compress." and
     // "Dim. stim." are deliberately abbreviated.
     public string ColumnThumbnail => "Anteprima";
-    public string ColumnImageId => "ID oggetto";
+    public string ColumnObjectId => "ID oggetto";
     public string ColumnType => "Tipo";
     public string TypeImage => "Immagine";
     public string TypeText => "Testo";
@@ -75,11 +75,11 @@ internal sealed class ItalianStrings : IStrings
     public string StatusSaving => "Salvataggio…";
     public string StatusSaveFailed => "Salvataggio non riuscito";
 
-    public string StatusSaved(int fileCount, int drawCallsRemoved) =>
-        $"Salvati {fileCount} file — {drawCallsRemoved} chiamate di disegno rimosse, verifica OK";
+    public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
+        $"Salvati {fileCount} file — {drawCallsRemoved} chiamate di disegno rimosse, {regionsFlattened} aree convertite in immagine, verifica OK";
 
     public string StatusSelection(int selectedCount) =>
-        $"{selectedCount} gruppi di immagini selezionati per la rimozione";
+        $"{selectedCount} oggetti selezionati per la rimozione";
 
     public string WarningNotRemovable => "Non rimovibile";
 
@@ -145,7 +145,8 @@ internal sealed class ItalianStrings : IStrings
     public string ErrorSameAsSource =>
         "Impossibile sovrascrivere il PDF di origine. Scegliere un nome diverso.";
 
-    public string ErrorNoSelection => "Nessuna immagine selezionata per la rimozione.";
+    public string ErrorNoSelection =>
+        "Non è selezionato nulla da rimuovere o da convertire in immagine.";
 
     public string VerificationCleanerSummary(int pagesModified, int drawCallsRemoved) =>
         $"(pulizia: {pagesModified} pagine, {drawCallsRemoved} chiamate di disegno) ";

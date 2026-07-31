@@ -34,7 +34,7 @@ internal sealed class KoreanStrings : IStrings
     public string ToolClearSelection => "선택 해제";
 
     public string ColumnThumbnail => "미리 보기";
-    public string ColumnImageId => "개체 ID";
+    public string ColumnObjectId => "개체 ID";
     public string ColumnType => "종류";
     public string TypeImage => "이미지";
     public string TypeText => "텍스트";
@@ -70,8 +70,8 @@ internal sealed class KoreanStrings : IStrings
     public string StatusSaving => "저장하는 중…";
     public string StatusSaveFailed => "저장하지 못했습니다";
 
-    public string StatusSaved(int fileCount, int drawCallsRemoved) =>
-        $"{fileCount}개 파일을 저장했습니다 — {drawCallsRemoved}개 그리기 명령 삭제, 검증 정상";
+    public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
+        $"{fileCount}개 파일을 저장했습니다 — 그리기 명령 {drawCallsRemoved}개 삭제, {regionsFlattened}개 영역 이미지화, 검증 정상";
 
     public string StatusSelection(int selectedCount) =>
         $"삭제 대상 {selectedCount}개 선택됨";
@@ -139,7 +139,8 @@ internal sealed class KoreanStrings : IStrings
     public string ErrorSameAsSource =>
         "원본 PDF에 덮어쓸 수 없습니다. 다른 이름을 지정하십시오.";
 
-    public string ErrorNoSelection => "삭제할 이미지가 선택되지 않았습니다.";
+    public string ErrorNoSelection =>
+        "삭제할 항목도 이미지화할 범위도 선택되지 않았습니다.";
 
     public string VerificationCleanerSummary(int pagesModified, int drawCallsRemoved) =>
         $"(삭제 처리: {pagesModified}페이지, 그리기 명령 {drawCallsRemoved}개) ";

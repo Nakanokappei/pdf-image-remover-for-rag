@@ -1,9 +1,3 @@
-using System.Diagnostics;
-using System.Drawing.Drawing2D;
-using System.Runtime.InteropServices;
-using Microsoft.Extensions.Logging;
-using PdfImageRemoverForRag.Core.Errors;
-using PdfImageRemoverForRag.Core.Formatting;
 using PdfImageRemoverForRag.Core.Models;
 
 namespace PdfImageRemoverForRag.App;
@@ -382,7 +376,7 @@ internal sealed partial class MainForm
         // offer beside a button whose usual job is ticking a list. Flattening is
         // chosen per unit in the tree, which is the granularity it acts at.
         //
-        // Select only what the list currently shows: the 表示列 filter scopes
+        // Select only what the list currently shows: the 表示する種類 filter scopes
         // "select all" so hidden kinds are never silently marked for removal.
         foreach (var group in _workflow.ImageGroups
                      .Where(g => g.IsSafelyRemovable && _visibleKinds.Contains(g.Kind)))

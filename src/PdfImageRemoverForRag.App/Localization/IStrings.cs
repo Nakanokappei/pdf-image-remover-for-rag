@@ -43,7 +43,13 @@ internal interface IStrings
     string MenuView { get; }
     string MenuTableView { get; }
     string MenuTileView { get; }
+    /// <summary>
+    /// Submenu that hides and shows whole KINDS of object — images, shapes,
+    /// text. It filters rows, never columns; the Japanese caption said 表示列
+    /// ("shown columns") for a long time and described the wrong axis.
+    /// </summary>
     string MenuShownTypes { get; }
+
     string MenuShowImages { get; }
     string MenuShowShapes { get; }
     string MenuShowText { get; }
@@ -70,7 +76,7 @@ internal interface IStrings
     // --- object list columns (spec §11.3) ----------------------------------
 
     string ColumnThumbnail { get; }
-    string ColumnImageId { get; }
+    string ColumnObjectId { get; }
     string ColumnType { get; }
     string TypeImage { get; }
     string TypeText { get; }
@@ -124,7 +130,17 @@ internal interface IStrings
     string StatusOpenFailed { get; }
     string StatusSaving { get; }
     string StatusSaveFailed { get; }
-    string StatusSaved(int fileCount, int drawCallsRemoved);
+    /// <summary>
+    /// What one save run did. Both counts are always shown, including a zero:
+    /// one run can delete, flatten, or both, and "0 removed" is what tells a
+    /// user who only flattened that nothing was thrown away.
+    /// </summary>
+    string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened);
+
+    /// <summary>
+    /// How many rows of the object list are ticked for removal. Say "objects",
+    /// not "images" — the list holds images, repeated text and shapes alike.
+    /// </summary>
     string StatusSelection(int selectedCount);
 
     // --- warnings (spec §7 / §14.3) ----------------------------------------
@@ -244,6 +260,13 @@ internal interface IStrings
     // --- messages raised by the workflow (spec §17) ------------------------
 
     string ErrorSameAsSource { get; }
+
+    /// <summary>
+    /// Raised when a save run is asked for with neither side ticked. It has to
+    /// name both sides: the run deletes AND flattens, so "no images selected"
+    /// would send a user who had ticked a flatten unit looking in the wrong
+    /// half of the window.
+    /// </summary>
     string ErrorNoSelection { get; }
 
     /// <summary>

@@ -211,6 +211,13 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
                 // other showings of the same string with it — which is exactly
                 // what the delete side is for.
                 var flattenedHere = new List<FlattenImage>();
+                // Counted apart from the rest: flattening takes draw calls out
+                // too, but it puts a picture of them back, so reporting the two
+                // together would tell a user who only flattened that N things
+                // were deleted. They are added back into `removed` because that
+                // is the "did this page change at all" gate, and subtracted
+                // again when the run's removal total is accumulated.
+                int flattenedOps = 0;
                 foreach (var flatten in pageFlatten)
                 {
                     int removedForRegion = RemoveRegionMembers(page, sequence, flatten.Region);
@@ -219,6 +226,7 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
                     // rendering would just lay a second copy over the original.
                     if (removedForRegion == 0) continue;
                     removed += removedForRegion;
+                    flattenedOps += removedForRegion;
                     flattenedHere.Add(flatten);
                 }
 
@@ -248,7 +256,7 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
                     regionsFlattened += flattenedHere.Count;
                 }
                 pagesModified++;
-                totalRemovedOps += removed;
+                totalRemovedOps += removed - flattenedOps;
             }
 
             // Dropping the draw calls only stops the image being PAINTED. The

@@ -37,7 +37,7 @@ internal sealed class ChineseTraditionalStrings : IStrings
     public string ToolClearSelection => "清除選取";
 
     public string ColumnThumbnail => "縮圖";
-    public string ColumnImageId => "物件 ID";
+    public string ColumnObjectId => "物件 ID";
     public string ColumnType => "類型";
     public string TypeImage => "圖片";
     public string TypeText => "文字";
@@ -73,11 +73,11 @@ internal sealed class ChineseTraditionalStrings : IStrings
     public string StatusSaving => "正在儲存…";
     public string StatusSaveFailed => "儲存失敗";
 
-    public string StatusSaved(int fileCount, int drawCallsRemoved) =>
-        $"已儲存 {fileCount} 個檔案 — 移除了 {drawCallsRemoved} 處繪製指令，儲存後驗證正常";
+    public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
+        $"已儲存 {fileCount} 個檔案 — 移除 {drawCallsRemoved} 處繪製指令，影像化 {regionsFlattened} 處，儲存後驗證正常";
 
     public string StatusSelection(int selectedCount) =>
-        $"已選取 {selectedCount} 個圖片群組準備移除";
+        $"已選取 {selectedCount} 個物件準備移除";
 
     public string WarningNotRemovable => "無法移除";
 
@@ -141,7 +141,8 @@ internal sealed class ChineseTraditionalStrings : IStrings
     public string ErrorSameAsSource =>
         "無法覆寫來源 PDF。請指定其他檔案名稱。";
 
-    public string ErrorNoSelection => "尚未選取要移除的圖片。";
+    public string ErrorNoSelection =>
+        "沒有選取要移除的物件，也沒有選取要影像化的範圍。";
 
     public string VerificationCleanerSummary(int pagesModified, int drawCallsRemoved) =>
         $"（移除處理：{pagesModified} 頁、{drawCallsRemoved} 處繪製指令）";

@@ -128,6 +128,52 @@ public class RemovedImagePruningTests : IClassFixture<SamplePdfFixture>
     }
 
     [Fact]
+    public async Task AnImageAnAnnotationAlsoUses_LosesItsPageReferenceButKeepsItsObject()
+    {
+        // A page is not the only thing that can name an image. Analysis looks
+        // at page resources and nothing else, so an image an annotation also
+        // uses is listed and can be removed — and deleting the object would
+        // leave the annotation pointing at nothing. The page's reference goes;
+        // the object stays, and the run says so rather than pretending.
+        var info = await NewAnalyzer().AnalyzeAsync(_samples.AnnotationSharedImagePath);
+        var image = info.ImageGroups.Single(g => g.Kind == RemovableKind.Image);
+        var dest = Path.Combine(_samples.TempDirectory, "pruning-annotation_cleaned.pdf");
+
+        var result = await new PdfSharpDocumentCleaner().CleanAsync(
+            _samples.AnnotationSharedImagePath, dest,
+            new[] { new ImageRemovalSelection(image.GroupId, image.Occurrences, Hash: image.Hash) });
+
+        // Gone from the page: not drawn, not listed — which is all the verifier
+        // asks, and all removal can honestly promise here.
+        Assert.DoesNotContain(image.Hash, HashesInPageResources(dest));
+        // But still in the file, because the annotation needs it.
+        Assert.Single(ImageObjectsInFile(dest));
+        Assert.Equal(1, result.ImagesKeptForOtherReferences);
+
+        var report = await new PdfSharpDocumentVerifier().VerifyAsync(
+            _samples.AnnotationSharedImagePath, dest,
+            removedGroupHashes: result.RemovedGroupHashes,
+            retainedGroupHashes: Array.Empty<string>());
+        Assert.True(report.IsOverallOk, string.Join(" | ", report.Warnings));
+    }
+
+    [Fact]
+    public async Task AnImageNothingElseUses_ReportsNoneKeptBack()
+    {
+        // The other side of the same counter: it has to stay at zero for an
+        // ordinary document, or it says nothing when it is not zero.
+        var info = await NewAnalyzer().AnalyzeAsync(_samples.RepeatedLogoPath);
+        var group = info.ImageGroups.Single(g => g.Kind == RemovableKind.Image);
+        var dest = Path.Combine(_samples.TempDirectory, "pruning-keptback-zero_cleaned.pdf");
+
+        var result = await new PdfSharpDocumentCleaner().CleanAsync(
+            _samples.RepeatedLogoPath, dest,
+            new[] { new ImageRemovalSelection(group.GroupId, group.Occurrences, Hash: group.Hash) });
+
+        Assert.Equal(0, result.ImagesKeptForOtherReferences);
+    }
+
+    [Fact]
     public async Task TheVerifier_FailsAFileThatStillListsARemovedImage()
     {
         // The original file still holds the image, so verifying it AS IF it

@@ -259,7 +259,7 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
             // "removed" images and 26 of their soft masks were all still there
             // and all still extractable. For a product whose whole purpose is
             // keeping images out of RAG, removing the reference is the job.
-            PruneRemovedImages(doc, resourceEntriesToDrop, doomedImages);
+            int imagesKeptBack = PruneRemovedImages(doc, resourceEntriesToDrop, doomedImages);
 
             // Save via a temp file. On disposal-time failure we clean up the
             // temp so the caller never has to reason about half-written state.
@@ -283,7 +283,8 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
                 PagesModified: pagesModified,
                 DrawCallsRemoved: totalRemovedOps,
                 Elapsed: sw.Elapsed,
-                RegionsFlattened: regionsFlattened);
+                RegionsFlattened: regionsFlattened,
+                ImagesKeptForOtherReferences: imagesKeptBack);
         }
         catch (OperationCanceledException)
         {
@@ -366,12 +367,21 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
     /// image loses its transparency. This is also why masks are not offered in
     /// the object list: they are not objects a person put on the page.
     ///
-    /// Safe to do for the whole document at once because a selected image is
-    /// never reachable through a Form XObject: any image inside a Form is
-    /// marked not-safely-removable during analysis, and an unsafe group cannot
-    /// be selected. Nothing else can still be pointing at these.
+    /// An object is deleted only once NOTHING in the document still points at
+    /// it. That rule is checked, not argued: a page is far from the only thing
+    /// that can name an image. Annotation appearance streams, tiling patterns,
+    /// soft-mask groups in an ExtGState and Type3 glyph procedures all carry
+    /// their own resources, none of which analysis looks at — so an image drawn
+    /// on a page AND used by an annotation is listed, is selectable, and would
+    /// leave a dangling reference behind if the object were simply removed.
+    /// Dropping the reference from the page is always safe; dropping the object
+    /// is not, and this is what tells the two apart.
     /// </summary>
-    static void PruneRemovedImages(
+    /// <returns>
+    /// How many images had to be left in the file because something else still
+    /// referenced them. Their pages no longer draw or list them either way.
+    /// </returns>
+    static int PruneRemovedImages(
         PdfDocument doc,
         IReadOnlyList<(PdfResources Resources, HashSet<string> Names)> pageEntries,
         IReadOnlyDictionary<PdfObjectID, PdfDictionary> doomed)
@@ -380,20 +390,84 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
         {
             ImageXObjectCollector.RemoveEntries(resources, names);
         }
+        if (doomed.Count == 0) return 0;
+
+        // Asked AFTER the page entries are gone, so those references do not
+        // keep their own images alive.
+        var stillReferenced = ReferencedObjectIds(doc);
+        var orphanedMasks = new List<PdfDictionary>();
+        int keptBack = 0;
 
         foreach (var image in doomed.Values)
         {
-            foreach (var maskKey in new[] { "/SMask", "/Mask" })
+            if (stillReferenced.Contains(image.Internals.ObjectID))
             {
-                // A /Mask may also be an array of colour-key ranges rather than
-                // an image; only a stream stands as its own object to delete.
-                if (ImageXObjectCollector.ResolveDictionary(image.Elements[maskKey]) is PdfDictionary mask
-                    && mask.Elements.GetName("/Subtype") == "/Image")
-                {
-                    TryRemoveObject(doc, mask);
-                }
+                keptBack++;
+                continue;
             }
+            orphanedMasks.AddRange(MasksOf(image));
             TryRemoveObject(doc, image);
+        }
+
+        // A mask is reachable only through its parent, so it can only be judged
+        // once the parents are gone — hence the second look rather than one
+        // combined pass.
+        if (orphanedMasks.Count == 0) return keptBack;
+        var afterImages = ReferencedObjectIds(doc);
+        foreach (var mask in orphanedMasks)
+        {
+            if (!afterImages.Contains(mask.Internals.ObjectID)) TryRemoveObject(doc, mask);
+        }
+        return keptBack;
+    }
+
+    /// <summary>
+    /// The image objects an image depends on: its soft mask, its stencil mask,
+    /// or both. A <c>/Mask</c> may instead be an array of colour-key ranges,
+    /// which is not an object and has nothing to delete.
+    /// </summary>
+    static IEnumerable<PdfDictionary> MasksOf(PdfDictionary image)
+    {
+        foreach (var key in new[] { "/SMask", "/Mask" })
+        {
+            if (ImageXObjectCollector.ResolveDictionary(image.Elements[key]) is PdfDictionary mask
+                && mask.Elements.GetName("/Subtype") == "/Image")
+            {
+                yield return mask;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Every object id named by an indirect reference anywhere in the document.
+    /// References are collected, never followed: whatever an indirect reference
+    /// points at is enumerated in its own right, so following would only risk
+    /// looping. Direct dictionaries and arrays nested inside an object ARE
+    /// walked — that is where a resource dictionary usually lives.
+    /// </summary>
+    static HashSet<PdfObjectID> ReferencedObjectIds(PdfDocument doc)
+    {
+        var referenced = new HashSet<PdfObjectID>();
+        foreach (var obj in doc.Internals.GetAllObjects())
+        {
+            CollectReferences(obj, referenced);
+        }
+        return referenced;
+    }
+
+    static void CollectReferences(PdfItem? item, HashSet<PdfObjectID> sink)
+    {
+        switch (item)
+        {
+            case PdfReference reference:
+                sink.Add(reference.ObjectID);
+                break;
+            case PdfDictionary dictionary:
+                foreach (var value in dictionary.Elements.Values) CollectReferences(value, sink);
+                break;
+            case PdfArray array:
+                foreach (var value in array.Elements) CollectReferences(value, sink);
+                break;
         }
     }
 

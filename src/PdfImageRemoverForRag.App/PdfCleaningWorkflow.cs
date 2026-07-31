@@ -279,11 +279,18 @@ internal sealed class PdfCleaningWorkflow
             // counts are here too, because a region asked for but not flattened
             // (nothing rendered, or nothing found where it was detected) is
             // otherwise invisible.
+            // imagesKeptBack is normally zero. When it is not, the file holds an
+            // image something other than a page points at — an annotation, a
+            // pattern — so its object had to stay even though its pages no
+            // longer draw it. That is the one case where removal cannot fully
+            // deliver, and without this line it would be invisible.
             _logger.LogInformation(
                 "cleaned: selections={Selections} regionsAsked={RegionsAsked} " +
-                "regionsFlattened={RegionsFlattened} pagesModified={Pages} drawCallsRemoved={Removed}",
+                "regionsFlattened={RegionsFlattened} pagesModified={Pages} drawCallsRemoved={Removed} " +
+                "imagesKeptBack={KeptBack}",
                 selections.Count, regionsToFlatten.Count, result.RegionsFlattened,
-                result.PagesModified, result.DrawCallsRemoved);
+                result.PagesModified, result.DrawCallsRemoved,
+                result.ImagesKeptForOtherReferences);
 
             // The verifier resolves hashes against Image XObjects, so it only
             // handles image groups; text removal is checked by tests, not here.

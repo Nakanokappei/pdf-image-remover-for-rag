@@ -67,6 +67,7 @@ public static class SamplePdfWriter
             WriteRepeatedShapes(Path.Combine(outputDirectory, "repeated-shapes.pdf")),
             WriteFormEmbeddedImage(Path.Combine(outputDirectory, "form-embedded-image.pdf"), logoPng),
             WriteSoftMaskedImage(Path.Combine(outputDirectory, "soft-masked-image.pdf")),
+            WriteAnnotationSharedImage(Path.Combine(outputDirectory, "annotation-shared-image.pdf")),
         };
         return written;
     }
@@ -312,6 +313,78 @@ public static class SamplePdfWriter
 
         doc.Save(path);
         return path;
+    }
+
+    static string WriteAnnotationSharedImage(string path)
+    {
+        // The same image drawn on the page AND used as an annotation's
+        // appearance stream. Analysis only ever looks at page resources, so it
+        // lists this image and lets the user remove it — but the annotation
+        // still points at the object, and deleting it would leave a reference
+        // pointing at nothing.
+        //
+        // Removal must therefore drop the page's reference and KEEP the object.
+        // This is the sample that proves the difference, and the only one where
+        // an image survives a removal that succeeded.
+        using var doc = NewDocument("annotation-shared-image sample");
+        var page = doc.AddPage();
+
+        const int width = 32;
+        const int height = 32;
+        var rgb = new byte[width * height * 3];
+        for (int i = 0; i < width * height; i++)
+        {
+            rgb[i * 3] = 30;
+            rgb[(i * 3) + 1] = (byte)(i % 256);
+            rgb[(i * 3) + 2] = 200;
+        }
+        var image = NewImageXObject(doc, width, height, "/DeviceRGB", rgb);
+
+        // Drawn on the page in the ordinary way.
+        var pageXObjects = new PdfDictionary(doc);
+        pageXObjects.Elements["/ImShared"] = image.Reference;
+        page.Resources.Elements["/XObject"] = pageXObjects;
+        var content = page.Contents.AppendContent();
+        content.CreateStream(Encoding.ASCII.GetBytes("q 80 0 0 80 60 600 cm /ImShared Do Q\n"));
+
+        // And used again by a stamp annotation, whose appearance stream is a
+        // Form XObject with resources of its own.
+        var appearance = new PdfDictionary(doc);
+        appearance.Elements["/Type"] = new PdfName("/XObject");
+        appearance.Elements["/Subtype"] = new PdfName("/Form");
+        appearance.Elements["/BBox"] = NewRectangle(0, 0, 80, 80);
+        var formResources = new PdfDictionary(doc);
+        var formXObjects = new PdfDictionary(doc);
+        formXObjects.Elements["/ImShared"] = image.Reference;
+        formResources.Elements["/XObject"] = formXObjects;
+        appearance.Elements["/Resources"] = formResources;
+        appearance.CreateStream(Encoding.ASCII.GetBytes("q 80 0 0 80 0 0 cm /ImShared Do Q\n"));
+        doc.Internals.AddObject(appearance);
+
+        var annotation = new PdfDictionary(doc);
+        annotation.Elements["/Type"] = new PdfName("/Annot");
+        annotation.Elements["/Subtype"] = new PdfName("/Stamp");
+        annotation.Elements["/Rect"] = NewRectangle(300, 600, 380, 680);
+        annotation.Elements["/F"] = new PdfInteger(4);   // printable
+        var appearanceStates = new PdfDictionary(doc);
+        appearanceStates.Elements["/N"] = appearance.Reference;
+        annotation.Elements["/AP"] = appearanceStates;
+        doc.Internals.AddObject(annotation);
+
+        var annots = new PdfArray(doc);
+        // AddObject has just given it one.
+        annots.Elements.Add(annotation.Reference!);
+        page.Elements["/Annots"] = annots;
+
+        doc.Save(path);
+        return path;
+    }
+
+    static PdfArray NewRectangle(double x1, double y1, double x2, double y2)
+    {
+        var rect = new PdfArray();
+        foreach (var value in new[] { x1, y1, x2, y2 }) rect.Elements.Add(new PdfReal(value));
+        return rect;
     }
 
     /// <summary>

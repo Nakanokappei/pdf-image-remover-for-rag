@@ -15,6 +15,15 @@ namespace PdfImageRemoverForRag.Core.Models;
 /// number asked for when a region could not be rendered, or when nothing was
 /// found at the place it was detected — both cases leave the page as it was.
 /// </param>
+/// <param name="ImagesKeptForOtherReferences">
+/// How many removed images had to stay in the file because something other
+/// than a page still pointed at them — an annotation's appearance stream, a
+/// tiling pattern, a soft-mask group, a Type3 glyph. Their pages no longer
+/// draw or list them, so they are removed as far as the document's content
+/// goes, but the bytes remain and an object-enumerating reader will still find
+/// them. Normally zero; a non-zero count is worth logging, because it is the
+/// one case where removal cannot fully deliver what it promises.
+/// </param>
 public sealed record CleaningResult(
     string SourcePath,
     string DestinationPath,
@@ -22,4 +31,5 @@ public sealed record CleaningResult(
     int PagesModified,
     int DrawCallsRemoved,
     TimeSpan Elapsed,
-    int RegionsFlattened = 0);
+    int RegionsFlattened = 0,
+    int ImagesKeptForOtherReferences = 0);

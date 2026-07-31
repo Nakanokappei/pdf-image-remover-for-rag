@@ -4,6 +4,8 @@ A Windows 11 desktop tool that removes unnecessary images, repeated text, and ve
 
 Company logos, headers, footers, watermarks, and page rules degrade retrieval quality and inflate preprocessing cost once a PDF lands in a RAG / Dify pipeline. This tool lists every removable object in your PDFs, lets you check what you want gone, and writes new PDFs with those objects' draw calls removed. **The original files are never overwritten.**
 
+Some text cannot simply be deleted — a chart's axis labels, a caption over a photograph — because the picture breaks without it. For those, the **Flatten** tab bakes the overlapping objects into a single image: the page looks exactly the same, and the text in that place stops being text.
+
 Everything runs locally — files never leave your PC, and no data is collected.
 
 **Manual: [English](docs/manual.en.md) · [Japanese](docs/manual.ja.md)** — also reachable from the app's Help menu.
@@ -20,6 +22,7 @@ Everything runs locally — files never leave your PC, and no data is collected.
 
 - **Open several PDFs at once.** Identical objects are merged into one row across files — one checkbox removes a shared logo from every file.
 - **Two views.** A spreadsheet-style table (sortable on any column, resizable columns) and a thumbnail tile view, always in the same order.
+- **Flatten overlaps into an image** (the Flatten tab). Where objects of different kinds overlap — image + text, image + shape, text + shape — the place can be replaced by a rendering of itself, so the page keeps its appearance while that text leaves the text layer. A tree of document → page → unit → object picks what goes in, down to the individual object, with a preview beside it. One save flattens and then removes, in that order.
 - **Thumbnails for everything.** Images are decoded, text is drawn as text, shapes are rendered from their actual path in their actual color.
 - **Filter by kind** (View → Shown Types) to work on images, text, or shapes alone.
 - **Safety first.** Saves go through a temp file that is verified (re-opens, page count matches, removed objects gone, kept objects present) before it becomes the final `_cleaned.pdf`. Objects inside a shared Form XObject are marked unremovable; full-page (scanned) images are flagged with a warning.
@@ -58,7 +61,7 @@ export DOTNET_ROOT="$HOME/.dotnet"
 DOTNET="$HOME/.dotnet/dotnet"
 
 "$DOTNET" build PdfImageRemoverForRag.sln -c Release   # build (0 warnings)
-"$DOTNET" test  PdfImageRemoverForRag.sln -c Release   # 106 tests (71 Core + 35 Infrastructure)
+"$DOTNET" test  PdfImageRemoverForRag.sln -c Release   # 165 tests (90 Core + 75 Infrastructure)
 "$DOTNET" run --project scripts/GenerateSamples -c Release -- samples/   # regenerate sample PDFs
 
 # Windows binaries from macOS:

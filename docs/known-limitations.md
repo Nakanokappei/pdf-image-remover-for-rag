@@ -47,10 +47,24 @@ Limitations of the current version. Read together with the README.
 | **Side effects** | Only the path-construction-through-painting operators are removed; preceding state settings (`w`, `rg`, `RG`, …) remain. Harmless when nothing follows, but a leftover state setting could in rare cases affect later drawing. |
 | **Granularity** | "One shape" = one path paint (construction through painting operator). A logo composed of several paths appears as several objects. |
 
+## Flattening overlaps into an image
+
+| Limitation | Description |
+| --- | --- |
+| **Scope** | Places on one page where objects of **two or more different kinds** overlap: image + text, image + text + shape, image + shape, text + shape. **Text over text is excluded** — rasterizing it would turn words into a picture and gain nothing. "Overlap" covers containment and partial overlap alike. |
+| **Connection rule** | A shape that **only strokes** its path joins a region solely when it lies **entirely inside** the other object; a **filled** shape joins as soon as it touches. Without this split, a page border — which crosses every paragraph on the page — pulled 77 % × 81 % of the paper into a single region. |
+| **Objects inside Form XObjects** | Never part of a region (shared Forms are never rewritten — the same policy as removal). |
+| **Granularity** | The rasterized area is the bounding box of the objects the user **checked**, and only those **instances** are deleted. The same string shown elsewhere in the file survives, which is the whole difference between this and removal. |
+| **Rendering** | 200 dpi through the operating system's PDF renderer (`Windows.Data.Pdf`), capped at 4000 px on the long side. The result is a raster image, so text inside a flattened area can no longer be selected, copied, or searched — that is the purpose, not a side effect. File size grows accordingly. |
+| **Failure handling** | A region that cannot be rendered, or where nothing matched at the place analysis found it, is left **exactly as it was** and reported as not flattened. Deleting the objects and then failing to draw their replacement would punch a hole in the page. |
+| **Rotated pages** | Pages carrying a `/Rotate` entry are **untested**. Detection and drawing both work in content-stream coordinates, so the two should agree, but this has not been confirmed against a real rotated document. |
+| **Whole-page regions** | No warning is raised when a region covers nearly the entire page; flattening one turns that page into a single image and none of its text stays text. The preview outline spanning the paper is the only indication. |
+| **Post-save verification** | The saved file is verified to re-open with a matching page count, and flattened images are deliberately **not** claimed as removed (their bytes are still in the document). That a flattened area has actually left the text layer is covered by the unit tests, not by the automatic check. |
+
 ## Features that are out of scope
 
-- Whole-page preview / after-removal preview
-- Removing only specific pages or specific occurrences (removal is per group, all occurrences)
+- After-removal preview (the Flatten tab previews the page **as it is**, not as it would be)
+- Removing only specific pages or specific occurrences **on the Delete side** (removal there is per group, all occurrences; the Flatten side is per instance by design)
 - Batch processing of multiple PDFs from the command line
 - OCR, AI-based logo classification, similar-image search
 - Settings screen, dark mode, auto-update, installer

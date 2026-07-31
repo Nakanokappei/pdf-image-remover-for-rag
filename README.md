@@ -61,7 +61,7 @@ export DOTNET_ROOT="$HOME/.dotnet"
 DOTNET="$HOME/.dotnet/dotnet"
 
 "$DOTNET" build PdfImageRemoverForRag.sln -c Release   # build (0 warnings)
-"$DOTNET" test  PdfImageRemoverForRag.sln -c Release   # 170 tests (90 Core + 80 Infrastructure)
+"$DOTNET" test  PdfImageRemoverForRag.sln -c Release   # 197 tests (107 Core + 90 Infrastructure)
 "$DOTNET" run --project scripts/GenerateSamples -c Release -- samples/   # regenerate sample PDFs
 
 # Windows binaries from macOS:
@@ -77,7 +77,7 @@ The app runs on Windows only — never try to launch it on macOS.
 src/PdfImageRemoverForRag.Core/            net8.0          Models, grouping, formatting, validation, abstractions
 src/PdfImageRemoverForRag.Infrastructure/  net8.0          PDFsharp / PdfPig implementations (GDI-free)
 src/PdfImageRemoverForRag.App/             net8.0-windows  WinForms UI (all GDI+ drawing lives here)
-tests/                                     xunit           90 unit + 80 integration tests
+tests/                                     xunit           107 unit + 90 integration tests
 scripts/GenerateSamples/                   Sample-PDF generator (shared with the test fixture)
 scripts/PdfImageRemoverForRag.Poc/         Technical-verification driver over Infrastructure
 ```

@@ -189,6 +189,8 @@ Only places where objects of *different* kinds overlap are listed. That gives fo
 
 ### How to use it
 
+![The Flatten panel; ticking a unit ticks the objects under it, and the preview below shows the area that becomes a picture](images/flatten-en.png)
+
 1. **Select the row of the object you want to look at, in the list on the left.** The Flatten panel then shows **only the units that object takes part in**.
    - An object that overlaps nothing gets "This object does not overlap anything." Most objects in a document are like that.
    - With no row selected the panel is empty.

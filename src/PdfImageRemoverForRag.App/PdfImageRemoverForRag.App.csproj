@@ -22,12 +22,17 @@
     <ApplicationIcon>appicon.ico</ApplicationIcon>
 
     <!-- Product version plus a plain integer build number (no date, so it never
-         looks stale). The build number is shown in the window title + About so
-         the exact build is identifiable inside the app. Bump BuildNumber on each
-         published update. -->
-    <Version>1.0.0</Version>
-    <BuildNumber>76</BuildNumber>
-    <InformationalVersion>1.0.0+$(BuildNumber)</InformationalVersion>
+         looks stale). Both are shown in About so the exact build is identifiable
+         inside the app. Bump BuildNumber on every published update AND every
+         binary put on the VM, so no two builds can claim the same number.
+         Version, packaging/Package.appxmanifest and the git tag move together;
+         what decides Major/Minor/Patch is in CLAUDE.md.
+         InformationalVersion interpolates Version rather than repeating it: it
+         said 1.0.0 while the Store said 1.0.3.0, because a literal here does not
+         follow a bump made two lines above. -->
+    <Version>1.1.0</Version>
+    <BuildNumber>77</BuildNumber>
+    <InformationalVersion>$(Version)+$(BuildNumber)</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 

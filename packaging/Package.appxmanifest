@@ -22,7 +22,7 @@
   <Identity
     Name="KappeiNakano.PDFImageRemoverforRAG"
     Publisher="CN=CBBEB0B6-F2F8-4A20-93BF-7BB185208944"
-    Version="1.0.3.0"
+    Version="1.1.0.0"
     ProcessorArchitecture="{ARCH}" />
 
   <Properties>

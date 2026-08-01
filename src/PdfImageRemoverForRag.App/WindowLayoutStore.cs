@@ -9,9 +9,22 @@ namespace PdfImageRemoverForRag.App;
 /// same screen count); otherwise the caller falls back to the default so the
 /// window never opens off-screen or larger than the current display.
 /// </summary>
+/// <param name="FlattenPanelWidth">
+/// Width of the 統合 panel, and <paramref name="FlattenPreviewHeight"/> the
+/// height of the preview inside it — both in LOGICAL (96-DPI) pixels, because a
+/// width dragged on the 200 % VM would be half the panel on a 100 % display if
+/// it were stored in device pixels. Zero means "never recorded", which is what
+/// a window.json written before these existed deserializes to, so the defaults
+/// apply and an old file needs no migration.
+///
+/// They ride along with the placement but are NOT subject to its
+/// display-arrangement guard: a splitter position cannot put anything
+/// off-screen, so plugging in a second monitor is no reason to forget it.
+/// </param>
 internal sealed record WindowLayout(
     int X, int Y, int Width, int Height, bool Maximized,
-    int ScreenIndex, int ScreenWidth, int ScreenHeight, int ScreenCount);
+    int ScreenIndex, int ScreenWidth, int ScreenHeight, int ScreenCount,
+    int FlattenPanelWidth = 0, int FlattenPreviewHeight = 0);
 
 internal static class WindowLayoutStore
 {
@@ -19,8 +32,13 @@ internal static class WindowLayoutStore
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "PdfImageRemoverForRag", "window.json");
 
-    /// <summary>Record the current placement and the display arrangement.</summary>
-    public static void Save(Form form)
+    /// <summary>
+    /// Record the current placement, the display arrangement, and where the user
+    /// left the two splitters. The splitter sizes are passed in rather than read
+    /// off the form: they are logical pixels, and only the caller knows the scale
+    /// they were measured at.
+    /// </summary>
+    public static void Save(Form form, int flattenPanelWidth, int flattenPreviewHeight)
     {
         try
         {
@@ -35,7 +53,8 @@ internal static class WindowLayoutStore
             var layout = new WindowLayout(
                 bounds.X, bounds.Y, bounds.Width, bounds.Height,
                 form.WindowState == FormWindowState.Maximized,
-                index, screen.Bounds.Width, screen.Bounds.Height, screens.Length);
+                index, screen.Bounds.Width, screen.Bounds.Height, screens.Length,
+                flattenPanelWidth, flattenPreviewHeight);
 
             Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
             File.WriteAllText(FilePath, JsonSerializer.Serialize(layout));
@@ -47,34 +66,42 @@ internal static class WindowLayoutStore
     }
 
     /// <summary>
-    /// The saved placement, or null when there is none or the display
-    /// arrangement has changed since it was saved (screen count, the recorded
-    /// screen's size, or a placement that would land off-screen).
+    /// Everything that was saved, or null when there is no file or it cannot be
+    /// read. This does NOT decide whether the window bounds are safe to use —
+    /// ask <see cref="PlacementIsUsable"/> for that. The two are separate
+    /// because the splitter sizes survive a display change that the bounds
+    /// cannot.
     /// </summary>
     public static WindowLayout? TryLoad()
     {
         try
         {
             if (!File.Exists(FilePath)) return null;
-            var layout = JsonSerializer.Deserialize<WindowLayout>(File.ReadAllText(FilePath));
-            if (layout is null) return null;
-
-            var screens = Screen.AllScreens;
-            if (layout.ScreenCount != screens.Length) return null;
-            if (layout.ScreenIndex < 0 || layout.ScreenIndex >= screens.Length) return null;
-
-            var screen = screens[layout.ScreenIndex];
-            if (screen.Bounds.Width != layout.ScreenWidth || screen.Bounds.Height != layout.ScreenHeight)
-            {
-                return null;
-            }
-            if (!IsReasonablyVisible(layout, screen)) return null;
-            return layout;
+            return JsonSerializer.Deserialize<WindowLayout>(File.ReadAllText(FilePath));
         }
         catch
         {
             return null;
         }
+    }
+
+    /// <summary>
+    /// Whether the saved bounds can be restored: the display arrangement has to
+    /// still match (screen count, the recorded screen's size) and the window has
+    /// to land somewhere reachable. False means open at the default size.
+    /// </summary>
+    public static bool PlacementIsUsable(WindowLayout layout)
+    {
+        var screens = Screen.AllScreens;
+        if (layout.ScreenCount != screens.Length) return false;
+        if (layout.ScreenIndex < 0 || layout.ScreenIndex >= screens.Length) return false;
+
+        var screen = screens[layout.ScreenIndex];
+        if (screen.Bounds.Width != layout.ScreenWidth || screen.Bounds.Height != layout.ScreenHeight)
+        {
+            return false;
+        }
+        return IsReasonablyVisible(layout, screen);
     }
 
     // Require a meaningful overlap with the screen's working area so the title

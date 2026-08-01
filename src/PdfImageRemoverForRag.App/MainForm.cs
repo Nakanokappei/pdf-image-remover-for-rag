@@ -85,6 +85,22 @@ internal sealed partial class MainForm : Form
     };
     readonly FlattenPanel _flattenPanel = new() { Dock = DockStyle.Fill };
 
+    // Width of the 統合 panel in LOGICAL pixels: seeded from the saved layout,
+    // updated as the user drags, re-applied on every DPI change, written back at
+    // shutdown. Held here rather than measured off the splitter on demand
+    // because re-deriving it at a new scale would move the panel every time the
+    // window changed monitor. Wide enough for a file name and an indented
+    // object label is the starting point.
+    int _flattenPanelWidth = DefaultFlattenPanelWidth;
+    const int DefaultFlattenPanelWidth = 300;
+
+    // Set by SplitterMoving, which ONLY fires while the user is dragging, and
+    // consumed by the SplitterMoved that ends the drag. SplitterMoved alone is
+    // not a signal that anything was chosen: the layout engine raises it too,
+    // repeatedly, while the window is still being built — which recorded a
+    // 1029-logical-pixel panel on a window that was showing 300.
+    bool _workspaceSplitterDragged;
+
     // --- tile view ---------------------------------------------------------
     // One control that paints every tile itself. It replaced a panel holding
     // one control per object, which broke down at 2,015 of them.
@@ -247,12 +263,20 @@ internal sealed partial class MainForm : Form
 
         // Restore the last window placement when the display arrangement is
         // unchanged; otherwise keep the default size above (centered by Windows).
+        // The splitter sizes come back either way — they cannot put anything
+        // off-screen, so a new monitor is no reason to forget them. Both are set
+        // before the handles exist, which is when they are first applied.
         var savedLayout = WindowLayoutStore.TryLoad();
         if (savedLayout is not null)
         {
-            StartPosition = FormStartPosition.Manual;
-            Bounds = new Rectangle(savedLayout.X, savedLayout.Y, savedLayout.Width, savedLayout.Height);
-            if (savedLayout.Maximized) WindowState = FormWindowState.Maximized;
+            if (WindowLayoutStore.PlacementIsUsable(savedLayout))
+            {
+                StartPosition = FormStartPosition.Manual;
+                Bounds = new Rectangle(savedLayout.X, savedLayout.Y, savedLayout.Width, savedLayout.Height);
+                if (savedLayout.Maximized) WindowState = FormWindowState.Maximized;
+            }
+            if (savedLayout.FlattenPanelWidth > 0) _flattenPanelWidth = savedLayout.FlattenPanelWidth;
+            _flattenPanel.PreviewHeight = savedLayout.FlattenPreviewHeight;
         }
 
         BuildMenu();
@@ -315,8 +339,13 @@ internal sealed partial class MainForm : Form
         DragDrop += OnPdfDragDrop;
         // Initial column sizing to the header widths once the grid has a handle.
         Load += (_, _) => AutoSizeContentColumns();
-        // Remember size/position (and the display arrangement) for next launch.
-        FormClosing += (_, _) => WindowLayoutStore.Save(this);
+        // Remember where the user put the 統合 panel's edge. The panel's own
+        // splitter reports itself; this one is the workspace split.
+        _workspaceSplit.SplitterMoving += (_, _) => _workspaceSplitterDragged = true;
+        _workspaceSplit.SplitterMoved += OnWorkspaceSplitterMoved;
+        // Remember size/position, the display arrangement, and both splitters.
+        FormClosing += (_, _) =>
+            WindowLayoutStore.Save(this, _flattenPanelWidth, _flattenPanel.PreviewHeight);
         FormClosed += (_, _) => DisposeThumbnailImages(disposePlaceholder: true);
     }
 }

@@ -115,11 +115,17 @@ internal sealed class FlattenPanel : UserControl
         ForeColor = SystemColors.GrayText,
         UseMnemonic = false,
     };
-    // List above, page below.
+    // List above, page below. FixedPanel is the preview for the same reason the
+    // workspace split fixes this whole panel: making the window taller should
+    // feed the list, which is what the user is working down. It is also what
+    // makes a remembered preview height mean anything — with the panels scaling
+    // proportionally, every resize would quietly change the height that was
+    // restored.
     readonly SplitContainer _split = new()
     {
         Dock = DockStyle.Fill,
         Orientation = Orientation.Horizontal,
+        FixedPanel = FixedPanel.Panel2,
     };
     readonly PreviewPane _preview = new() { Dock = DockStyle.Fill };
 
@@ -138,6 +144,24 @@ internal sealed class FlattenPanel : UserControl
     /// bitmap decided under different rules.
     /// </summary>
     public Func<PlacedObject, LayerThumbnail>? ThumbnailFor { get; set; }
+
+    /// <summary>
+    /// Height of the preview under the list, in LOGICAL pixels: set by the host
+    /// from the saved layout before the handle exists, updated as the user drags
+    /// the splitter, and read back at shutdown. Zero means the user has never
+    /// chosen one, and the three-fifths default applies.
+    ///
+    /// It is kept here rather than read off <see cref="_split"/> on demand
+    /// because a DPI change re-applies it: converting device pixels back at the
+    /// NEW scale would move the splitter every time the window changed monitor.
+    /// </summary>
+    public int PreviewHeight { get; set; }
+
+    // Set by SplitterMoving, which ONLY fires while the user is dragging, and
+    // consumed by the SplitterMoved that ends the drag. SplitterMoved alone is
+    // not a signal that anything was chosen: the layout engine raises it too,
+    // repeatedly, while the panel is still being built.
+    bool _splitterDragged;
 
     public FlattenPanel()
     {
@@ -168,6 +192,8 @@ internal sealed class FlattenPanel : UserControl
         listSide.Controls.Add(_emptyMessage);
         _split.Panel1.Controls.Add(listSide);
         _split.Panel2.Controls.Add(_preview);
+        _split.SplitterMoving += (_, _) => _splitterDragged = true;
+        _split.SplitterMoved += OnSplitterMoved;
 
         // Docked children claim their edge in reverse order of addition, so the
         // fill goes in first and the title bar ends up outermost.
@@ -178,6 +204,24 @@ internal sealed class FlattenPanel : UserControl
     }
 
     int Dip(int logical) => LogicalToDeviceUnits(logical);
+
+    /// <summary>Device pixels back to logical ones — the inverse WinForms omits.</summary>
+    int Undip(int device) => (int)Math.Round(device * 96.0 / DeviceDpi);
+
+    int PreviewHeightInDevicePixels =>
+        _split.Height - _split.SplitterDistance - _split.SplitterWidth;
+
+    /// <summary>
+    /// Remember where the user put the splitter, so it survives a DPI change now
+    /// and a restart later. Only a move that began with
+    /// <see cref="SplitContainer.SplitterMoving"/> counts — see the field.
+    /// </summary>
+    void OnSplitterMoved(object? sender, SplitterEventArgs e)
+    {
+        if (!_splitterDragged) return;
+        _splitterDragged = false;
+        PreviewHeight = Undip(PreviewHeightInDevicePixels);
+    }
 
     protected override void OnHandleCreated(EventArgs e)
     {
@@ -205,15 +249,29 @@ internal sealed class FlattenPanel : UserControl
         _split.SplitterWidth = Math.Max(4, Dip(4));
         _split.Panel1MinSize = Dip(120);
         _split.Panel2MinSize = Dip(120);
-        // Three fifths to the list: it is the thing being operated, and the
-        // preview only has to be big enough to say where on the page you are.
+        ApplyPreviewHeight();
+    }
+
+    /// <summary>
+    /// Put the splitter where <see cref="PreviewHeight"/> asks for, or three
+    /// fifths to the list when the user has never said — the list is the thing
+    /// being operated, and the preview only has to be big enough to say where on
+    /// the page you are. Re-applied whenever the DPI changes, so a remembered
+    /// height means the same amount of picture at any scale.
+    /// </summary>
+    void ApplyPreviewHeight()
+    {
         int available = _split.Height;
-        int wanted = Math.Max(_split.Panel1MinSize, (int)(available * 0.6));
-        if (available > _split.Panel1MinSize + _split.Panel2MinSize + _split.SplitterWidth)
-        {
-            _split.SplitterDistance = Math.Min(
-                wanted, available - _split.Panel2MinSize - _split.SplitterWidth);
-        }
+        if (available <= _split.Panel1MinSize + _split.Panel2MinSize + _split.SplitterWidth) return;
+
+        int wantedListHeight = PreviewHeight > 0
+            ? available - Dip(PreviewHeight) - _split.SplitterWidth
+            : (int)(available * 0.6);
+
+        _split.SplitterDistance = Math.Clamp(
+            wantedListHeight,
+            _split.Panel1MinSize,
+            available - _split.Panel2MinSize - _split.SplitterWidth);
     }
 
     /// <summary>

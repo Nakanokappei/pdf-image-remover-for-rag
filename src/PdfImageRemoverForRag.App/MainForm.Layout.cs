@@ -152,10 +152,11 @@ internal sealed partial class MainForm
     }
 
     /// <summary>
-    /// Give the flatten panel its width in logical pixels. Re-applied on a DPI
-    /// change because <see cref="SplitContainer.FixedPanel"/> holds a panel to
-    /// its size in device pixels — left alone, the panel would shrink by half
-    /// when the window moved to a 200 % display.
+    /// Give the flatten panel the width in <see cref="_flattenPanelWidth"/>,
+    /// which is in logical pixels. Re-applied on a DPI change because
+    /// <see cref="SplitContainer.FixedPanel"/> holds a panel to its size in
+    /// device pixels — left alone, the panel would shrink by half when the
+    /// window moved to a 200 % display.
     /// </summary>
     void ApplyWorkspaceSplitMetrics()
     {
@@ -163,16 +164,28 @@ internal sealed partial class MainForm
         _workspaceSplit.Panel1MinSize = Dip(320);
         _workspaceSplit.Panel2MinSize = Dip(200);
 
-        // Wide enough for a file name and an indented object label; the user
-        // can drag from here and the width then survives window resizing.
-        int wanted = Dip(300);
+        int wanted = Dip(_flattenPanelWidth);
         int room = _workspaceSplit.Width
                  - _workspaceSplit.Panel1MinSize - _workspaceSplit.SplitterWidth;
         if (room < _workspaceSplit.Panel2MinSize) return;
 
-        int panelWidth = Math.Min(wanted, room);
+        int panelWidth = Math.Max(_workspaceSplit.Panel2MinSize, Math.Min(wanted, room));
         _workspaceSplit.SplitterDistance =
             _workspaceSplit.Width - panelWidth - _workspaceSplit.SplitterWidth;
+    }
+
+    /// <summary>
+    /// Record where the user dragged the workspace splitter to, so the width
+    /// survives a DPI change now and a restart later. Only a move that began
+    /// with <see cref="SplitContainer.SplitterMoving"/> counts — see the field.
+    /// </summary>
+    void OnWorkspaceSplitterMoved(object? sender, SplitterEventArgs e)
+    {
+        if (!_workspaceSplitterDragged) return;
+        _workspaceSplitterDragged = false;
+        int panelWidth = _workspaceSplit.Width
+                       - _workspaceSplit.SplitterDistance - _workspaceSplit.SplitterWidth;
+        _flattenPanelWidth = (int)Math.Round(panelWidth * 96.0 / DeviceDpi);
     }
 
     void BuildLayout()

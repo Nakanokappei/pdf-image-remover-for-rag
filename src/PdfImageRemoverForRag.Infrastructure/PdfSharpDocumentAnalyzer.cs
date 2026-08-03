@@ -143,7 +143,7 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
                 var textHits = ContentStreamWalker.FindTexts(sequence, textDecoder, textMetrics);
                 foreach (var text in textHits)
                 {
-                    if (text.Value.Length < MinTextLength) continue;
+                    if (ReadableCharacterCount(text.Value) < MinReadableCharacters) continue;
                     if (!textPlacementsByValue.TryGetValue(text.Value, out var placements))
                     {
                         placements = new List<Placement>();
@@ -338,11 +338,40 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
         return placed;
     }
 
-    /// <summary>Minimum characters for a text object to be removable (§ user request).</summary>
-    const int MinTextLength = 2;
+    /// <summary>
+    /// Minimum READABLE characters for a text object to be removable. One, so
+    /// that a single letter repeated across a document qualifies: a
+    /// confidentiality marking is often exactly one character ("S" on every
+    /// page of a real manual), and at two it could not be removed at all.
+    ///
+    /// Counting readable characters rather than all of them is what keeps a
+    /// string of spaces out of the list. Such a row shows nothing, tells the
+    /// user nothing, and joins words together if it is removed. It could
+    /// already appear before this count was lowered — two spaces were two
+    /// characters — so this closes that as well.
+    ///
+    /// The repetition filter below is the other half: a lone character shown
+    /// once is still not offered.
+    /// </summary>
+    const int MinReadableCharacters = 1;
 
     /// <summary>Minimum showings within one file before a text is treated as noise.</summary>
     const int MinTextOccurrences = 2;
+
+    /// <summary>
+    /// How many characters of a shown string a reader would actually see.
+    /// Whitespace and control characters do not count — they take up room on
+    /// the page without putting a mark on it.
+    /// </summary>
+    static int ReadableCharacterCount(string value)
+    {
+        var count = 0;
+        foreach (var character in value)
+        {
+            if (!char.IsWhiteSpace(character) && !char.IsControl(character)) count++;
+        }
+        return count;
+    }
 
     /// <summary>
     /// One place an object was drawn: the page and the rectangle it covers, in

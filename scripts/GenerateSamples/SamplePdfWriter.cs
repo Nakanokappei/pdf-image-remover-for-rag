@@ -70,6 +70,7 @@ public static class SamplePdfWriter
             WriteRepeatedShapes(Path.Combine(outputDirectory, "repeated-shapes.pdf")),
             WriteFormEmbeddedImage(Path.Combine(outputDirectory, "form-embedded-image.pdf"), logoPng),
             WriteFormDrawnShapes(Path.Combine(outputDirectory, "form-drawn-shapes.pdf")),
+            WriteSingleCharacterText(Path.Combine(outputDirectory, "single-character-text.pdf")),
             WriteSoftMaskedImage(Path.Combine(outputDirectory, "soft-masked-image.pdf")),
             WriteAnnotationSharedImage(Path.Combine(outputDirectory, "annotation-shared-image.pdf")),
         };
@@ -357,6 +358,37 @@ public static class SamplePdfWriter
             // repeated-text filter keeps it out and the assertions stay about
             // shapes.
             gfx.DrawString($"Form-drawn shapes, page {i}", caption, XBrushes.Black, 60, 120);
+        }
+        doc.Save(path);
+        return path;
+    }
+
+    static string WriteSingleCharacterText(string path)
+    {
+        // The three ways a short string can be judged, on three pages so the
+        // repetition filter has something to work with:
+        //   "S"    one readable character, shown on every page — a
+        //          confidentiality marking, and the case this sample exists for
+        //   "   "  whitespace only, shown on every page — must stay out of the
+        //          list, since the row would show nothing and removing it would
+        //          join the words on either side
+        //   "X"    one readable character shown ONCE — still filtered, because
+        //          the repetition rule is unchanged
+        using var doc = NewDocument("single-character-text sample");
+        var marking = new XFont("Segoe WP", 12, XFontStyleEx.Bold);
+        var body = new XFont("Segoe WP", 11, XFontStyleEx.Regular);
+        for (int i = 1; i <= 3; i++)
+        {
+            var page = doc.AddPage();
+            using var gfx = XGraphics.FromPdfPage(page);
+            gfx.DrawString("S", marking, XBrushes.Gray, 520, 40);
+            gfx.DrawString("   ", body, XBrushes.Black, 40, 60);
+            gfx.DrawString($"Body paragraph unique to page {i}.", body, XBrushes.Black, 40, 120);
+        }
+        // On the last page only, so it cannot reach two showings.
+        using (var gfx = XGraphics.FromPdfPage(doc.Pages[doc.PageCount - 1]))
+        {
+            gfx.DrawString("X", marking, XBrushes.Black, 40, 160);
         }
         doc.Save(path);
         return path;

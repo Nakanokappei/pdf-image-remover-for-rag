@@ -24,6 +24,7 @@ public sealed class SamplePdfFixture : IDisposable
     public string RepeatedShapesPath => Path.Combine(TempDirectory, "repeated-shapes.pdf");
     public string FormEmbeddedImagePath => Path.Combine(TempDirectory, "form-embedded-image.pdf");
     public string FormDrawnShapesPath => Path.Combine(TempDirectory, "form-drawn-shapes.pdf");
+    public string SingleCharacterTextPath => Path.Combine(TempDirectory, "single-character-text.pdf");
     public string SoftMaskedImagePath => Path.Combine(TempDirectory, "soft-masked-image.pdf");
     public string AnnotationSharedImagePath => Path.Combine(TempDirectory, "annotation-shared-image.pdf");
 

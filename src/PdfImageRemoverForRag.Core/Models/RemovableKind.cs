@@ -18,7 +18,7 @@ public enum RemovableKind
     Shape = 2,
 
     /// <summary>
-    /// Artwork painted inside a Form XObject — "図" in the UI. A Shape is one
+    /// Artwork painted inside a Form XObject — "Drawing" in the UI. A Shape is one
     /// path on the page; a Drawing is everything one form paints, and it is
     /// removable only as a whole because the form's content stream is shared
     /// between the pages that draw it. What IS per-page is the form's

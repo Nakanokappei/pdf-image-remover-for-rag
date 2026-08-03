@@ -80,7 +80,7 @@ internal sealed partial class MainForm : Form
         AccessibleName = $"{ShownTypesCaption}: {caption}",
     };
 
-    /// <summary>The 表示する種類 caption without its access-key marker.</summary>
+    /// <summary>The Shown Types caption without its access-key marker.</summary>
     static string ShownTypesCaption => L10n.MenuShownTypes.Replace("&", string.Empty);
 
     /// <summary>

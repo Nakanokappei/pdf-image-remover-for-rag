@@ -61,6 +61,15 @@ internal sealed partial class MainForm
             _openToolButton, _saveToolButton,
             new ToolStripSeparator(),
             _selectAllToolButton, _clearSelectionToolButton,
+            new ToolStripSeparator(),
+            // The kind filters last, so the commands keep the positions the
+            // user already knows. Four short captions with no icons: the
+            // caption IS the filter, and a glyph for "text" next to a glyph for
+            // "drawing" would be two more things to learn.
+            HostKindCheckBox(_showImagesCheck),
+            HostKindCheckBox(_showShapesCheck),
+            HostKindCheckBox(_showDrawingsCheck),
+            HostKindCheckBox(_showTextCheck),
         });
 
         // Sizes (ImageScalingSize, button padding) are DPI-dependent and set in
@@ -78,6 +87,21 @@ internal sealed partial class MainForm
             button.AccessibleName = toolTip;
             button.Margin = new Padding(2, 1, 2, 1);
         }
+
+        // Put one filter box on the strip. The tooltip carries the submenu's
+        // caption because four bare nouns do not say what they are filtering,
+        // and a visible label for them would cost width the toolbar may not
+        // have at 200 %.
+        static ToolStripControlHost HostKindCheckBox(CheckBox box) =>
+            new(box)
+            {
+                AutoSize = true,
+                ToolTipText = ShownTypesCaption,
+                // Hosted controls are not painted by the ToolStrip renderer, so
+                // the host has to carry the strip's own colour or the box sits
+                // on a grey patch.
+                BackColor = SystemColors.Window,
+            };
 
         static void SetIconAndText(ToolStripButton button, Image icon, string caption)
         {
@@ -133,6 +157,15 @@ internal sealed partial class MainForm
         _saveToolButton.Padding = new Padding(Dip(10));
         _selectAllToolButton.Padding = new Padding(Dip(10), Dip(10), Dip(12), Dip(10));
         _clearSelectionToolButton.Padding = new Padding(Dip(10), Dip(10), Dip(12), Dip(10));
+
+        // The filter boxes size themselves from their text, but the gap between
+        // them is a hand-picked number and so has to be scaled like every other
+        // one. 8 logical px apart, which keeps four of them from reading as one
+        // block without spending the width a separator would.
+        foreach (var box in new[] { _showImagesCheck, _showShapesCheck, _showDrawingsCheck, _showTextCheck })
+        {
+            box.Margin = new Padding(Dip(4), Dip(2), Dip(4), Dip(2));
+        }
 
         // The tile view measures itself by hand, so its bitmap size follows the
         // scale here. TileView reads the metrics through its own Dip and needs

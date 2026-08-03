@@ -168,23 +168,60 @@ internal sealed partial class MainForm
     }
 
     /// <summary>
-    /// Toggle whether a removable kind appears in the list. Enforces the
-    /// "at least one kind visible" rule: the last remaining check cannot be
-    /// turned off.
+    /// Show or hide one removable kind. Enforces the "at least one kind
+    /// visible" rule: the last remaining kind cannot be turned off.
+    ///
+    /// The menu and the toolbar both come here, and both are put back in step
+    /// afterwards — including when the request is refused, which is what makes
+    /// a check box bounce back instead of showing a filter that is not applied.
     /// </summary>
-    void ToggleKindVisibility(RemovableKind kind, ToolStripMenuItem item)
+    void SetKindVisible(RemovableKind kind, bool visible)
     {
-        if (_visibleKinds.Contains(kind))
+        bool alreadyVisible = _visibleKinds.Contains(kind);
+        // Refused or redundant: nothing changes, but the surfaces may still be
+        // out of step — a check box the user just cleared is showing the wrong
+        // answer until it is told otherwise.
+        if (visible == alreadyVisible || (!visible && _visibleKinds.Count == 1))
         {
-            if (_visibleKinds.Count == 1) return; // keep at least one kind on
-            _visibleKinds.Remove(kind);
+            SyncKindToggles();
+            return;
         }
-        else
-        {
-            _visibleKinds.Add(kind);
-        }
-        item.Checked = _visibleKinds.Contains(kind);
+
+        if (visible) _visibleKinds.Add(kind);
+        else _visibleKinds.Remove(kind);
+        SyncKindToggles();
         RebuildDisplay();
+    }
+
+    /// <summary>
+    /// A check box reporting what the user just did to it. Ignored while the
+    /// two surfaces are being synchronised, or the correction would be read as
+    /// a fresh instruction and undo itself.
+    /// </summary>
+    void OnKindCheckChanged(RemovableKind kind, CheckBox box)
+    {
+        if (_syncingKindToggles) return;
+        SetKindVisible(kind, box.Checked);
+    }
+
+    /// <summary>
+    /// Make every menu item and check box agree with the filter that is
+    /// actually applied. One writer for both surfaces, so they cannot drift.
+    /// </summary>
+    void SyncKindToggles()
+    {
+        _syncingKindToggles = true;
+        try
+        {
+            _showImagesMenuItem.Checked = _showImagesCheck.Checked = _visibleKinds.Contains(RemovableKind.Image);
+            _showShapesMenuItem.Checked = _showShapesCheck.Checked = _visibleKinds.Contains(RemovableKind.Shape);
+            _showDrawingsMenuItem.Checked = _showDrawingsCheck.Checked = _visibleKinds.Contains(RemovableKind.Drawing);
+            _showTextMenuItem.Checked = _showTextCheck.Checked = _visibleKinds.Contains(RemovableKind.Text);
+        }
+        finally
+        {
+            _syncingKindToggles = false;
+        }
     }
 
     void RefreshThumbnailImages(IReadOnlyList<CrossFileImageGroup> groups)

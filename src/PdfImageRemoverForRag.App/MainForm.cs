@@ -33,7 +33,7 @@ internal sealed partial class MainForm : Form
     readonly ToolStripMenuItem _exitMenuItem = new(L10n.MenuExit);
     readonly ToolStripMenuItem _tableViewMenuItem = new(L10n.MenuTableView) { Checked = true, CheckOnClick = false };
     readonly ToolStripMenuItem _tileViewMenuItem = new(L10n.MenuTileView) { Checked = false, CheckOnClick = false };
-    // 表示する種類 submenu: per-kind visibility filters. All three start checked;
+    // 表示する種類 submenu: per-kind visibility filters. All four start checked;
     // CheckOnClick is off so MainForm can veto turning off the last one.
     readonly ToolStripMenuItem _shownTypesMenuItem = new(L10n.MenuShownTypes);
     readonly ToolStripMenuItem _showImagesMenuItem = new(L10n.MenuShowImages) { Checked = true, CheckOnClick = false };
@@ -49,6 +49,45 @@ internal sealed partial class MainForm : Form
     readonly ToolStripButton _saveToolButton = new() { Enabled = false };
     readonly ToolStripButton _selectAllToolButton = new() { Enabled = false };
     readonly ToolStripButton _clearSelectionToolButton = new() { Enabled = false };
+
+    // The same per-kind filters as the menu, repeated on the toolbar so that
+    // narrowing the list to one kind is a click rather than four trips through
+    // a submenu.
+    //
+    // Real check boxes, not ToolStripButtons with CheckOnClick.
+    // Windows11ToolStripRenderer draws hover and press and returns before the
+    // base renderer, so a checked ToolStripButton looks exactly like an
+    // unchecked one — a toggle whose state cannot be seen is worse than no
+    // toggle. A hosted CheckBox brings its own glyph and its own UIA toggle
+    // pattern.
+    readonly CheckBox _showImagesCheck = NewKindCheckBox(L10n.MenuShowImages);
+    readonly CheckBox _showShapesCheck = NewKindCheckBox(L10n.MenuShowShapes);
+    readonly CheckBox _showDrawingsCheck = NewKindCheckBox(L10n.MenuShowDrawings);
+    readonly CheckBox _showTextCheck = NewKindCheckBox(L10n.MenuShowText);
+
+    /// <summary>
+    /// One toolbar filter box. The caption is the same string the menu uses, so
+    /// the two surfaces cannot describe the same filter differently, and the
+    /// accessible name prefixes it with the submenu's own caption — four bare
+    /// nouns in a row need to say what they are filtering.
+    /// </summary>
+    static CheckBox NewKindCheckBox(string caption) => new()
+    {
+        Text = caption,
+        Checked = true,
+        AutoSize = true,
+        BackColor = SystemColors.Window,
+        AccessibleName = $"{ShownTypesCaption}: {caption}",
+    };
+
+    /// <summary>The 表示する種類 caption without its access-key marker.</summary>
+    static string ShownTypesCaption => L10n.MenuShownTypes.Replace("&", string.Empty);
+
+    /// <summary>
+    /// Set while the two surfaces are being brought back into agreement, so the
+    /// check boxes' own events do not re-enter the toggle they are reporting.
+    /// </summary>
+    bool _syncingKindToggles;
 
     // --- table view (§11.3) ------------------------------------------------
     // No AutoSizeMode here: ConfigureImageListGrid gives every column its mode
@@ -290,10 +329,18 @@ internal sealed partial class MainForm : Form
         _exitMenuItem.Click += (_, _) => Close();
         _tableViewMenuItem.Click += (_, _) => SetViewMode(tileView: false);
         _tileViewMenuItem.Click += (_, _) => SetViewMode(tileView: true);
-        _showImagesMenuItem.Click += (_, _) => ToggleKindVisibility(RemovableKind.Image, _showImagesMenuItem);
-        _showShapesMenuItem.Click += (_, _) => ToggleKindVisibility(RemovableKind.Shape, _showShapesMenuItem);
-        _showDrawingsMenuItem.Click += (_, _) => ToggleKindVisibility(RemovableKind.Drawing, _showDrawingsMenuItem);
-        _showTextMenuItem.Click += (_, _) => ToggleKindVisibility(RemovableKind.Text, _showTextMenuItem);
+        // Both surfaces report the same intent — "this kind should be shown or
+        // not" — and one method decides. A menu click is a toggle because the
+        // item carries no state of its own; a check box already holds the
+        // answer, so it passes what it now shows.
+        _showImagesMenuItem.Click += (_, _) => SetKindVisible(RemovableKind.Image, !_visibleKinds.Contains(RemovableKind.Image));
+        _showShapesMenuItem.Click += (_, _) => SetKindVisible(RemovableKind.Shape, !_visibleKinds.Contains(RemovableKind.Shape));
+        _showDrawingsMenuItem.Click += (_, _) => SetKindVisible(RemovableKind.Drawing, !_visibleKinds.Contains(RemovableKind.Drawing));
+        _showTextMenuItem.Click += (_, _) => SetKindVisible(RemovableKind.Text, !_visibleKinds.Contains(RemovableKind.Text));
+        _showImagesCheck.CheckedChanged += (_, _) => OnKindCheckChanged(RemovableKind.Image, _showImagesCheck);
+        _showShapesCheck.CheckedChanged += (_, _) => OnKindCheckChanged(RemovableKind.Shape, _showShapesCheck);
+        _showDrawingsCheck.CheckedChanged += (_, _) => OnKindCheckChanged(RemovableKind.Drawing, _showDrawingsCheck);
+        _showTextCheck.CheckedChanged += (_, _) => OnKindCheckChanged(RemovableKind.Text, _showTextCheck);
         _manualMenuItem.Click += OnManualClicked;
         _aboutMenuItem.Click += OnAboutClicked;
 

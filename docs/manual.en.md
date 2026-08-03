@@ -150,11 +150,13 @@ Below the toolbar the window is split left and right.
 
 **View → Table** returns to the table.
 
+> **If you use a screen reader, use the table view.** The tiles are painted onto a single control, so **Narrator cannot read them** (NVDA and JAWS can). The table shows the same objects in the same order, and there is nothing you can do in one view that you cannot do in the other.
+
 ### Filtering by kind
 
-**View → Shown Types** toggles Images / Shapes / Text. Handy when you want to clear out all shapes at once.
+The **check boxes on the toolbar**, or **View → Shown Types**, toggle Images / Shapes / Drawings / Text. The two are the same switch and always agree. Handy when you want to look at one kind at a time.
 
-At least one kind must stay visible, so the last remaining check cannot be turned off. **Select All** applies only to the kinds currently shown.
+At least one kind must stay visible, so the last remaining check cannot be turned off (it springs back if you try). **Select All** applies only to the kinds currently shown.
 
 ---
 

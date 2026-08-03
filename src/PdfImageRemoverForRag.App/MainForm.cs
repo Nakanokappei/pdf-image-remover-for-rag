@@ -81,7 +81,18 @@ internal sealed partial class MainForm : Form
     };
 
     /// <summary>The Shown Types caption without its access-key marker.</summary>
-    static string ShownTypesCaption => L10n.MenuShownTypes.Replace("&", string.Empty);
+    static string ShownTypesCaption =>
+        AccessKeyMarker.Replace(L10n.MenuShownTypes, string.Empty).Replace("&", string.Empty).Trim();
+
+    /// <summary>
+    /// A trailing access-key marker, as CJK menus spell it: 表示する種類(&amp;D).
+    /// Dropping only the ampersand leaves "(D)" behind, and a screen reader reads
+    /// it out — the caption was announced as "表示する種類(D): 画像". The whole
+    /// parenthesis has to go. Latin captions put the marker inside the word
+    /// (&amp;Shown Types), where removing the ampersand is already enough.
+    /// </summary>
+    static readonly System.Text.RegularExpressions.Regex AccessKeyMarker =
+        new(@"\s*\(&[A-Za-z0-9]\)", System.Text.RegularExpressions.RegexOptions.Compiled);
 
     /// <summary>
     /// Set while the two surfaces are being brought back into agreement, so the

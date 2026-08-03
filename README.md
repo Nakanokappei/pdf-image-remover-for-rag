@@ -1,6 +1,6 @@
 # PDF Image Remover for RAG
 
-A Windows 11 desktop tool that removes unnecessary images, repeated text, and vector shapes from PDFs before you feed them into a RAG pipeline.
+A Windows 11 desktop tool that removes unnecessary images, repeated text, vector shapes, and grouped artwork from PDFs before you feed them into a RAG pipeline.
 
 Company logos, headers, footers, watermarks, and page rules degrade retrieval quality and inflate preprocessing cost once a PDF lands in a RAG / Dify pipeline. This tool lists every removable object in your PDFs, lets you check what you want gone, and writes new PDFs without them. A removed image is taken out of the file itself, not merely stopped from being painted — otherwise a pipeline that reads a PDF by enumerating its objects still finds it. **The original files are never overwritten.**
 
@@ -15,16 +15,17 @@ Everything runs locally — files never leave your PC, and no data is collected.
 | Kind | What is listed | Notes |
 | --- | --- | --- |
 | **Images** | Every drawn Image XObject | The same logo on 50 pages — and across every open file — is one row |
-| **Text** | Strings of 2+ characters shown 2+ times in a file | Headers, footers, watermarks. CJK/composite fonts are decoded via `/ToUnicode` |
+| **Text** | Strings with at least one visible character, shown 2+ times in a file | Headers, footers, watermarks — a one-letter confidentiality marking counts. Whitespace-only strings are never listed. CJK/composite fonts are decoded via `/ToUnicode` |
 | **Shapes** | Every drawn line, rectangle, and curve | Identity is shape + line width + color; position is ignored |
+| **Drawings** | Artwork a Form XObject paints, listed as one object | A silhouette with a speech bubble is one row, not one row per path. Identity is the form's stream hash, so one form on eleven pages is one row |
 
 ## Features
 
 - **Open several PDFs at once.** Identical objects are merged into one row across files — one checkbox removes a shared logo from every file.
 - **Two views.** A spreadsheet-style table (sortable on any column, resizable columns) and a thumbnail tile view, always in the same order.
 - **Flatten overlaps into an image** (the Flatten panel, docked beside the object list). Where objects of different kinds overlap — image + text, image + shape, text + shape — the place can be replaced by a rendering of itself, so the page keeps its appearance while that text leaves the text layer. Selecting a row in the object list shows the units that object takes part in, laid out like an image editor's layers panel: a unit is a layer group and the objects inside it are its layers, each with a thumbnail, a name and a checkbox. A preview underneath shows where on the page it is. One save flattens and then removes, in that order.
-- **Thumbnails for everything.** Images are decoded, text is drawn as text, shapes are rendered from their actual path in their actual color.
-- **Filter by kind** (View → Shown Types) to work on images, text, or shapes alone.
+- **Thumbnails for everything.** Images are decoded, text is drawn as text, shapes are rendered from their actual path in their actual color, and a drawing's paths are rendered together so it looks like what sits on the page.
+- **Filter by kind** — check boxes on the toolbar, or View → Shown Types — to work on one kind at a time.
 - **Safety first.** Saves go through a temp file that is verified (re-opens, page count matches, removed images absent from both the content streams and the page resources, kept objects present) before it becomes the final `_cleaned.pdf`. Objects inside a shared Form XObject are marked unremovable; full-page (scanned) images are flagged with a warning.
 - **16 UI languages**, following the OS display language: English, Japanese, Simplified Chinese, Traditional Chinese, Korean, German, French, Spanish, Italian, Portuguese, Russian, Indonesian, Malay, Hindi, Turkish, Vietnamese. There is no in-app language switch — it follows Windows. The manual exists in English and Japanese only; every other language opens the English page.
 - **Handles large documents.** A 31 MB, 176-page file with 2,015 removable objects opens in seconds. Thumbnails are cached on disk and only the ones on screen are held in memory, so opening many large PDFs costs disk rather than RAM.

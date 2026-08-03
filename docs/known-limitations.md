@@ -8,7 +8,7 @@ Limitations of the current version. Read together with the README.
 | --- | --- |
 | **Images inside Form XObjects** | Listed, but marked "not removable" and cannot be checked. Rewriting a shared Form could affect other pages, so the tool errs on the safe side. |
 | **Inline images (`BI`…`EI`)** | Not handled. Only Image XObjects are processed. |
-| **Logos, rules, or text drawn as vector paths** | Handled as *shapes*, not as images or text. |
+| **Logos, rules, or text drawn as vector paths** | Handled as *shapes*, not as images or text — when the page draws them itself. Paths painted inside a Form XObject are a *drawing* instead (see below). |
 | **Full-page images in scanned PDFs** | Removable, but flagged with a warning. Deleting one removes everything visible on that page. Partial removal inside an image (e.g. erasing just a logo) is not supported. |
 | **Encrypted PDFs** | Cannot be opened — there is no password prompt. An error dialog explains this. |
 | **JPEG (`/DCTDecode`) thumbnails** | Supported. PdfPig's `TryGetPng` always returns false for JPEG (a documented limitation), so the raw JPEG bytes are passed through for display. |
@@ -25,12 +25,44 @@ Limitations of the current version. Read together with the README.
 | **Soft masks of images you keep** | A `/SMask` is an image's alpha channel and belongs to its parent, so it is neither listed as a removable object nor removable on its own — deleting it would strip the transparency from an image you chose to keep. Object-enumerating readers may still surface such masks as spurious images, typically near-black rectangles matching their parents' pixel dimensions. Remove the parent image and its mask goes with it. |
 | **Visual confirmation** | The automatic post-save verification is basic (the file opens, page count matches, removed images are absent from both the content streams and the page resources, retained objects remain). Final visual confirmation is left to the user. |
 
+### Telling which soft masks will turn into black rectangles
+
+The tool does not flag these, and they cannot be seen by looking at the page —
+the mask is doing its job there. They appear downstream, when a reader
+enumerates objects instead of rendering pages and writes every image it finds
+out as a picture. This is what to measure when that happens.
+
+A `/SMask` holds one 8-bit sample per pixel: 0 is transparent, 255 is opaque. A
+reader that does not know it is alpha writes those samples out as grey levels,
+so **transparency becomes darkness**. A mask that is mostly zero therefore
+becomes a mostly black rectangle the size of its parent.
+
+Darkness alone does not decide it. What separates the two cases is whether any
+part of the mask is opaque:
+
+| Measured over the mask's samples | What the extracted image looks like |
+| --- | --- |
+| Most samples near 0, **and none near 255** | A rectangle with nothing visible in it — the black box people report |
+| Most samples near 0, **but some near 255** | The opaque region's shape, drawn dark. A logo still reads as a logo, which is why it gets reported as something else |
+| Samples spread around mid-grey | A grey panel nobody notices |
+
+So a document can hold many masks and produce far fewer black rectangles than
+it has masks. On the file this was worked out from, 7 masks on one page yielded
+exactly 3 black rectangles, and across the document 59 masks yielded 27.
+
+**The remedy is to remove the parent image**, which takes the mask with it (a
+mask cannot be removed on its own — see the row above). Weigh it first: a mask
+that is 90 % transparent belongs to an image that is barely visible on the
+page, often a soft highlight or a callout laid over a screenshot. Removing it
+removes that artwork too. Check one page before doing the whole document.
+
 ## Text removal
 
 | Limitation | Description |
 | --- | --- |
-| **Scope** | Strings drawn by `Tj`/`TJ`/`'`/`"` directly in the page content stream, **2+ characters** long and shown **2+ times within one file** (repeated noise: headers, footers, watermarks). |
-| **How "2+ characters" is measured** | On the **actual decoded characters**, using the font's `/ToUnicode` CMap. Identity-H (CID) text such as Japanese decodes correctly, so the threshold behaves as expected. Fonts without a ToUnicode map are matched on raw values (WinAnsi and similar are readable as-is). |
+| **Scope** | Strings drawn by `Tj`/`TJ`/`'`/`"` directly in the page content stream, holding **at least one visible character** and shown **2+ times within one file** (repeated noise: headers, footers, watermarks). One character is enough, so a single-letter confidentiality marking in the corner of every page can be removed. |
+| **Whitespace** | Whitespace and control characters do not count towards that one character, so a string of spaces is never listed. Such a row would show nothing, and removing it would join the words on either side. |
+| **How the characters are counted** | On the **actual decoded characters**, using the font's `/ToUnicode` CMap. Identity-H (CID) text such as Japanese decodes correctly, so the threshold behaves as expected. Fonts without a ToUnicode map are matched on raw values (WinAnsi and similar are readable as-is). |
 | **Garbled text** | Composite fonts (Type0 / Identity-H) store 2-byte code sequences; these are decoded via the `/ToUnicode` CMap, so the list, thumbnails, and removal keys all show and match real characters. Fonts with no ToUnicode CMap cannot be decoded and are handled on raw values (matching and removal still work, but the display may be garbled). |
 | **Text inside Form XObjects** | Not detected and not removed (shared Forms are never rewritten — the same safety policy as for images). |
 | **Same-value collisions** | Two different text runs showing the same string in different fonts may both be removed (rare). |
@@ -44,10 +76,23 @@ Limitations of the current version. Read together with the README.
 | **Scope** | Vector shapes (lines, rectangles, curves) drawn by path-construction operators (`m`/`l`/`c`/`v`/`y`/`re`/`h`) plus a painting operator (`S`/`s`/`f`/`F`/`f*`/`B`/`b`/`n`, …) directly in the page content stream. **No occurrence-count filter** — like images, every drawn shape is listed and the user picks what to remove. Repeats of the same shape collapse into one group with a summed usage count. |
 | **Identity** | **Shape + line width + color** (**position is ignored**). Path points are CTM-mapped, then translated so the bounding box starts at the origin; the painting operator, line width (`w`), and stroke/fill color (`RG`/`rg`/`G`/`g`/`K`/`k`) complete the signature. The same shape at different positions is one group; a different width or color splits it. |
 | **Clipping paths** | Paths that also set a clip (`W`/`W*`) are never removed (removing them could reshape unrelated clipped content). |
-| **Shapes inside Form XObjects** | Not detected and not removed (shared Forms are never rewritten). |
+| **Shapes inside Form XObjects** | Not listed as shapes. They are listed as one *drawing* instead — see the next section. |
 | **Thumbnails** | The actual path is rendered in its actual color (scaled to the bounding box, stroke/fill reproduced). CMYK and grayscale colors are converted to RGB. Shapes brighter than light gray are drawn on a black background so they stay visible. |
 | **Side effects** | Only the path-construction-through-painting operators are removed; preceding state settings (`w`, `rg`, `RG`, …) remain. Harmless when nothing follows, but a leftover state setting could in rare cases affect later drawing. |
 | **Granularity** | "One shape" = one path paint (construction through painting operator). A logo composed of several paths appears as several objects. |
+
+## Drawing removal
+
+| Limitation | Description |
+| --- | --- |
+| **Scope** | The vector artwork a Form XObject paints in its own content stream. Listed as **one object per form**, however many paths it holds, because the stream is shared by every page that draws the form. **No occurrence-count filter**, like images and shapes. |
+| **Identity** | The form's **stream hash**, the same identity images use. One form placed on eleven pages is one object with eleven placements; two forms holding identical bytes are one object. |
+| **Granularity** | A drawing cannot be taken apart. Removing one leaves nothing of it on that page, so a silhouette and the speech bubble beside it go together if one form paints both. |
+| **How it is removed** | The page's own `Do` call for the form is deleted, along with the form's entry in that page's `/XObject` resources. The form's content stream is **never rewritten** — that is what keeps other pages intact. The form object itself is deleted once nothing in the document still points at it. |
+| **Text inside a form** | Not detected, as a drawing or as text. Only paths are read. |
+| **Images inside a form** | Still handled as images (listed, marked not removable), not as part of the drawing. |
+| **Thumbnails** | Every path is drawn through one mapping of the drawing's bounding box, so the parts keep the arrangement they have on the page. Each part keeps its own fill or stroke and its own colour. |
+| **Flattening** | Drawings never join an overlap region. A caption sitting on a form-painted figure is not offered for flattening. |
 
 ## Flattening overlaps into an image
 

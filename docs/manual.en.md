@@ -13,15 +13,16 @@ Company logos, headers, footers, watermarks, and ruling lines are ingested along
 - **Your original PDFs are never modified.** Output always goes to a separate file.
 - **Everything runs locally on your PC.** No file leaves the machine, and no data is collected.
 
-### Three kinds of removable objects
+### Four kinds of removable objects
 
 | Type | What gets listed | Notes |
 | --- | --- | --- |
 | **Image** | Every drawn image | The same logo on 50 pages collapses into one row |
-| **Text** | Strings of **2+ characters shown 2+ times** in a file | For headers, footers, watermarks. CJK / double-byte text is decoded correctly |
+| **Text** | Strings with at least one visible character, shown **2+ times** in a file | One character is enough — a confidentiality marking such as "S". Whitespace-only strings are never listed. For headers, footers, watermarks; CJK / double-byte text is decoded correctly |
 | **Shape** | Every drawn line, rectangle, and curve | Same **shape + line width + color** = one row (position is ignored) |
+| **Drawing** | Artwork placed as a unit | A person silhouette with a speech bubble, and the like: several lines that sit together. The whole picture is removed, not one line at a time |
 
-Only **Text** has an occurrence filter. Images and shapes are listed in full.
+Only **Text** has an occurrence filter. Images, shapes and drawings are listed in full.
 
 ### Two ways to go about it
 
@@ -272,7 +273,7 @@ Details: [known-limitations.md](known-limitations.md)
 | --- | --- |
 | "Could not open the PDF" | The file may be password-protected or corrupt. Use **Copy Details** in the error dialog to inspect it |
 | "The selected file is not a PDF" | A `.pdf` extension is not enough — the contents must actually be a PDF. Check that it is not an image or text file saved under a PDF name |
-| The list is empty | The PDF has no removable objects. Note that text only qualifies at 2+ characters shown 2+ times |
+| The list is empty | The PDF has no removable objects. Note that text only qualifies when it has a visible character and is shown 2+ times |
 | Cannot save | Check that you are not targeting the source path, and that you have write permission in the destination folder |
 | Cannot check a row | That row is "Not removable" (→ section 7) |
 

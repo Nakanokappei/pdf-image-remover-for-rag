@@ -154,6 +154,7 @@ internal static class L10n
     public static string ColumnWarning => S.ColumnWarning;
     public static string AccessibleDeleteColumn => S.AccessibleDeleteColumn;
     public static string TextSize(int characterCount) => S.TextSize(characterCount);
+    public static string RowNumber(int number) => S.RowNumber(number);
 
     // --- status bar / progress ---------------------------------------------
 

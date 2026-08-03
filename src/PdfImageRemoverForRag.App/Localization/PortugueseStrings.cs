@@ -54,6 +54,7 @@ internal sealed class PortugueseStrings : IStrings
     public string ColumnWarning => "Aviso";
     public string AccessibleDeleteColumn => "Remover";
     public string TextSize(int characterCount) => $"{characterCount} caracteres";
+    public string RowNumber(int number) => $"Linha {number}";
 
     public string StatusOpenPrompt => "Abra um PDF para começar";
     public string StatusAnalyzing => "Analisando o PDF…";

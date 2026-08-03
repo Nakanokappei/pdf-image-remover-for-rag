@@ -106,6 +106,14 @@ internal interface IStrings
     /// <summary>Size cell for a text object: character count.</summary>
     string TextSize(int characterCount);
 
+    /// <summary>
+    /// What a screen reader calls one row of the object list. The number is the
+    /// one printed in the row header, counting from 1 — WinForms names a row
+    /// from its zero-based index, so the spoken number was one behind the
+    /// visible one.
+    /// </summary>
+    string RowNumber(int number);
+
     // --- status bar --------------------------------------------------------
 
     string StatusOpenPrompt { get; }

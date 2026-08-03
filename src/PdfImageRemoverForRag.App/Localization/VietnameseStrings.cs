@@ -56,6 +56,7 @@ internal sealed class VietnameseStrings : IStrings
     public string ColumnWarning => "Cảnh báo";
     public string AccessibleDeleteColumn => "Xóa";
     public string TextSize(int characterCount) => $"{characterCount} ký tự";
+    public string RowNumber(int number) => $"Hàng {number}";
 
     public string StatusOpenPrompt => "Mở một tệp PDF để bắt đầu";
     public string StatusAnalyzing => "Đang phân tích tệp PDF…";

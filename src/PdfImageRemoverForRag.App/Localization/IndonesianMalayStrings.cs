@@ -58,6 +58,7 @@ internal sealed class IndonesianMalayStrings : IStrings
     public string ColumnWarning => "Peringatan";
     public string AccessibleDeleteColumn => "Hapus";
     public string TextSize(int characterCount) => $"{characterCount} karakter";
+    public string RowNumber(int number) => $"Baris {number}";
 
     public string StatusOpenPrompt => "Buka PDF untuk memulai";
     public string StatusAnalyzing => "Menganalisis PDF…";

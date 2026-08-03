@@ -50,6 +50,7 @@ internal sealed class EnglishStrings : IStrings
     public string ColumnWarning => "Warning";
     public string AccessibleDeleteColumn => "Remove";
     public string TextSize(int characterCount) => $"{characterCount} chars";
+    public string RowNumber(int number) => $"Row {number}";
 
     public string StatusOpenPrompt => "Open a PDF to begin";
     public string StatusAnalyzing => "Analyzing PDF…";

@@ -57,6 +57,7 @@ internal sealed class SpanishStrings : IStrings
     public string ColumnWarning => "Aviso";
     public string AccessibleDeleteColumn => "Quitar";
     public string TextSize(int characterCount) => $"{characterCount} caracteres";
+    public string RowNumber(int number) => $"Fila {number}";
 
     public string StatusOpenPrompt => "Abra un PDF para comenzar";
     public string StatusAnalyzing => "Analizando el PDF…";

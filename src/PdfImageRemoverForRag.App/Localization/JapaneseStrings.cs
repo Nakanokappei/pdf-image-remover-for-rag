@@ -47,6 +47,7 @@ internal sealed class JapaneseStrings : IStrings
     public string ColumnWarning => "警告";
     public string AccessibleDeleteColumn => "削除";
     public string TextSize(int characterCount) => $"{characterCount} 文字";
+    public string RowNumber(int number) => $"行 {number}";
 
     public string StatusOpenPrompt => "PDFを開いてください";
     public string StatusAnalyzing => "PDFを解析しています…";

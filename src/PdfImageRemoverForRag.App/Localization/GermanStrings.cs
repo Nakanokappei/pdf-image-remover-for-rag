@@ -54,6 +54,7 @@ internal sealed class GermanStrings : IStrings
     public string ColumnWarning => "Warnung";
     public string AccessibleDeleteColumn => "Entfernen";
     public string TextSize(int characterCount) => $"{characterCount} Zeichen";
+    public string RowNumber(int number) => $"Zeile {number}";
 
     public string StatusOpenPrompt => "Öffnen Sie eine PDF-Datei, um zu beginnen";
     public string StatusAnalyzing => "PDF wird analysiert…";

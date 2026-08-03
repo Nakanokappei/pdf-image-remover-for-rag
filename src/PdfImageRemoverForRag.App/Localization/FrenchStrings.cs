@@ -56,6 +56,7 @@ internal sealed class FrenchStrings : IStrings
     public string ColumnWarning => "Avertissement";
     public string AccessibleDeleteColumn => "Supprimer";
     public string TextSize(int characterCount) => $"{characterCount} car.";
+    public string RowNumber(int number) => $"Ligne {number}";
 
     public string StatusOpenPrompt => "Ouvrez un PDF pour commencer";
     public string StatusAnalyzing => "Analyse du PDF…";

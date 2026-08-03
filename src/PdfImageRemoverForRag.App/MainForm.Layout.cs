@@ -266,6 +266,10 @@ internal sealed partial class MainForm
         // Ctrl+Tab still steps through cells for anyone who wants that.
         _imageListGrid.StandardTab = true;
         _imageListGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None;
+        // Every row is cloned from this template, so replacing it is what gives
+        // all of them the screen-reader name that counts from 1. Set before the
+        // height below, since assigning the template discards the old one.
+        _imageListGrid.RowTemplate = new ObjectListRow();
         _imageListGrid.RowTemplate.Height = 68;
         // Trailing area past the last column reads as empty spreadsheet space.
         _imageListGrid.BackgroundColor = SystemColors.Window;

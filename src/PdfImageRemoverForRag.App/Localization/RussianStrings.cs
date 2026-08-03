@@ -61,6 +61,7 @@ internal sealed class RussianStrings : IStrings
     public string ColumnWarning => "Предупр.";
     public string AccessibleDeleteColumn => "Удалить";
     public string TextSize(int characterCount) => $"{characterCount} симв.";
+    public string RowNumber(int number) => $"Строка {number}";
 
     public string StatusOpenPrompt => "Откройте PDF, чтобы начать";
     public string StatusAnalyzing => "Анализ PDF…";

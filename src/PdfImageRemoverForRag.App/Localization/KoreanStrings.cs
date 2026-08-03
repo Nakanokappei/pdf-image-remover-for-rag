@@ -48,6 +48,7 @@ internal sealed class KoreanStrings : IStrings
     public string ColumnWarning => "경고";
     public string AccessibleDeleteColumn => "삭제";
     public string TextSize(int characterCount) => $"{characterCount}자";
+    public string RowNumber(int number) => $"{number}행";
 
     public string StatusOpenPrompt => "PDF를 열어 주십시오";
     public string StatusAnalyzing => "PDF를 분석하는 중…";

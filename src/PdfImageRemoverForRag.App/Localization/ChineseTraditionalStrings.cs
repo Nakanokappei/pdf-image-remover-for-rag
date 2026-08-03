@@ -51,6 +51,7 @@ internal sealed class ChineseTraditionalStrings : IStrings
     public string ColumnWarning => "警告";
     public string AccessibleDeleteColumn => "移除";
     public string TextSize(int characterCount) => $"{characterCount} 個字元";
+    public string RowNumber(int number) => $"第 {number} 列";
 
     public string StatusOpenPrompt => "請先開啟 PDF";
     public string StatusAnalyzing => "正在分析 PDF…";

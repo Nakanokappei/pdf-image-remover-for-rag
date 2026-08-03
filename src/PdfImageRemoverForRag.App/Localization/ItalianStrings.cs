@@ -53,6 +53,7 @@ internal sealed class ItalianStrings : IStrings
     public string ColumnWarning => "Avviso";
     public string AccessibleDeleteColumn => "Rimuovi";
     public string TextSize(int characterCount) => $"{characterCount} caratteri";
+    public string RowNumber(int number) => $"Riga {number}";
 
     public string StatusOpenPrompt => "Aprire un PDF per iniziare";
     public string StatusAnalyzing => "Analisi del PDF in corso…";

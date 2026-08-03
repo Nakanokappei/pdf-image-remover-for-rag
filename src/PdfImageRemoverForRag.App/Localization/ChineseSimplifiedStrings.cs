@@ -49,6 +49,7 @@ internal sealed class ChineseSimplifiedStrings : IStrings
     public string ColumnWarning => "警告";
     public string AccessibleDeleteColumn => "删除";
     public string TextSize(int characterCount) => $"{characterCount} 个字符";
+    public string RowNumber(int number) => $"第 {number} 行";
 
     public string StatusOpenPrompt => "请打开 PDF 以开始";
     public string StatusAnalyzing => "正在分析 PDF…";

@@ -53,6 +53,7 @@ internal sealed class HindiStrings : IStrings
     public string ColumnWarning => "चेतावनी";
     public string AccessibleDeleteColumn => "हटाएँ";
     public string TextSize(int characterCount) => $"{characterCount} वर्ण";
+    public string RowNumber(int number) => $"पंक्ति {number}";
 
     public string StatusOpenPrompt => "शुरू करने के लिए कोई PDF खोलें";
     public string StatusAnalyzing => "PDF का विश्लेषण हो रहा है…";

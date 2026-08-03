@@ -60,6 +60,7 @@ internal sealed class TurkishStrings : IStrings
     public string ColumnWarning => "Uyarı";
     public string AccessibleDeleteColumn => "Kaldır";
     public string TextSize(int characterCount) => $"{characterCount} karakter";
+    public string RowNumber(int number) => $"Satır {number}";
 
     public string StatusOpenPrompt => "Başlamak için bir PDF açın";
     public string StatusAnalyzing => "PDF çözümleniyor…";

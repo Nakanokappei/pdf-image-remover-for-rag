@@ -66,6 +66,7 @@ internal static class ImageListRow
     {
         RemovableKind.Text => L10n.TypeText,
         RemovableKind.Shape => L10n.TypeShape,
+        RemovableKind.Drawing => L10n.TypeDrawing,
         _ => L10n.TypeImage,
     };
 
@@ -73,7 +74,9 @@ internal static class ImageListRow
     public static string SizeLabel(CrossFileImageGroup group) => group.Kind switch
     {
         RemovableKind.Text => L10n.TextSize(group.TextValue?.Length ?? 0),
-        RemovableKind.Shape => L10n.ShapeSize(group.PixelWidth, group.PixelHeight),
+        // A drawing is measured on the page like a shape is, in points.
+        RemovableKind.Shape or RemovableKind.Drawing =>
+            L10n.ShapeSize(group.PixelWidth, group.PixelHeight),
         _ => $"{group.PixelWidth}×{group.PixelHeight}",
     };
 
@@ -239,6 +242,65 @@ internal static class ImageListRow
         {
             using var pen = new Pen(strokeColor, 1.4f);
             graphics.DrawPath(pen, path);
+        }
+        return bitmap;
+    }
+
+    /// <summary>
+    /// Render a drawing: every path its form paints, through ONE mapping of the
+    /// drawing's box into the thumbnail. Sharing the mapping is the whole point
+    /// — scaling each part to fit on its own would stack a head, a body and a
+    /// speech bubble on top of each other instead of arranging them.
+    ///
+    /// Each part keeps its own paint operator and colors, so a drawing may mix
+    /// fills and strokes. The caller owns (and must dispose) the image.
+    /// </summary>
+    public static Image CreateDrawingThumbnail(DrawingGeometry drawing, int width, int height)
+    {
+        // A dark backing only when EVERY painted colour would vanish on white;
+        // one dark part is enough to make the drawing readable as it is.
+        bool needsDarkBackground = drawing.Parts.Count > 0 && drawing.Parts.All(part =>
+            (part.IsFilled ? part.FillColor : part.StrokeColor) is { } c
+            && c.Luminance > LightGrayLuminance);
+
+        var bitmap = new Bitmap(width, height);
+        using var graphics = Graphics.FromImage(bitmap);
+        graphics.Clear(needsDarkBackground ? Color.Black : Color.White);
+        graphics.SmoothingMode = SmoothingMode.AntiAlias;
+        using (var border = new Pen(needsDarkBackground ? Color.FromArgb(80, 80, 80) : Color.Gainsboro))
+        {
+            graphics.DrawRectangle(border, 0, 0, width - 1, height - 1);
+        }
+
+        const int pad = 6;
+        var area = new RectangleF(pad, pad, width - 2 * pad, height - 2 * pad);
+        double scale = 1;
+        if (drawing.Width > 0) scale = area.Width / drawing.Width;
+        if (drawing.Height > 0) scale = Math.Min(scale, area.Height / drawing.Height);
+        if (scale <= 0 || double.IsInfinity(scale)) scale = 1;
+
+        // Centre the scaled box; flip Y so the drawing stands upright.
+        float offsetX = area.X + (float)(area.Width - drawing.Width * scale) / 2;
+        float offsetY = area.Y + (float)(area.Height - drawing.Height * scale) / 2;
+        PointF Map(PointD p) => new(
+            (float)(offsetX + p.X * scale),
+            (float)(offsetY + (drawing.Height - p.Y) * scale));
+
+        foreach (var part in drawing.Parts)
+        {
+            bool fill = part.IsFilled;
+            bool stroke = part.PaintOperator is "S" or "s" or "B" or "B*" or "b" or "b*";
+            using var path = BuildGraphicsPath(part, Map);
+            if (fill)
+            {
+                using var brush = new SolidBrush(ToColor(part.FillColor, Color.Black));
+                graphics.FillPath(brush, path);
+            }
+            if (stroke || !fill)
+            {
+                using var pen = new Pen(ToColor(part.StrokeColor, Color.Black), 1.4f);
+                graphics.DrawPath(pen, path);
+            }
         }
         return bitmap;
     }

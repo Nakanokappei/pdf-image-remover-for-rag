@@ -20,6 +20,7 @@ internal sealed class VietnameseStrings : IStrings
     public string MenuShownTypes => "Loại &hiển thị";
     public string MenuShowImages => "Hình ảnh";
     public string MenuShowShapes => "Hình vẽ";
+    public string MenuShowDrawings => "Bản vẽ";
     public string MenuShowText => "Văn bản";
     public string MenuHelp => "Trợ &giúp";
     public string MenuManual => "&Hướng dẫn trực tuyến…";
@@ -47,6 +48,7 @@ internal sealed class VietnameseStrings : IStrings
     public string TypeImage => "Hình ảnh";
     public string TypeText => "Văn bản";
     public string TypeShape => "Hình vẽ";
+    public string TypeDrawing => "Bản vẽ";
     public string ColumnSize => "Kích thước";
     public string ColumnUsageCount => "Lần dùng";
     public string ColumnCompression => "Nén";

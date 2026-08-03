@@ -170,6 +170,17 @@ internal static class TilePainter
                     inner.Left + (inner.Width * 0.34f), inner.Top + (inner.Height * 0.34f),
                     inner.Width * 0.64f, inner.Height * 0.64f);
                 break;
+            case RemovableKind.Drawing:
+                // Two shapes joined by a line: several paths that move together,
+                // which is what separates a drawing from the single path the
+                // shape glyph shows.
+                float unit = inner.Width / 4f;
+                g.DrawEllipse(pen, inner.Left, inner.Top, unit * 1.6f, unit * 1.6f);
+                g.DrawRectangle(pen, inner.Right - (unit * 1.8f), inner.Bottom - (unit * 1.8f),
+                    unit * 1.8f, unit * 1.8f);
+                g.DrawLine(pen, inner.Left + (unit * 1.4f), inner.Top + (unit * 1.4f),
+                    inner.Right - (unit * 1.6f), inner.Bottom - (unit * 1.6f));
+                break;
             default:
                 // A framed picture with a sun and a mountain ridge.
                 g.DrawRectangle(pen, inner);

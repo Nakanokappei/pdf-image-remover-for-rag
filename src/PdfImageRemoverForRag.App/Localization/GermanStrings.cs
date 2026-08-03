@@ -19,6 +19,7 @@ internal sealed class GermanStrings : IStrings
     public string MenuShownTypes => "Angezeigte T&ypen";
     public string MenuShowImages => "Bilder";
     public string MenuShowShapes => "Formen";
+    public string MenuShowDrawings => "Zeichnungen";
     public string MenuShowText => "Text";
     public string MenuHelp => "&Hilfe";
     public string MenuManual => "Online-Han&dbuch…";
@@ -45,6 +46,7 @@ internal sealed class GermanStrings : IStrings
     public string TypeImage => "Bild";
     public string TypeText => "Text";
     public string TypeShape => "Form";
+    public string TypeDrawing => "Zeichnung";
     public string ColumnSize => "Größe";
     public string ColumnUsageCount => "Anzahl";
     public string ColumnCompression => "Kompr.";

@@ -20,7 +20,7 @@ internal sealed partial class MainForm
         });
         _shownTypesMenuItem.DropDownItems.AddRange(new ToolStripItem[]
         {
-            _showImagesMenuItem, _showShapesMenuItem, _showTextMenuItem,
+            _showImagesMenuItem, _showShapesMenuItem, _showDrawingsMenuItem, _showTextMenuItem,
         });
         var viewMenu = new ToolStripMenuItem(L10n.MenuView);
         viewMenu.DropDownItems.AddRange(new ToolStripItem[]

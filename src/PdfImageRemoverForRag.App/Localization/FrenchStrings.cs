@@ -21,6 +21,7 @@ internal sealed class FrenchStrings : IStrings
     public string MenuShownTypes => "Types &affichés";
     public string MenuShowImages => "Images";
     public string MenuShowShapes => "Formes";
+    public string MenuShowDrawings => "Dessins";
     public string MenuShowText => "Texte";
     public string MenuHelp => "Aid&e";
     public string MenuManual => "&Manuel en ligne…";
@@ -47,6 +48,7 @@ internal sealed class FrenchStrings : IStrings
     public string TypeImage => "Image";
     public string TypeText => "Texte";
     public string TypeShape => "Forme";
+    public string TypeDrawing => "Dessin";
     public string ColumnSize => "Taille";
     public string ColumnUsageCount => "Occur.";
     public string ColumnCompression => "Compr.";

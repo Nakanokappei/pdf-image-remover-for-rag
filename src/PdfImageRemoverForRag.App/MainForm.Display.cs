@@ -392,7 +392,7 @@ internal sealed partial class MainForm
                     // Full text in the tooltip since the cell may be truncated.
                     row.Cells[_thumbnailColumn.Index].ToolTipText = group.TextValue ?? string.Empty;
                 }
-                else if (group.Kind == RemovableKind.Shape)
+                else if (group.Kind is RemovableKind.Shape or RemovableKind.Drawing)
                 {
                     row.Cells[_thumbnailColumn.Index].ToolTipText = ImageListRow.SizeLabel(group);
                 }
@@ -480,7 +480,7 @@ internal sealed partial class MainForm
     string? TileToolTipFor(CrossFileImageGroup group)
     {
         if (group.Kind == RemovableKind.Text) return group.TextValue ?? string.Empty;
-        if (group.Kind == RemovableKind.Shape) return ImageListRow.SizeLabel(group);
+        if (group.Kind is RemovableKind.Shape or RemovableKind.Drawing) return ImageListRow.SizeLabel(group);
         var warning = ImageListRow.WarningToolTip(group);
         return warning.Length > 0 ? warning : null;
     }

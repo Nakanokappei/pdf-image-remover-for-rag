@@ -52,6 +52,7 @@ internal interface IStrings
 
     string MenuShowImages { get; }
     string MenuShowShapes { get; }
+    string MenuShowDrawings { get; }
     string MenuShowText { get; }
     string MenuHelp { get; }
     string MenuManual { get; }
@@ -81,6 +82,14 @@ internal interface IStrings
     string TypeImage { get; }
     string TypeText { get; }
     string TypeShape { get; }
+
+    /// <summary>
+    /// The artwork a Form XObject paints, listed as one object however many
+    /// paths it holds. Distinct from <see cref="TypeShape"/>, which is a single
+    /// path on the page — the two sit next to each other in the type column, so
+    /// a translation has to keep them tellable apart.
+    /// </summary>
+    string TypeDrawing { get; }
     string ColumnSize { get; }
     string ColumnUsageCount { get; }
     string ColumnCompression { get; }

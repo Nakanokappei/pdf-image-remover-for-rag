@@ -301,14 +301,17 @@ internal sealed class PdfCleaningWorkflow
                 result.PagesModified, result.DrawCallsRemoved,
                 result.ImagesKeptForOtherReferences);
 
-            // The verifier resolves hashes against Image XObjects, so it only
-            // handles image groups; text removal is checked by tests, not here.
-            var imageHashes = document.ImageGroups
-                .Where(g => g.Kind == RemovableKind.Image)
+            // The verifier resolves hashes against the XObjects a page names, so
+            // it covers images and drawings — both are streams the file stores
+            // and can be found again by hash. Text and shapes live as operators
+            // inside a content stream with no hash to resolve, and their removal
+            // is checked by tests rather than here.
+            var verifiableHashes = document.ImageGroups
+                .Where(g => g.Kind is RemovableKind.Image or RemovableKind.Drawing)
                 .Select(g => g.Hash)
                 .ToArray();
-            var removedHashes = imageHashes.Where(selectedHashes.Contains).ToArray();
-            var retainedHashes = imageHashes.Except(removedHashes, StringComparer.Ordinal).ToArray();
+            var removedHashes = verifiableHashes.Where(selectedHashes.Contains).ToArray();
+            var retainedHashes = verifiableHashes.Except(removedHashes, StringComparer.Ordinal).ToArray();
             var report = await _verifier.VerifyAsync(
                 document.FilePath, tempPath, removedHashes, retainedHashes, ct)
                 .ConfigureAwait(false);

@@ -38,6 +38,7 @@ internal sealed partial class MainForm : Form
     readonly ToolStripMenuItem _shownTypesMenuItem = new(L10n.MenuShownTypes);
     readonly ToolStripMenuItem _showImagesMenuItem = new(L10n.MenuShowImages) { Checked = true, CheckOnClick = false };
     readonly ToolStripMenuItem _showShapesMenuItem = new(L10n.MenuShowShapes) { Checked = true, CheckOnClick = false };
+    readonly ToolStripMenuItem _showDrawingsMenuItem = new(L10n.MenuShowDrawings) { Checked = true, CheckOnClick = false };
     readonly ToolStripMenuItem _showTextMenuItem = new(L10n.MenuShowText) { Checked = true, CheckOnClick = false };
     readonly ToolStripMenuItem _manualMenuItem = new(L10n.MenuManual);
     readonly ToolStripMenuItem _aboutMenuItem = new(L10n.MenuAbout);
@@ -155,7 +156,7 @@ internal sealed partial class MainForm : Form
     // At least one kind is always present.
     readonly HashSet<RemovableKind> _visibleKinds = new()
     {
-        RemovableKind.Image, RemovableKind.Shape, RemovableKind.Text,
+        RemovableKind.Image, RemovableKind.Shape, RemovableKind.Drawing, RemovableKind.Text,
     };
 
     // Current sort. Defaults (and resets on every open) to 使用回数 descending.
@@ -291,6 +292,7 @@ internal sealed partial class MainForm : Form
         _tileViewMenuItem.Click += (_, _) => SetViewMode(tileView: true);
         _showImagesMenuItem.Click += (_, _) => ToggleKindVisibility(RemovableKind.Image, _showImagesMenuItem);
         _showShapesMenuItem.Click += (_, _) => ToggleKindVisibility(RemovableKind.Shape, _showShapesMenuItem);
+        _showDrawingsMenuItem.Click += (_, _) => ToggleKindVisibility(RemovableKind.Drawing, _showDrawingsMenuItem);
         _showTextMenuItem.Click += (_, _) => ToggleKindVisibility(RemovableKind.Text, _showTextMenuItem);
         _manualMenuItem.Click += OnManualClicked;
         _aboutMenuItem.Click += OnAboutClicked;

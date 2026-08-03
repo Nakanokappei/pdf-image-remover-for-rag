@@ -27,6 +27,7 @@ internal sealed class IndonesianMalayStrings : IStrings
     public string MenuShownTypes => "&Jenis Ditampilkan";
     public string MenuShowImages => "Gambar";
     public string MenuShowShapes => "Bentuk";
+    public string MenuShowDrawings => "Grafik";
     public string MenuShowText => "Teks";
     public string MenuHelp => "&Bantuan";
     public string MenuManual => "&Manual Online…";
@@ -49,6 +50,7 @@ internal sealed class IndonesianMalayStrings : IStrings
     public string TypeImage => "Gambar";
     public string TypeText => "Teks";
     public string TypeShape => "Bentuk";
+    public string TypeDrawing => "Grafik";
     public string ColumnSize => "Ukuran";
     public string ColumnUsageCount => "Penggunaan";
     public string ColumnCompression => "Kompresi";

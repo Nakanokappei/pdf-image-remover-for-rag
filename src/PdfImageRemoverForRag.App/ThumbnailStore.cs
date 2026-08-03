@@ -204,6 +204,13 @@ internal sealed class ThumbnailStore : IDisposable
                 : null;
         }
 
+        if (group.Kind == RemovableKind.Drawing)
+        {
+            return group.DrawingGeometry is { } drawing
+                ? ImageListRow.CreateDrawingThumbnail(drawing, size.Width, size.Height)
+                : null;
+        }
+
         var sourcePath = SourcePath(group.Hash);
         if (!File.Exists(sourcePath)) return null;
 

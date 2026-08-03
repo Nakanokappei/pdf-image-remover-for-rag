@@ -19,6 +19,7 @@ internal sealed class HindiStrings : IStrings
     public string MenuShownTypes => "दिखाए गए प्रकार(&S)";
     public string MenuShowImages => "छवियाँ";
     public string MenuShowShapes => "आकृतियाँ";
+    public string MenuShowDrawings => "रेखाचित्र";
     public string MenuShowText => "टेक्स्ट";
     public string MenuHelp => "सहायता(&H)";
     public string MenuManual => "ऑनलाइन मैनुअल(&M)…";
@@ -44,6 +45,7 @@ internal sealed class HindiStrings : IStrings
     public string TypeImage => "छवि";
     public string TypeText => "टेक्स्ट";
     public string TypeShape => "आकृति";
+    public string TypeDrawing => "रेखाचित्र";
     public string ColumnSize => "आकार";
     public string ColumnUsageCount => "उपयोग";
     public string ColumnCompression => "संपीड़न";

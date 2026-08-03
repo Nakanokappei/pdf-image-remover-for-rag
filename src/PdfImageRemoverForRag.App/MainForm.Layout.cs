@@ -258,6 +258,13 @@ internal sealed partial class MainForm
         _imageListGrid.AllowUserToResizeRows = false;
         _imageListGrid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
         _imageListGrid.MultiSelect = false;
+        // Tab leaves the grid instead of walking its cells. The default is the
+        // other way round, which made the grid a keyboard trap: once focus
+        // arrived there it could not be moved on to the toolbar or the Flatten
+        // panel, and a keyboard-only user was stuck. Nothing is lost by it —
+        // whole rows are selected, so the arrow keys are how you move here, and
+        // Ctrl+Tab still steps through cells for anyone who wants that.
+        _imageListGrid.StandardTab = true;
         _imageListGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None;
         _imageListGrid.RowTemplate.Height = 68;
         // Trailing area past the last column reads as empty spreadsheet space.

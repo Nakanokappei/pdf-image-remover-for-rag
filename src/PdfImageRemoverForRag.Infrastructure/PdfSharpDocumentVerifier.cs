@@ -142,6 +142,15 @@ public sealed class PdfSharpDocumentVerifier : IPdfDocumentVerifier
             if (removed.Contains(hash)) removedNames.Add(entry.ResourceName);
             else if (retained.Contains(hash)) retainedNames.Add(entry.ResourceName);
         }
+        // Forms are classified the same way, so a removed drawing is checked as
+        // strictly as a removed image. Without this the post-save check would
+        // pass over drawings in silence and report the save as verified.
+        foreach (var entry in ImageXObjectCollector.EnumerateFormEntries(resources))
+        {
+            var hash = ImageXObjectCollector.ComputeStreamHash(entry.Dictionary);
+            if (removed.Contains(hash)) removedNames.Add(entry.ResourceName);
+            else if (retained.Contains(hash)) retainedNames.Add(entry.ResourceName);
+        }
         return (removedNames, retainedNames);
     }
 }

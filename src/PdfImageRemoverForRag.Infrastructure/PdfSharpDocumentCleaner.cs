@@ -156,6 +156,15 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
                 .Select(s => s.TextValue!),
             StringComparer.Ordinal);
 
+        // Drawing selections are matched by the form's stream hash, for the same
+        // reason images are: a form is a stream the file stores, and the same
+        // artwork can sit in the file as more than one object.
+        var selectedDrawingHashes = new HashSet<string>(
+            selections
+                .Where(s => s.Kind == RemovableKind.Drawing && s.Hash is not null)
+                .Select(s => s.Hash!),
+            StringComparer.Ordinal);
+
         // Shape selections are matched by their path signature (stored in TextValue).
         var selectedShapeSignatures = new HashSet<string>(
             selections
@@ -189,6 +198,14 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
                 var pageFlatten = flattenImages.Where(f => f.Region.PageNumber == pageNumber).ToList();
                 var namesToDrop = ResolveNamesForHashes(
                     page.Resources, selectedImageHashes, removedHashes, doomedImages);
+                // A drawing joins the same set once its form is found by hash,
+                // which gives it the whole treatment images get: the page's Do
+                // call goes, the resource entry goes, and the object itself goes
+                // if nothing else in the document still points at it. The form's
+                // own content stream is never rewritten — that is what makes
+                // removing a drawing from a page safe for every other page.
+                namesToDrop.UnionWith(ResolveFormNamesForHashes(
+                    page.Resources, selectedDrawingHashes, removedHashes, doomedImages));
                 // Recorded before the page can be skipped below: a page may list
                 // the image without drawing it (a leftover from an earlier pass)
                 // and that entry has to go too.
@@ -508,6 +525,33 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
         if (targetHashes.Count == 0) return result;
 
         foreach (var entry in ImageXObjectCollector.EnumerateImageEntries(resources))
+        {
+            var hash = ImageXObjectCollector.ComputeStreamHash(entry.Dictionary);
+            if (!targetHashes.Contains(hash)) continue;
+            result.Add(entry.ResourceName);
+            hashesRemoved.Add(hash);
+            doomed[entry.Dictionary.Internals.ObjectID] = entry.Dictionary;
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// The same resolution as <see cref="ResolveNamesForHashes"/>, for the Form
+    /// XObjects behind drawings. Kept separate rather than folded in because
+    /// the two walk different entries of the same dictionary, and a form that
+    /// merely CONTAINS a selected image must not be dropped by this route — its
+    /// image is handled as an image, and the form may draw much else besides.
+    /// </summary>
+    static HashSet<string> ResolveFormNamesForHashes(
+        PdfResources? resources,
+        HashSet<string> targetHashes,
+        HashSet<string> hashesRemoved,
+        Dictionary<PdfObjectID, PdfDictionary> doomed)
+    {
+        var result = new HashSet<string>(StringComparer.Ordinal);
+        if (targetHashes.Count == 0) return result;
+
+        foreach (var entry in ImageXObjectCollector.EnumerateFormEntries(resources))
         {
             var hash = ImageXObjectCollector.ComputeStreamHash(entry.Dictionary);
             if (!targetHashes.Contains(hash)) continue;

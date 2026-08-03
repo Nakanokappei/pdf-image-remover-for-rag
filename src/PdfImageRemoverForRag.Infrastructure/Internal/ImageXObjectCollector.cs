@@ -42,6 +42,27 @@ internal static class ImageXObjectCollector
     }
 
     /// <summary>
+    /// Enumerate every Form XObject named directly in a page's resources — the
+    /// counterpart of <see cref="EnumerateImageEntries"/> for the forms whose
+    /// artwork is a <see cref="RemovableKind.Drawing"/>. The cleaner and the
+    /// verifier both need to get from a selected stream hash back to the name
+    /// the page uses, and they must do it the same way.
+    /// </summary>
+    public static IEnumerable<FormXObject> EnumerateFormEntries(PdfResources? resources)
+    {
+        if (resources is null) yield break;
+        var xObjects = resources.Elements.GetDictionary("/XObject");
+        if (xObjects is null) yield break;
+
+        foreach (var kv in xObjects.Elements)
+        {
+            var dict = ResolveDictionary(kv.Value);
+            if (dict?.Elements.GetName("/Subtype") != "/Form") continue;
+            yield return new FormXObject(kv.Key, dict, dict.Internals.ObjectID.ToString());
+        }
+    }
+
+    /// <summary>
     /// SHA-256 (uppercase hex) of the raw filtered stream — the group key
     /// used across the whole app. Centralised here so the analyzer, cleaner,
     /// and verifier can never drift on how a stream is hashed.

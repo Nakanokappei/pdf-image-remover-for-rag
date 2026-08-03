@@ -307,7 +307,7 @@ internal sealed class PdfCleaningWorkflow
             // inside a content stream with no hash to resolve, and their removal
             // is checked by tests rather than here.
             var verifiableHashes = document.ImageGroups
-                .Where(g => g.Kind is RemovableKind.Image or RemovableKind.Drawing)
+                .Where(g => g.Kind.IsIdentifiedByStreamHash())
                 .Select(g => g.Hash)
                 .ToArray();
             var removedHashes = verifiableHashes.Where(selectedHashes.Contains).ToArray();

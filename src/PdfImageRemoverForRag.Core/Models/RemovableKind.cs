@@ -27,3 +27,21 @@ public enum RemovableKind
     /// </summary>
     Drawing = 3,
 }
+
+/// <summary>Questions about a kind that more than one layer has to agree on.</summary>
+public static class RemovableKinds
+{
+    /// <summary>
+    /// Whether objects of this kind are identified by the SHA-256 of a stream
+    /// the file stores — as opposed to living as operators inside a content
+    /// stream, where the shown string or the path signature identifies them.
+    ///
+    /// Written once because it decides three separate things that must agree:
+    /// what <c>MatchKey</c> hands the cleaner, which hashes the cleaner
+    /// resolves resource names from, and which groups the post-save check can
+    /// verify at all. It had been hand-copied to each of them, and the last
+    /// time they disagreed a released build had to be withdrawn.
+    /// </summary>
+    public static bool IsIdentifiedByStreamHash(this RemovableKind kind) =>
+        kind is RemovableKind.Image or RemovableKind.Drawing;
+}

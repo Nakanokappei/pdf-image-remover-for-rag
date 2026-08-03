@@ -61,8 +61,15 @@ internal static class ImageListRow
         return string.IsNullOrWhiteSpace(text) ? $"\"{text}\"" : text;
     }
 
-    /// <summary>タイプ cell: image / text / shape, localized.</summary>
-    public static string TypeLabel(CrossFileImageGroup group) => group.Kind switch
+    /// <summary>タイプ cell: image / text / shape / drawing, localized.</summary>
+    public static string TypeLabel(CrossFileImageGroup group) => TypeLabel(group.Kind);
+
+    /// <summary>
+    /// The same label from a bare kind, for callers that hold one without a
+    /// group. The App names a kind here and nowhere else — a second copy of
+    /// this switch is how the Flatten panel came to call a drawing an image.
+    /// </summary>
+    public static string TypeLabel(RemovableKind kind) => kind switch
     {
         RemovableKind.Text => L10n.TypeText,
         RemovableKind.Shape => L10n.TypeShape,
@@ -197,54 +204,14 @@ internal static class ImageListRow
     /// light gray get a black background so they stay visible. The caller owns
     /// (and must dispose) the image.
     /// </summary>
-    public static Image CreateShapeThumbnail(ShapeGeometry geometry, int width, int height)
-    {
-        bool fill = geometry.IsFilled;
-        bool stroke = geometry.PaintOperator is "S" or "s" or "B" or "B*" or "b" or "b*";
-
-        // Default PDF drawing color is black. The "representative" color (for
-        // the background decision) is the one actually painted.
-        var strokeColor = ToColor(geometry.StrokeColor, Color.Black);
-        var fillColor = ToColor(geometry.FillColor, Color.Black);
-        var representative = fill ? geometry.FillColor : geometry.StrokeColor;
-        bool needsDarkBackground = representative is { } rep && rep.Luminance > LightGrayLuminance;
-
-        var bitmap = new Bitmap(width, height);
-        using var graphics = Graphics.FromImage(bitmap);
-        graphics.Clear(needsDarkBackground ? Color.Black : Color.White);
-        graphics.SmoothingMode = SmoothingMode.AntiAlias;
-        using (var border = new Pen(needsDarkBackground ? Color.FromArgb(80, 80, 80) : Color.Gainsboro))
-        {
-            graphics.DrawRectangle(border, 0, 0, width - 1, height - 1);
-        }
-
-        const int pad = 6;
-        var area = new RectangleF(pad, pad, width - 2 * pad, height - 2 * pad);
-        double scale = 1;
-        if (geometry.Width > 0) scale = area.Width / geometry.Width;
-        if (geometry.Height > 0) scale = Math.Min(scale, area.Height / geometry.Height);
-        if (scale <= 0 || double.IsInfinity(scale)) scale = 1;
-
-        // Center the scaled bbox; flip Y so the shape draws upright.
-        float offsetX = area.X + (float)(area.Width - geometry.Width * scale) / 2;
-        float offsetY = area.Y + (float)(area.Height - geometry.Height * scale) / 2;
-        PointF Map(PointD p) => new(
-            (float)(offsetX + p.X * scale),
-            (float)(offsetY + (geometry.Height - p.Y) * scale));
-
-        using var path = BuildGraphicsPath(geometry, Map);
-        if (fill)
-        {
-            using var brush = new SolidBrush(fillColor);
-            graphics.FillPath(brush, path);
-        }
-        if (stroke || !fill)
-        {
-            using var pen = new Pen(strokeColor, 1.4f);
-            graphics.DrawPath(pen, path);
-        }
-        return bitmap;
-    }
+    public static Image CreateShapeThumbnail(ShapeGeometry geometry, int width, int height) =>
+        // A shape is a drawing of one part. Rendering it through the same code
+        // is what keeps a lone path and a one-path drawing looking alike — the
+        // padding, the scale-to-fit, the Y flip and the background rule are
+        // decided in one place instead of two that drift.
+        CreateDrawingThumbnail(
+            new DrawingGeometry(new[] { geometry }, geometry.Width, geometry.Height),
+            width, height);
 
     /// <summary>
     /// Render a drawing: every path its form paints, through ONE mapping of the
@@ -289,7 +256,7 @@ internal static class ImageListRow
         foreach (var part in drawing.Parts)
         {
             bool fill = part.IsFilled;
-            bool stroke = part.PaintOperator is "S" or "s" or "B" or "B*" or "b" or "b*";
+            bool stroke = part.IsStroked;
             using var path = BuildGraphicsPath(part, Map);
             if (fill)
             {

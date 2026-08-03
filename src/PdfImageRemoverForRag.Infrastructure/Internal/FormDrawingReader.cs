@@ -31,7 +31,13 @@ internal static class FormDrawingReader
     internal sealed record FormDrawing(
         string StreamHash,
         DrawingGeometry Geometry,
-        double BoxX, double BoxY, double BoxWidth, double BoxHeight);
+        double BoxX, double BoxY)
+    {
+        /// <summary>The box's size, which is the drawing's own — one source, not two.</summary>
+        public double BoxWidth => Geometry.Width;
+
+        public double BoxHeight => Geometry.Height;
+    }
 
     /// <summary>
     /// Read a form's artwork, or null when it paints no paths of its own —
@@ -46,12 +52,11 @@ internal static class FormDrawingReader
         if (hits.Count == 0) return null;
 
         var matrix = ReadMatrix(formDict);
-        // Line widths scale with the matrix like everything else; the square
-        // root of the determinant is the uniform part of that scale.
-        var lineScale = Math.Sqrt(Math.Abs((matrix.A * matrix.D) - (matrix.B * matrix.C)));
 
         // First pass: put every path into the form's placed space and find the
-        // one box they all share.
+        // one box they all share. These are the lists that get handed out — the
+        // second pass slides them to the origin in place rather than copying
+        // every point again.
         var mapped = new List<(ContentStreamWalker.ShapeHit Hit, List<PointD>[] Points)>(hits.Count);
         double minX = double.MaxValue, minY = double.MaxValue;
         double maxX = double.MinValue, maxY = double.MinValue;
@@ -82,49 +87,46 @@ internal static class FormDrawingReader
         // Every path could have been empty of points (an "h" on its own).
         if (minX > maxX || minY > maxY) return null;
 
-        // Second pass: move the shared box to the origin. Each part keeps its
-        // own paint operator and colours, so a drawing may mix fills and
-        // strokes the way the silhouette and its speech bubble do.
+        // Second pass: slide the shared box to the origin, rewriting each point
+        // where it lies. Each part keeps its own paint operator and colours, so
+        // a drawing may mix fills and strokes the way the silhouette and its
+        // speech bubble do, and its width and height are re-measured here
+        // because the hit's own were taken before the matrix applied.
         var parts = new List<ShapeGeometry>(mapped.Count);
         foreach (var (hit, perElement) in mapped)
         {
-            var elements = new List<ShapePathElement>(perElement.Length);
+            var elements = new ShapePathElement[perElement.Length];
             double partMinX = double.MaxValue, partMinY = double.MaxValue;
             double partMaxX = double.MinValue, partMaxY = double.MinValue;
 
             for (var e = 0; e < perElement.Length; e++)
             {
-                var local = new List<PointD>(perElement[e].Count);
-                foreach (var point in perElement[e])
+                var points = perElement[e];
+                for (var i = 0; i < points.Count; i++)
                 {
-                    var x = Math.Round(point.X - minX, 2);
-                    var y = Math.Round(point.Y - minY, 2);
-                    local.Add(new PointD(x, y));
+                    var x = Math.Round(points[i].X - minX, 2);
+                    var y = Math.Round(points[i].Y - minY, 2);
+                    points[i] = new PointD(x, y);
                     if (x < partMinX) partMinX = x;
                     if (x > partMaxX) partMaxX = x;
                     if (y < partMinY) partMinY = y;
                     if (y > partMaxY) partMaxY = y;
                 }
-                elements.Add(new ShapePathElement(hit.Geometry.Elements[e].Operator, local));
+                elements[e] = new ShapePathElement(hit.Geometry.Elements[e].Operator, points);
             }
 
-            // The part's own extent, recomputed in the drawing's space — the
-            // hit's width and height were measured before the matrix applied.
-            var width = partMaxX > partMinX ? partMaxX - partMinX : 0;
-            var height = partMaxY > partMinY ? partMaxY - partMinY : 0;
             parts.Add(hit.Geometry with
             {
                 Elements = elements,
-                Width = width,
-                Height = height,
-                LineWidth = hit.Geometry.LineWidth * lineScale,
+                Width = partMaxX > partMinX ? partMaxX - partMinX : 0,
+                Height = partMaxY > partMinY ? partMaxY - partMinY : 0,
             });
         }
 
         return new FormDrawing(
             ImageXObjectCollector.ComputeStreamHash(formDict),
             new DrawingGeometry(parts, maxX - minX, maxY - minY),
-            minX, minY, maxX - minX, maxY - minY);
+            minX, minY);
     }
 
     /// <summary>

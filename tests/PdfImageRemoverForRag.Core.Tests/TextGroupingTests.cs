@@ -8,30 +8,11 @@ namespace PdfImageRemoverForRag.Core.Tests;
 // IDs, image-before-text ordering, and cross-file text merging.
 public class TextGroupingTests
 {
-    static ImageDiscovery Image(string hash, int usage = 1)
-    {
-        var occ = Enumerable.Range(1, usage)
-            .Select(p => new PdfImageOccurrence(p, "1 0 R", "/Im1", 0, 0, 100, 60)).ToArray();
-        return new ImageDiscovery("1 0 R", hash, 100, 60, "/DeviceRGB", 8, "/FlateDecode",
-            1000, false, true, null, null, occ);
-    }
-
-    static ImageDiscovery Text(string value, int usage = 2)
-    {
-        var occ = Enumerable.Range(1, usage)
-            .Select(p => new PdfImageOccurrence(p, "", "", 0, 0, 0, 0)).ToArray();
-        return new ImageDiscovery("", "TEXT:" + value, 0, 0, "Text", 0, "Text",
-            value.Length, false, true, null, null, occ,
-            RemovableKind.Text, value);
-    }
-
-    static ImageGroupBuilder NewBuilder() =>
-        new(new FullPageImageDetector(new[]
-        {
-            new PageDimensions(1, 595, 842),
-            new PageDimensions(2, 595, 842),
-            new PageDimensions(3, 595, 842),
-        }));
+    // The discovery factories live in Discoveries so a change to the
+    // ImageDiscovery record lands in one place.
+    static ImageDiscovery Image(string hash, int usage = 1) => Discoveries.Image(hash, usage);
+    static ImageDiscovery Text(string value, int usage = 2) => Discoveries.Text(value, usage);
+    static ImageGroupBuilder NewBuilder() => Discoveries.NewBuilder();
 
     [Fact]
     public void TextDiscoveries_GroupByValue_AndCarryKindAndValue()

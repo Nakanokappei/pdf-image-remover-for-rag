@@ -47,6 +47,13 @@ public sealed record ShapeGeometry(
     /// background.
     /// </summary>
     public bool IsFilled => PaintOperator is "f" or "F" or "f*" or "B" or "B*" or "b" or "b*";
+
+    /// <summary>
+    /// Whether the path is painted with an outline. Beside
+    /// <see cref="IsFilled"/> so the two readings of a paint operator sit
+    /// together rather than being spelled out wherever a path is drawn.
+    /// </summary>
+    public bool IsStroked => PaintOperator is "S" or "s" or "B" or "B*" or "b" or "b*";
 }
 
 /// <summary>

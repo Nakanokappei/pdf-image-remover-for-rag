@@ -136,16 +136,17 @@ public sealed class PdfSharpDocumentVerifier : IPdfDocumentVerifier
         // stream in a single pass.
         var removedNames = new HashSet<string>(StringComparer.Ordinal);
         var retainedNames = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var entry in ImageXObjectCollector.EnumerateImageEntries(resources))
-        {
-            var hash = ImageXObjectCollector.ComputeStreamHash(entry.Dictionary);
-            if (removed.Contains(hash)) removedNames.Add(entry.ResourceName);
-            else if (retained.Contains(hash)) retainedNames.Add(entry.ResourceName);
-        }
-        // Forms are classified the same way, so a removed drawing is checked as
-        // strictly as a removed image. Without this the post-save check would
-        // pass over drawings in silence and report the save as verified.
-        foreach (var entry in ImageXObjectCollector.EnumerateFormEntries(resources))
+        // Images and forms in one pass: a removed drawing is checked as strictly
+        // as a removed image, and by the same code, so the check cannot come to
+        // hold one rule for images and another for drawings. Without the forms
+        // half, the post-save check would pass over drawings in silence and
+        // report the save as verified.
+        var entries = ImageXObjectCollector.EnumerateImageEntries(resources)
+            .Select(e => (e.ResourceName, e.Dictionary))
+            .Concat(ImageXObjectCollector.EnumerateFormEntries(resources)
+                .Select(e => (e.ResourceName, e.Dictionary)));
+
+        foreach (var entry in entries)
         {
             var hash = ImageXObjectCollector.ComputeStreamHash(entry.Dictionary);
             if (removed.Contains(hash)) removedNames.Add(entry.ResourceName);

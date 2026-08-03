@@ -55,7 +55,7 @@ public sealed record CrossFileImageGroup(
     /// had started being hand-copied wherever a placement met a group.
     /// </summary>
     public string MatchKey =>
-        Kind is RemovableKind.Image or RemovableKind.Drawing ? Hash : TextValue ?? string.Empty;
+        Kind.IsIdentifiedByStreamHash() ? Hash : TextValue ?? string.Empty;
 
     /// <summary>
     /// Whether a drawn object belongs to this group. Kind first: an image hash

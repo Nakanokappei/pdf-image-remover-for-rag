@@ -11,42 +11,11 @@ namespace PdfImageRemoverForRag.Core.Tests;
 // the file stores once.
 public class DrawingGroupingTests
 {
-    // One placement per call. Merging two of these is what "the same icon on
-    // two pages" has to produce, so the helper must not do the merging itself.
-    static ImageDiscovery Drawing(string formHash, int page, DrawingGeometry? geometry = null)
-    {
-        var occurrence = new PdfImageOccurrence(page, "217 0 R", "/Meta217", 60, 600, 120, 120);
-        return new ImageDiscovery("217 0 R", formHash, 120, 120, "Drawing", 0, "Drawing",
-            3824, false, true, null, null, new[] { occurrence },
-            RemovableKind.Drawing, null, null, geometry);
-    }
-
-    static ImageDiscovery Image(string hash)
-    {
-        var occurrence = new PdfImageOccurrence(1, "1 0 R", "/Im1", 0, 0, 100, 60);
-        return new ImageDiscovery("1 0 R", hash, 100, 60, "/DeviceRGB", 8, "/FlateDecode",
-            1000, false, true, null, null, new[] { occurrence });
-    }
-
-    static ImageDiscovery Text(string value)
-    {
-        var occurrences = new[]
-        {
-            new PdfImageOccurrence(1, "", "", 0, 0, 0, 0),
-            new PdfImageOccurrence(2, "", "", 0, 0, 0, 0),
-        };
-        return new ImageDiscovery("", "TEXT:" + value, 0, 0, "Text", 0, "Text",
-            value.Length, false, true, null, null, occurrences,
-            RemovableKind.Text, value);
-    }
-
-    static ImageDiscovery Shape(string signature)
-    {
-        var occurrence = new PdfImageOccurrence(1, "", "", 40, 80, 460, 680);
-        return new ImageDiscovery("", "SHAPE:" + signature, 460, 680, "Shape", 0, "Shape",
-            0, false, true, null, null, new[] { occurrence },
-            RemovableKind.Shape, signature);
-    }
+    // The discovery factories live in Discoveries; only the geometry below is
+    // specific to drawings.
+    static ImageDiscovery Drawing(string formHash, int page, DrawingGeometry? geometry = null) =>
+        Discoveries.Drawing(formHash, page, geometry);
+    static ImageGroupBuilder NewBuilder() => Discoveries.NewBuilder();
 
     // A head, a body and a speech bubble: three paths, two paint operators, all
     // in the drawing's own 120x120 box rather than each in its own.
@@ -64,13 +33,6 @@ public class DrawingGroupingTests
                 40, 30, "S", 1, new RgbColor(83, 86, 90)),
         },
         120, 120);
-
-    static ImageGroupBuilder NewBuilder() =>
-        new(new FullPageImageDetector(new[]
-        {
-            new PageDimensions(1, 595, 842),
-            new PageDimensions(2, 595, 842),
-        }));
 
     [Fact]
     public void TheSameFormOnTwoPages_IsOneDrawingWithTwoPlacements()
@@ -96,9 +58,9 @@ public class DrawingGroupingTests
         var groups = NewBuilder().Build(new[]
         {
             Drawing("HASH_ICON", page: 1),
-            Shape("border"),
-            Text("CONFIDENTIAL"),
-            Image("HASH_LOGO"),
+            Discoveries.Shape("border"),
+            Discoveries.Text("CONFIDENTIAL"),
+            Discoveries.Image("HASH_LOGO"),
         });
 
         Assert.Equal(4, groups.Count);

@@ -91,8 +91,7 @@ internal sealed partial class MainForm : Form
     /// parenthesis has to go. Latin captions put the marker inside the word
     /// (&amp;Shown Types), where removing the ampersand is already enough.
     /// </summary>
-    static readonly System.Text.RegularExpressions.Regex AccessKeyMarker =
-        new(@"\s*\(&[A-Za-z0-9]\)", System.Text.RegularExpressions.RegexOptions.Compiled);
+    static readonly System.Text.RegularExpressions.Regex AccessKeyMarker = new(@"\s*\(&[A-Za-z0-9]\)");
 
     /// <summary>
     /// Set while the two surfaces are being brought back into agreement, so the

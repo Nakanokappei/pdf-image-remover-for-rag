@@ -27,7 +27,17 @@ internal static class ImageXObjectCollector
     /// resources. This is the shared primitive the cleaner and verifier use
     /// to map object ids / stream hashes back to resource names.
     /// </summary>
-    public static IEnumerable<ImageEntry> EnumerateImageEntries(PdfResources? resources)
+    public static IEnumerable<ImageEntry> EnumerateImageEntries(PdfResources? resources) =>
+        EnumerateEntries(resources, "/Image")
+            .Select(e => new ImageEntry(e.Name, e.Dictionary, e.ObjectId));
+
+    /// <summary>
+    /// The one walk of a page's <c>/XObject</c> dictionary. Both entry kinds go
+    /// through it so name resolution and reference dereferencing can only be
+    /// got right or wrong once — this class exists to keep that single.
+    /// </summary>
+    static IEnumerable<(string Name, PdfDictionary Dictionary, string ObjectId)> EnumerateEntries(
+        PdfResources? resources, string subtype)
     {
         if (resources is null) yield break;
         var xObjects = resources.Elements.GetDictionary("/XObject");
@@ -36,8 +46,8 @@ internal static class ImageXObjectCollector
         foreach (var kv in xObjects.Elements)
         {
             var dict = ResolveDictionary(kv.Value);
-            if (dict?.Elements.GetName("/Subtype") != "/Image") continue;
-            yield return new ImageEntry(kv.Key, dict, dict.Internals.ObjectID.ToString());
+            if (dict?.Elements.GetName("/Subtype") != subtype) continue;
+            yield return (kv.Key, dict, dict.Internals.ObjectID.ToString());
         }
     }
 
@@ -48,19 +58,9 @@ internal static class ImageXObjectCollector
     /// verifier both need to get from a selected stream hash back to the name
     /// the page uses, and they must do it the same way.
     /// </summary>
-    public static IEnumerable<FormXObject> EnumerateFormEntries(PdfResources? resources)
-    {
-        if (resources is null) yield break;
-        var xObjects = resources.Elements.GetDictionary("/XObject");
-        if (xObjects is null) yield break;
-
-        foreach (var kv in xObjects.Elements)
-        {
-            var dict = ResolveDictionary(kv.Value);
-            if (dict?.Elements.GetName("/Subtype") != "/Form") continue;
-            yield return new FormXObject(kv.Key, dict, dict.Internals.ObjectID.ToString());
-        }
-    }
+    public static IEnumerable<FormXObject> EnumerateFormEntries(PdfResources? resources) =>
+        EnumerateEntries(resources, "/Form")
+            .Select(e => new FormXObject(e.Name, e.Dictionary, e.ObjectId));
 
     /// <summary>
     /// SHA-256 (uppercase hex) of the raw filtered stream — the group key

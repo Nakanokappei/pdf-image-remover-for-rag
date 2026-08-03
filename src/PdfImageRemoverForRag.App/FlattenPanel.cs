@@ -502,12 +502,9 @@ internal sealed class FlattenPanel : UserControl
         .OrderBy(k => k)
         .Select(KindLabel));
 
-    static string KindLabel(RemovableKind kind) => kind switch
-    {
-        RemovableKind.Text => L10n.TypeText,
-        RemovableKind.Shape => L10n.TypeShape,
-        _ => L10n.TypeImage,
-    };
+    // One kind-to-label function for the whole App: the panel used to keep its
+    // own copy, which listed three kinds and called anything else an image.
+    static string KindLabel(RemovableKind kind) => ImageListRow.TypeLabel(kind);
 
     /// <summary>
     /// An object's name: its kind, then what identifies it to a person. For text

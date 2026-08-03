@@ -524,7 +524,31 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
         var result = new HashSet<string>(StringComparer.Ordinal);
         if (targetHashes.Count == 0) return result;
 
-        foreach (var entry in ImageXObjectCollector.EnumerateImageEntries(resources))
+        CollectMatchingNames(
+            ImageXObjectCollector.EnumerateImageEntries(resources)
+                .Select(e => (e.ResourceName, e.Dictionary)),
+            targetHashes, hashesRemoved, doomed, result);
+        return result;
+    }
+
+    /// <summary>
+    /// Match a page's resource entries against the selected stream hashes,
+    /// collecting the names to drop and the objects to consider deleting.
+    ///
+    /// Images and forms are enumerated apart — a form that merely CONTAINS a
+    /// selected image must not be dropped as a whole — but they are matched the
+    /// same way, and that sameness lives here. Getting object identity wrong on
+    /// one side and not the other is what forced a released build to be
+    /// withdrawn, so the rule is written once.
+    /// </summary>
+    static void CollectMatchingNames(
+        IEnumerable<(string ResourceName, PdfDictionary Dictionary)> entries,
+        HashSet<string> targetHashes,
+        HashSet<string> hashesRemoved,
+        Dictionary<PdfObjectID, PdfDictionary> doomed,
+        HashSet<string> result)
+    {
+        foreach (var entry in entries)
         {
             var hash = ImageXObjectCollector.ComputeStreamHash(entry.Dictionary);
             if (!targetHashes.Contains(hash)) continue;
@@ -532,15 +556,14 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
             hashesRemoved.Add(hash);
             doomed[entry.Dictionary.Internals.ObjectID] = entry.Dictionary;
         }
-        return result;
     }
 
     /// <summary>
     /// The same resolution as <see cref="ResolveNamesForHashes"/>, for the Form
-    /// XObjects behind drawings. Kept separate rather than folded in because
-    /// the two walk different entries of the same dictionary, and a form that
-    /// merely CONTAINS a selected image must not be dropped by this route — its
-    /// image is handled as an image, and the form may draw much else besides.
+    /// XObjects behind drawings. The enumeration is separate because a form
+    /// that merely CONTAINS a selected image must not be dropped by this route
+    /// — its image is handled as an image, and the form may draw much else
+    /// besides. The matching itself is shared.
     /// </summary>
     static HashSet<string> ResolveFormNamesForHashes(
         PdfResources? resources,
@@ -551,14 +574,10 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
         var result = new HashSet<string>(StringComparer.Ordinal);
         if (targetHashes.Count == 0) return result;
 
-        foreach (var entry in ImageXObjectCollector.EnumerateFormEntries(resources))
-        {
-            var hash = ImageXObjectCollector.ComputeStreamHash(entry.Dictionary);
-            if (!targetHashes.Contains(hash)) continue;
-            result.Add(entry.ResourceName);
-            hashesRemoved.Add(hash);
-            doomed[entry.Dictionary.Internals.ObjectID] = entry.Dictionary;
-        }
+        CollectMatchingNames(
+            ImageXObjectCollector.EnumerateFormEntries(resources)
+                .Select(e => (e.ResourceName, e.Dictionary)),
+            targetHashes, hashesRemoved, doomed, result);
         return result;
     }
 

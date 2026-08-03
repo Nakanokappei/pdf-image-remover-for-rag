@@ -30,8 +30,8 @@
          InformationalVersion interpolates Version rather than repeating it: it
          said 1.0.0 while the Store said 1.0.3.0, because a literal here does not
          follow a bump made two lines above. -->
-    <Version>1.1.0</Version>
-    <BuildNumber>80</BuildNumber>
+    <Version>1.2.0</Version>
+    <BuildNumber>81</BuildNumber>
     <InformationalVersion>$(Version)+$(BuildNumber)</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>

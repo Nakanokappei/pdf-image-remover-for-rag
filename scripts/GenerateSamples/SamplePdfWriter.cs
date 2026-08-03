@@ -24,7 +24,8 @@ namespace PdfImageRemoverForRag.Scripts.GenerateSamples;
 /// Writes the sample PDFs into a directory: the five spec §8.2 documents
 /// (one-image / repeated-logo / multiple-images / image-and-text /
 /// scanned-page) plus jpeg-image (DCTDecode path), repeated-text,
-/// repeated-shapes, and form-embedded-image (the not-safely-removable case).
+/// repeated-shapes, form-embedded-image (the not-safely-removable case), and
+/// form-drawn-shapes (vector artwork inside a form, which analysis cannot see).
 /// </summary>
 public static class SamplePdfWriter
 {
@@ -68,6 +69,7 @@ public static class SamplePdfWriter
             WriteRepeatedText(Path.Combine(outputDirectory, "repeated-text.pdf")),
             WriteRepeatedShapes(Path.Combine(outputDirectory, "repeated-shapes.pdf")),
             WriteFormEmbeddedImage(Path.Combine(outputDirectory, "form-embedded-image.pdf"), logoPng),
+            WriteFormDrawnShapes(Path.Combine(outputDirectory, "form-drawn-shapes.pdf")),
             WriteSoftMaskedImage(Path.Combine(outputDirectory, "soft-masked-image.pdf")),
             WriteAnnotationSharedImage(Path.Combine(outputDirectory, "annotation-shared-image.pdf")),
         };
@@ -313,6 +315,48 @@ public static class SamplePdfWriter
             DrawParagraph(gfx, $"Form-embedded image page {i}",
                 "The header image lives inside a shared Form XObject.",
                 "It must be listed as not safely removable.");
+        }
+        doc.Save(path);
+        return path;
+    }
+
+    static string WriteFormDrawnShapes(string path)
+    {
+        // Vector artwork drawn INSIDE a Form XObject, with no image anywhere in
+        // it. This is the shape of a real customer document whose person
+        // silhouette and speech bubble never appeared in the object list:
+        // analysis reads a page's own content stream for shapes and text, and
+        // enters a form only to collect the images inside it, so a form that
+        // paints nothing but paths contributes nothing to the list.
+        //
+        // The page also carries a plain border rectangle. That is the control:
+        // it is discovered, which is what makes "nothing came from the form" a
+        // real assertion rather than "nothing was found at all".
+        using var doc = NewDocument("form-drawn-shapes sample");
+        var icon = new XForm(doc, XUnit.FromPoint(120), XUnit.FromPoint(120));
+        using (var iconGfx = XGraphics.FromForm(icon))
+        {
+            // Three paths and two paint operators, matching what the reported
+            // document held: a filled head, a filled body, a stroked bubble.
+            iconGfx.DrawEllipse(XBrushes.Gray, 30, 10, 40, 40);
+            iconGfx.DrawRectangle(XBrushes.Gray, 20, 58, 60, 40);
+            iconGfx.DrawRoundedRectangle(new XPen(XColors.Gray, 1), 75, 15, 40, 30, 8, 8);
+        }
+
+        var caption = new XFont("Segoe WP", 11, XFontStyleEx.Regular);
+        for (int i = 1; i <= 2; i++)
+        {
+            var page = doc.AddPage();
+            using var gfx = XGraphics.FromPdfPage(page);
+            // Identical on both pages, so it groups into one entry drawn twice.
+            gfx.DrawRectangle(new XPen(XColors.Silver, 1), 40, 80, 460, 680);
+            // Both pages draw the same form object, low on the page where the
+            // reported document put its icon.
+            gfx.DrawImage(icon, 60, 600);
+            // Unique per page: two or more characters but shown once, so the
+            // repeated-text filter keeps it out and the assertions stay about
+            // shapes.
+            gfx.DrawString($"Form-drawn shapes, page {i}", caption, XBrushes.Black, 60, 120);
         }
         doc.Save(path);
         return path;

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Generate demo PDFs for screenshots. Run on macOS from the repository root.
+"""Generate demo PDFs for screenshots. Run from the repository root.
 
-    scratchpad-venv/bin/python scripts/generate-demo-pdfs.py demo-pdfs/
+    <venv>/Scripts/python.exe scripts/generate-demo-pdfs.py demo-pdfs/
 
 Needs reportlab (not a project dependency; install it into a throwaway venv).
 
@@ -52,6 +52,13 @@ from reportlab.pdfgen import canvas
 # Morisawa OTFs; these candidates all carry TrueType outlines. Ordered by
 # preference: MS PGothic matches what the screenshots will show on Windows.
 FONT_CANDIDATES = [
+    # Windows, where this repo is developed now. msgothic.ttc holds MS Gothic,
+    # MS PGothic and MS UI Gothic; the proportional face reads best, and the
+    # others are here so a missing index cannot stop the run.
+    ("C:/Windows/Fonts/msgothic.ttc", 1),                   # MS PGothic
+    ("C:/Windows/Fonts/msgothic.ttc", 0),                   # MS Gothic
+    ("C:/Windows/Fonts/meiryo.ttc", 0),                     # Meiryo
+    # macOS, from when the demo PDFs were generated there.
     (str(Path.home() / "Library/Fonts/msgothic.ttc"), 2),   # MS PGothic
     (str(Path.home() / "Library/Fonts/msgothic.ttc"), 0),   # MS Gothic
     ("/System/Library/Fonts/Supplemental/Arial Unicode.ttf", 0),
@@ -67,6 +74,11 @@ MARGIN = 50
 BRAND = Color(0.09, 0.36, 0.56)     # header rule / logo
 RULE = Color(0.72, 0.75, 0.78)      # thin separators
 BODY = Color(0.18, 0.19, 0.21)
+FIGURE = Color(0.42, 0.45, 0.50)    # the reader-note figure
+
+# The reader-note figure is defined once per document as a Form XObject and
+# drawn on every page. Its name only has to be unique within the file.
+NOTE_FORM = "NoteFigure"
 
 
 def make_logo() -> Image.Image:
@@ -132,6 +144,33 @@ class DemoDocument:
     def text(self, ja: str, en: str) -> str:
         return ja if self.japanese else en
 
+    def define_note_figure(self) -> None:
+        """Define the reader-note figure as a Form XObject, once per document.
+
+        A figure placed as a unit — a person and a speech bubble — which is
+        what the app lists as a *drawing*. It is all vector paths and holds no
+        image, and that is the point: artwork like this is invisible to
+        anything that reads only a page's own content stream, which is why the
+        app grew a fourth kind of removable object for it.
+
+        Defined once and drawn on every page, so it groups into one row with a
+        usage count in the twenties across the three files, the same way the
+        logo does.
+        """
+        c = self.canvas
+        c.beginForm(NOTE_FORM, 0, 0, 74, 40)
+        c.setFillColor(FIGURE)
+        c.setStrokeColor(FIGURE)
+        # A head and shoulders: two filled paths.
+        c.circle(12, 29, 7, stroke=0, fill=1)
+        c.roundRect(3, 6, 18, 18, 6, stroke=0, fill=1)
+        # The speech bubble beside them: a stroked path with a tail, so the
+        # drawing mixes fills and strokes the way real artwork does.
+        c.setLineWidth(1.1)
+        c.roundRect(28, 12, 44, 24, 5, stroke=1, fill=0)
+        c.lines([(30, 14, 23, 8), (23, 8, 34, 12)])
+        c.endForm()
+
     def draw_furniture(self) -> None:
         """Header logo + title and footer text, drawn identically on each page.
 
@@ -163,6 +202,13 @@ class DemoDocument:
         c.setFillColor(Color(0.45, 0.47, 0.5))
         c.drawString(MARGIN, 48, self.text(f"{ORG_JA}｜社外秘", f"{ORG_EN} | Confidential"))
         c.drawRightString(PAGE_W - MARGIN, 48, str(self.page_number))
+
+        # The reader-note figure, low on the page where the document that
+        # prompted this feature put its own.
+        c.saveState()
+        c.translate(MARGIN, 72)
+        c.doForm(NOTE_FORM)
+        c.restoreState()
 
     def paragraph(self, y: float, lines: list[str], leading: float = 15) -> float:
         """Draw pre-wrapped body lines, returning the y below the block."""
@@ -355,6 +401,8 @@ def build(path: Path, title: str, kind: str, logo: ImageReader,
     produces reflects a real document rather than the generator's laziness.
     """
     doc = DemoDocument(path, title, logo, japanese)
+    # Defined before any page draws it.
+    doc.define_note_figure()
 
     # Page 1: title + opening copy + the first chart.
     doc.new_page()

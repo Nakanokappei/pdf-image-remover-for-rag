@@ -31,7 +31,8 @@ public sealed record PdfImageGroup(
     IReadOnlyList<PdfImageOccurrence> Occurrences,
     RemovableKind Kind = RemovableKind.Image,
     string? TextValue = null,
-    ShapeGeometry? ShapeGeometry = null)
+    ShapeGeometry? ShapeGeometry = null,
+    DrawingGeometry? DrawingGeometry = null)
 {
     /// <summary>Total number of placements across all pages (§11.3 "使用回数").</summary>
     public int UsageCount => Occurrences.Count;

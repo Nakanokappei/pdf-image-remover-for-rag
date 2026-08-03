@@ -48,3 +48,21 @@ public sealed record ShapeGeometry(
     /// </summary>
     public bool IsFilled => PaintOperator is "f" or "F" or "f*" or "B" or "B*" or "b" or "b*";
 }
+
+/// <summary>
+/// The renderable geometry of a <see cref="RemovableKind.Drawing"/>: every path
+/// one Form XObject paints, kept together because that is the unit the user
+/// sees and the unit that can be removed.
+///
+/// The parts share ONE coordinate box — the drawing's, sized
+/// <see cref="Width"/> x <see cref="Height"/> from its origin — rather than each
+/// sitting in its own. That is the difference from a lone
+/// <see cref="ShapeGeometry"/>, whose coordinates start at its own bounding box,
+/// and it is what lets a head, a body and a speech bubble be drawn in the
+/// arrangement they actually have. Each part still carries its own paint
+/// operator, colors and line width, so a drawing may mix fills and strokes.
+/// </summary>
+public sealed record DrawingGeometry(
+    IReadOnlyList<ShapeGeometry> Parts,
+    double Width,
+    double Height);

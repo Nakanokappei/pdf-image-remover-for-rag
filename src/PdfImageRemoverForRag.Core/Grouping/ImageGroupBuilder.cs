@@ -40,7 +40,7 @@ public sealed class ImageGroupBuilder
     /// <summary>Assign sequential per-kind ids in the already-sorted order.</summary>
     internal static PdfImageGroup[] AssignGroupIds(IReadOnlyList<PdfImageGroup> sorted)
     {
-        int imageIndex = 0, textIndex = 0, shapeIndex = 0;
+        int imageIndex = 0, textIndex = 0, shapeIndex = 0, drawingIndex = 0;
         var result = new PdfImageGroup[sorted.Count];
         for (int i = 0; i < sorted.Count; i++)
         {
@@ -49,6 +49,7 @@ public sealed class ImageGroupBuilder
             {
                 RemovableKind.Text => $"TXT_{++textIndex:D3}",
                 RemovableKind.Shape => $"SHP_{++shapeIndex:D3}",
+                RemovableKind.Drawing => $"DRW_{++drawingIndex:D3}",
                 _ => $"IMG_{++imageIndex:D3}",
             };
             result[i] = group with { GroupId = id };
@@ -95,6 +96,7 @@ public sealed class ImageGroupBuilder
             Occurrences: occurrences,
             Kind: first.Kind,
             TextValue: first.TextValue,
-            ShapeGeometry: first.ShapeGeometry);
+            ShapeGeometry: first.ShapeGeometry,
+            DrawingGeometry: first.DrawingGeometry);
     }
 }

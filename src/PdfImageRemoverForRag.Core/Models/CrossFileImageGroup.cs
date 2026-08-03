@@ -33,7 +33,8 @@ public sealed record CrossFileImageGroup(
     IReadOnlyList<CrossFileOccurrences> FileOccurrences,
     RemovableKind Kind = RemovableKind.Image,
     string? TextValue = null,
-    ShapeGeometry? ShapeGeometry = null)
+    ShapeGeometry? ShapeGeometry = null,
+    DrawingGeometry? DrawingGeometry = null)
 {
     /// <summary>Total placements across every file (UI 使用回数 / tile badge).</summary>
     public int UsageCount => FileOccurrences.Sum(f => f.Occurrences.Count);
@@ -42,8 +43,10 @@ public sealed record CrossFileImageGroup(
     public int FileCount => FileOccurrences.Count;
 
     /// <summary>
-    /// The value this group is identified by: the stream hash for an image, and
-    /// the match key — shown string or path signature — for the other kinds.
+    /// The value this group is identified by: the stream hash for an image and
+    /// for a drawing (both are streams the file already stores), and the match
+    /// key — shown string or path signature — for the kinds that live as
+    /// operators inside a content stream.
     /// The same thing <see cref="PlacedObject.Identity"/> carries, which is what
     /// makes <see cref="Matches"/> a lookup rather than a translation.
     ///
@@ -51,7 +54,8 @@ public sealed record CrossFileImageGroup(
     /// the mistake that forced a released build to be withdrawn, and the rule
     /// had started being hand-copied wherever a placement met a group.
     /// </summary>
-    public string MatchKey => Kind == RemovableKind.Image ? Hash : TextValue ?? string.Empty;
+    public string MatchKey =>
+        Kind is RemovableKind.Image or RemovableKind.Drawing ? Hash : TextValue ?? string.Empty;
 
     /// <summary>
     /// Whether a drawn object belongs to this group. Kind first: an image hash

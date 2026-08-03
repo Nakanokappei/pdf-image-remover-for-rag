@@ -44,7 +44,12 @@ namespace PdfImageRemoverForRag.Core.Models;
 /// The cleaner's match key for non-image kinds. For
 /// <see cref="RemovableKind.Text"/> it is the exact shown string (also
 /// displayed); for <see cref="RemovableKind.Shape"/> it is the path
-/// signature (internal, not displayed). Null for images.
+/// signature (internal, not displayed). Null for images and drawings, which
+/// are both matched by <see cref="StreamHash"/>.
+/// </param>
+/// <param name="DrawingGeometry">
+/// Every path a <see cref="RemovableKind.Drawing"/>'s form paints, for the
+/// thumbnail. Null for every other kind.
 /// </param>
 public sealed record ImageDiscovery(
     string ObjectId,
@@ -62,4 +67,5 @@ public sealed record ImageDiscovery(
     IReadOnlyList<PdfImageOccurrence> Occurrences,
     RemovableKind Kind = RemovableKind.Image,
     string? TextValue = null,
-    ShapeGeometry? ShapeGeometry = null);
+    ShapeGeometry? ShapeGeometry = null,
+    DrawingGeometry? DrawingGeometry = null);

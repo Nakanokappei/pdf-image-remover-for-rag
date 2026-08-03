@@ -50,6 +50,10 @@ samples/cleaned/
 # Not committed: they embed a subset of MS PGothic.
 demo-pdfs/
 
+# Real customer documents kept for reproduction only. Never published: they are
+# third-party internal material, and their file names are not English either.
+private-fixtures/
+
 # PoC scratch output
 poc-out/
 *.log

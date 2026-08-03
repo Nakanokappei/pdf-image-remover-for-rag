@@ -12,9 +12,15 @@ namespace PdfImageRemoverForRag.Infrastructure.Internal;
 /// </summary>
 internal static class ContentStreamWalker
 {
-    /// <summary><see cref="Index"/> is the operator's position in the sequence.</summary>
+    /// <summary>
+    /// <see cref="Index"/> is the operator's position in the sequence.
+    /// <see cref="Ctm"/> is the transform in force at the operator: the box is
+    /// enough for an image, which is drawn in the unit square, but a Form
+    /// XObject's content has coordinates of its own and needs the matrix to be
+    /// placed on the page.
+    /// </summary>
     internal readonly record struct DrawCall(string ResourceName,
-        double X, double Y, double Width, double Height, int Index);
+        double X, double Y, double Width, double Height, int Index, AffineMatrix Ctm);
 
     /// <summary>
     /// Scan the whole sequence and emit one <see cref="DrawCall"/> per
@@ -49,7 +55,8 @@ internal static class ContentStreamWalker
                     if (op.Operands.Count == 1 && op.Operands[0] is CName name)
                     {
                         var box = stack.Current.MapUnitBoundingBox();
-                        hits.Add(new DrawCall(name.Name, box.X, box.Y, box.W, box.H, index));
+                        hits.Add(new DrawCall(
+                            name.Name, box.X, box.Y, box.W, box.H, index, stack.Current));
                     }
                     break;
             }

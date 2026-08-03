@@ -8,15 +8,14 @@ using Xunit;
 
 namespace PdfImageRemoverForRag.Infrastructure.Tests;
 
-// Pins the gap reported against a real customer document: a person silhouette
-// and a speech bubble, both drawn inside a Form XObject, never appear in the
-// object list. Analysis reads a page's own content stream for shapes and text
-// and enters a form only to collect the images inside it, so a form that paints
-// nothing but paths contributes nothing to the list.
+// The gap reported against a real customer document, now closed: a person
+// silhouette and a speech bubble drawn inside a Form XObject did not appear in
+// the object list, because analysis read a page's own content stream for shapes
+// and text and entered a form only to collect the images inside it.
 //
-// These assertions describe what the analyzer does TODAY, not what it should
-// do. They are the tests to invert once form-drawn artwork becomes a listable
-// object.
+// A form's artwork is one Drawing however many paths it holds, because the
+// form's content stream is shared by every page that draws it and only the
+// page's own Do call can be removed safely.
 public class FormDrawnShapeTests : IClassFixture<SamplePdfFixture>
 {
     readonly SamplePdfFixture _samples;
@@ -69,20 +68,56 @@ public class FormDrawnShapeTests : IClassFixture<SamplePdfFixture>
     }
 
     [Fact]
-    public async Task ShapesDrawnInsideAForm_AreNotDiscovered()
+    public async Task ShapesDrawnInsideAForm_AreOneDrawing()
     {
         var info = await NewAnalyzer().AnalyzeAsync(_samples.FormDrawnShapesPath);
 
-        // The page-level border rectangle is found, on both pages — proof the
-        // shape detector ran and worked on this very document.
+        // The page-level border rectangle stays a Shape — the new kind must not
+        // swallow the paths that were already found.
         var shapes = info.ImageGroups.Where(g => g.Kind == RemovableKind.Shape).ToArray();
         var border = Assert.Single(shapes);
         Assert.Equal(2, border.UsageCount);
-        Assert.Equal(new[] { 1, 2 }, border.UsagePages);
 
-        // The form's head, body and bubble are absent, and nothing else stands
-        // in for them: the border is the whole list.
-        Assert.Single(info.ImageGroups);
+        // The form's head, body and bubble are ONE object, not three, drawn on
+        // both pages.
+        var drawings = info.ImageGroups.Where(g => g.Kind == RemovableKind.Drawing).ToArray();
+        var drawing = Assert.Single(drawings);
+        Assert.Equal("DRW_001", drawing.GroupId);
+        Assert.Equal(2, drawing.UsageCount);
+        Assert.Equal(new[] { 1, 2 }, drawing.UsagePages);
+        Assert.True(drawing.IsSafelyRemovable);
+
+        // All three paths are carried, with both paint operators.
+        Assert.NotNull(drawing.DrawingGeometry);
+        Assert.Equal(3, drawing.DrawingGeometry!.Parts.Count);
+        Assert.Equal(2, drawing.DrawingGeometry.Parts.Count(p => p.IsFilled));
+    }
+
+    [Fact]
+    public async Task ADrawing_LandsWhereTheFormWasPlacedOnThePage()
+    {
+        // The arithmetic this checks is the reason the kind needed the CTM at
+        // the Do call: a form is not drawn in the unit square, so its rectangle
+        // is its own box mapped through /Matrix and then through the placement.
+        //
+        // The sample paints, in the form's 120-point box, an ellipse at
+        // (30,10)-(70,50), a rectangle at (20,58)-(80,98) and a bubble at
+        // (75,15)-(115,45), all in XGraphics' top-left coordinates. Their union
+        // is x 20..115 and, flipped into PDF's bottom-up space, y 22..110. The
+        // form is placed at (60,600) from the top of an 842-point page, so its
+        // origin sits at y 122 and the artwork covers (80,144) to (175,232).
+        var info = await NewAnalyzer().AnalyzeAsync(_samples.FormDrawnShapesPath);
+        var drawing = info.ImageGroups.Single(g => g.Kind == RemovableKind.Drawing);
+
+        var first = drawing.Occurrences.First(o => o.PageNumber == 1);
+        Assert.Equal(80, first.X, precision: 0);
+        Assert.Equal(144, first.Y, precision: 0);
+        Assert.Equal(95, first.Width, precision: 0);
+        Assert.Equal(88, first.Height, precision: 0);
+
+        // The size shown in the list is that rectangle, in points.
+        Assert.Equal(95, drawing.PixelWidth);
+        Assert.Equal(88, drawing.PixelHeight);
     }
 
     // A PDF operator is a token bounded by whitespace; "f" must not match the

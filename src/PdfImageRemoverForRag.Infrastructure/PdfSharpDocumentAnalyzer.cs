@@ -107,6 +107,12 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
             var textPlacementsByValue = new Dictionary<string, List<Placement>>(StringComparer.Ordinal);
             // Shape signature → where it is drawn + one bounding box for the size.
             var shapesBySignature = new Dictionary<string, ShapeAccumulator>(StringComparer.Ordinal);
+            // Form object id → the artwork it paints, read once however many
+            // pages draw it. The reported document places one form on eleven
+            // pages; parsing its stream eleven times would buy nothing.
+            var drawingsByForm = new Dictionary<string, FormDrawingReader.FormDrawing?>(StringComparer.Ordinal);
+            // Form stream hash → where that drawing is placed.
+            var drawingsByHash = new Dictionary<string, DrawingAccumulator>(StringComparer.Ordinal);
 
             for (int i = 0; i < doc.PageCount; i++)
             {
@@ -208,6 +214,31 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
                                 call.X, call.Y, call.Width, call.Height));
                         }
                     }
+
+                    // The form's own artwork — the paths it paints itself,
+                    // which neither the page's content stream nor the image
+                    // walk above can see.
+                    if (!drawingsByForm.TryGetValue(form.ObjectId, out var drawing))
+                    {
+                        drawing = FormDrawingReader.Read(form.Dictionary);
+                        drawingsByForm[form.ObjectId] = drawing;
+                    }
+                    if (drawing is null) continue;
+
+                    if (!drawingsByHash.TryGetValue(drawing.StreamHash, out var drawingAcc))
+                    {
+                        drawingAcc = new DrawingAccumulator(form.ObjectId, drawing);
+                        drawingsByHash[drawing.StreamHash] = drawingAcc;
+                    }
+                    // One occurrence per Do call: the drawing's box mapped
+                    // through the transform in force where the form is placed.
+                    foreach (var call in formCalls)
+                    {
+                        var box = call.Ctm.MapBoundingBox(
+                            drawing.BoxX, drawing.BoxY, drawing.BoxWidth, drawing.BoxHeight);
+                        drawingAcc.Placements.Add(
+                            new Placement(pageNumber, box.X, box.Y, box.W, box.H));
+                    }
                 }
             }
 
@@ -235,6 +266,13 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
             foreach (var (signature, acc) in shapesBySignature)
             {
                 discoveries.Add(BuildShapeDiscovery(signature, acc));
+            }
+
+            // Drawing discoveries: one per form that paints artwork of its own,
+            // wherever it is placed. No occurrence-count filter, like shapes.
+            foreach (var (hash, acc) in drawingsByHash)
+            {
+                discoveries.Add(BuildDrawingDiscovery(hash, acc));
             }
 
             return (discoveries, pageDims, doc.SecuritySettings.IsEncrypted, doc.PageCount, overlapRegions);
@@ -327,6 +365,53 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
         public double Width { get; }
         public double Height { get; }
         public ShapeGeometry Geometry { get; }
+    }
+
+    /// <summary>Mutable staging for one form's artwork during the sweep.</summary>
+    sealed class DrawingAccumulator
+    {
+        public DrawingAccumulator(string objectId, FormDrawingReader.FormDrawing drawing)
+        {
+            ObjectId = objectId;
+            Drawing = drawing;
+        }
+
+        public List<Placement> Placements { get; } = new();
+        public string ObjectId { get; }
+        public FormDrawingReader.FormDrawing Drawing { get; }
+    }
+
+    /// <summary>
+    /// Build a drawing discovery. Grouped by the form's stream hash — the same
+    /// identity an image uses, because a form is a stream the file stores once
+    /// too — so one form drawn on many pages is one object with many
+    /// placements. The size is the first placement's, in points.
+    ///
+    /// It is safely removable: what gets deleted is the page's own Do call, not
+    /// the shared form, so removing it from one page cannot disturb another.
+    /// </summary>
+    static ImageDiscovery BuildDrawingDiscovery(string hash, DrawingAccumulator acc)
+    {
+        var occurrences = acc.Placements.Select(ToOccurrence).ToArray();
+        var first = acc.Placements[0];
+        return new ImageDiscovery(
+            ObjectId: acc.ObjectId,
+            StreamHash: hash,
+            PixelWidth: (int)Math.Round(first.Width),
+            PixelHeight: (int)Math.Round(first.Height),
+            ColorSpace: "Drawing",
+            BitsPerComponent: 0,
+            Compression: "Drawing",
+            StreamByteCount: 0,
+            IsImageMask: false,
+            IsSafelyRemovable: true,
+            UnsafeReason: null,
+            ThumbnailBytes: null,
+            Occurrences: occurrences,
+            Kind: RemovableKind.Drawing,
+            TextValue: null,
+            ShapeGeometry: null,
+            DrawingGeometry: acc.Drawing.Geometry);
     }
 
     /// <summary>

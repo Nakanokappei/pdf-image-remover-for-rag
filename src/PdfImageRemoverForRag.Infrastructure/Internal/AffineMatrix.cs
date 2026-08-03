@@ -31,12 +31,22 @@ internal readonly record struct AffineMatrix(double A, double B, double C, doubl
     /// Map the unit square (where images are drawn before the CTM) to the
     /// axis-aligned bounding box in page space.
     /// </summary>
-    public (double X, double Y, double W, double H) MapUnitBoundingBox()
+    public (double X, double Y, double W, double H) MapUnitBoundingBox() =>
+        MapBoundingBox(0, 0, 1, 1);
+
+    /// <summary>
+    /// Map an arbitrary rectangle to its axis-aligned bounding box in the
+    /// target space. A Form XObject is not drawn in the unit square — its
+    /// content sits wherever its own coordinates put it — so placing one needs
+    /// the rectangle it actually occupies, not the unit square.
+    /// </summary>
+    public (double X, double Y, double W, double H) MapBoundingBox(
+        double x, double y, double width, double height)
     {
-        var p0 = Apply(0, 0);
-        var p1 = Apply(1, 0);
-        var p2 = Apply(0, 1);
-        var p3 = Apply(1, 1);
+        var p0 = Apply(x, y);
+        var p1 = Apply(x + width, y);
+        var p2 = Apply(x, y + height);
+        var p3 = Apply(x + width, y + height);
         double xMin = Math.Min(Math.Min(p0.X, p1.X), Math.Min(p2.X, p3.X));
         double xMax = Math.Max(Math.Max(p0.X, p1.X), Math.Max(p2.X, p3.X));
         double yMin = Math.Min(Math.Min(p0.Y, p1.Y), Math.Min(p2.Y, p3.Y));

@@ -155,10 +155,16 @@ internal sealed partial class MainForm
     {
         // 16-logical glyphs; 10-logical padding all round → 36-logical buttons.
         _toolStrip.ImageScalingSize = new Size(Dip(16), Dip(16));
-        _openToolButton.Padding = new Padding(Dip(10));
-        _saveToolButton.Padding = new Padding(Dip(10));
-        _selectAllToolButton.Padding = new Padding(Dip(10), Dip(10), Dip(12), Dip(10));
-        _clearSelectionToolButton.Padding = new Padding(Dip(10), Dip(10), Dip(12), Dip(10));
+        // Horizontal padding is what sets the distance between neighbours: two
+        // adjacent buttons are separated by one's right padding plus the
+        // other's left, and nothing else. At 10 each that came to 20 logical px
+        // between one command and the next, which read as five loose buttons
+        // rather than two pairs. Halved sideways; the vertical padding is what
+        // gives the hover highlight its height and is left alone.
+        _openToolButton.Padding = new Padding(Dip(5), Dip(10), Dip(5), Dip(10));
+        _saveToolButton.Padding = new Padding(Dip(5), Dip(10), Dip(5), Dip(10));
+        _selectAllToolButton.Padding = new Padding(Dip(5), Dip(10), Dip(6), Dip(10));
+        _clearSelectionToolButton.Padding = new Padding(Dip(5), Dip(10), Dip(6), Dip(10));
 
         // The filter boxes size themselves from their text, but the gap between
         // them is a hand-picked number and so has to be scaled like every other

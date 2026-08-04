@@ -18,11 +18,8 @@ internal sealed partial class MainForm
             _openMenuItem, _saveMenuItem, _closeAllMenuItem,
             new ToolStripSeparator(), _exitMenuItem,
         });
-        _shownTypesMenuItem.DropDownItems.AddRange(new ToolStripItem[]
-        {
-            _showImagesMenuItem, _showShapesMenuItem, _showDrawingsMenuItem,
-            _showShadowsMenuItem, _showTextMenuItem,
-        });
+        _shownTypesMenuItem.DropDownItems.AddRange(
+            _kindToggles.Select(t => (ToolStripItem)t.MenuItem).ToArray());
         var viewMenu = new ToolStripMenuItem(L10n.MenuView);
         viewMenu.DropDownItems.AddRange(new ToolStripItem[]
         {
@@ -63,16 +60,13 @@ internal sealed partial class MainForm
             new ToolStripSeparator(),
             _selectAllToolButton, _clearSelectionToolButton,
             _filterSeparator,
-            // The kind filters last, so the commands keep the positions the
-            // user already knows. Five short captions with no icons: the
-            // caption IS the filter, and a glyph for "text" next to a glyph for
-            // "drawing" would be two more things to learn.
-            HostKindCheckBox(_showImagesCheck),
-            HostKindCheckBox(_showShapesCheck),
-            HostKindCheckBox(_showDrawingsCheck),
-            HostKindCheckBox(_showShadowsCheck),
-            HostKindCheckBox(_showTextCheck),
         });
+        // The kind filters last, so the commands keep the positions the user
+        // already knows. Short captions with no icons: the caption IS the
+        // filter, and a glyph for "text" next to a glyph for "drawing" would be
+        // two more things to learn.
+        _toolStrip.Items.AddRange(
+            _kindToggles.Select(t => (ToolStripItem)HostKindCheckBox(t.Box)).ToArray());
 
         // Sizes (ImageScalingSize, button padding) are DPI-dependent and set in
         // ApplyDpiDependentLayout; here we only set content/display.
@@ -91,7 +85,7 @@ internal sealed partial class MainForm
         }
 
         // Put one filter box on the strip. The tooltip carries the submenu's
-        // caption because four bare nouns do not say what they are filtering,
+        // caption because a row of bare nouns does not say what they filter,
         // and a visible label for them would cost width the toolbar may not
         // have at 200 %.
         static ToolStripControlHost HostKindCheckBox(CheckBox box) =>
@@ -168,15 +162,11 @@ internal sealed partial class MainForm
 
         // The filter boxes size themselves from their text, but the gap between
         // them is a hand-picked number and so has to be scaled like every other
-        // one. 8 logical px apart, which keeps five of them from reading as one
-        // block without spending the width a separator would.
-        foreach (var box in new[]
-                 {
-                     _showImagesCheck, _showShapesCheck, _showDrawingsCheck,
-                     _showShadowsCheck, _showTextCheck,
-                 })
+        // one. 8 logical px apart, which keeps them from reading as one block
+        // without spending the width a separator would.
+        foreach (var toggle in _kindToggles)
         {
-            box.Margin = new Padding(Dip(4), Dip(2), Dip(4), Dip(2));
+            toggle.Box.Margin = new Padding(Dip(4), Dip(2), Dip(4), Dip(2));
         }
 
         // The gap the separator leaves on its right, before the first filter

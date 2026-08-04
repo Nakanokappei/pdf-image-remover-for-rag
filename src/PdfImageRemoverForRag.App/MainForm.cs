@@ -33,14 +33,10 @@ internal sealed partial class MainForm : Form
     readonly ToolStripMenuItem _exitMenuItem = new(L10n.MenuExit);
     readonly ToolStripMenuItem _tableViewMenuItem = new(L10n.MenuTableView) { Checked = true, CheckOnClick = false };
     readonly ToolStripMenuItem _tileViewMenuItem = new(L10n.MenuTileView) { Checked = false, CheckOnClick = false };
-    // 表示する種類 submenu: per-kind visibility filters. All four start checked;
-    // CheckOnClick is off so MainForm can veto turning off the last one.
+    // 表示する種類 submenu: per-kind visibility filters. Every kind starts
+    // checked; CheckOnClick is off so MainForm can veto turning off the last one.
+    // The entries themselves are in _kindToggles.
     readonly ToolStripMenuItem _shownTypesMenuItem = new(L10n.MenuShownTypes);
-    readonly ToolStripMenuItem _showImagesMenuItem = new(L10n.MenuShowImages) { Checked = true, CheckOnClick = false };
-    readonly ToolStripMenuItem _showShapesMenuItem = new(L10n.MenuShowShapes) { Checked = true, CheckOnClick = false };
-    readonly ToolStripMenuItem _showDrawingsMenuItem = new(L10n.MenuShowDrawings) { Checked = true, CheckOnClick = false };
-    readonly ToolStripMenuItem _showShadowsMenuItem = new(L10n.MenuShowShadows) { Checked = true, CheckOnClick = false };
-    readonly ToolStripMenuItem _showTextMenuItem = new(L10n.MenuShowText) { Checked = true, CheckOnClick = false };
     readonly ToolStripMenuItem _manualMenuItem = new(L10n.MenuManual);
     readonly ToolStripMenuItem _aboutMenuItem = new(L10n.MenuAbout);
 
@@ -52,8 +48,8 @@ internal sealed partial class MainForm : Form
     readonly ToolStripButton _clearSelectionToolButton = new() { Enabled = false };
 
     // The same per-kind filters as the menu, repeated on the toolbar so that
-    // narrowing the list to one kind is a click rather than four trips through
-    // a submenu.
+    // narrowing the list to one kind is a click rather than a trip through a
+    // submenu per kind.
     //
     // Real check boxes, not ToolStripButtons with CheckOnClick.
     // Windows11ToolStripRenderer draws hover and press and returns before the
@@ -65,17 +61,40 @@ internal sealed partial class MainForm : Form
     // margin is what keeps the filter boxes off it and that margin is scaled
     // per DPI like every other hand-picked distance.
     readonly ToolStripSeparator _filterSeparator = new();
-    readonly CheckBox _showImagesCheck = NewKindCheckBox(L10n.MenuShowImages);
-    readonly CheckBox _showShapesCheck = NewKindCheckBox(L10n.MenuShowShapes);
-    readonly CheckBox _showDrawingsCheck = NewKindCheckBox(L10n.MenuShowDrawings);
-    readonly CheckBox _showShadowsCheck = NewKindCheckBox(L10n.MenuShowShadows);
-    readonly CheckBox _showTextCheck = NewKindCheckBox(L10n.MenuShowText);
+
+    /// <summary>
+    /// One kind's pair of switches: the submenu entry and the toolbar box. They
+    /// show the same filter and are never allowed to disagree, so they travel
+    /// together — through the wiring, the layout, the DPI pass and the
+    /// synchronisation. Adding the fifth kind meant editing six places that each
+    /// listed the other four; this is that list, written once.
+    /// </summary>
+    sealed record KindToggle(RemovableKind Kind, ToolStripMenuItem MenuItem, CheckBox Box);
+
+    /// <summary>
+    /// In display order, which is the enum's order — the same order the object
+    /// list sorts by, so the filters read down the toolbar the way the rows read
+    /// down the list.
+    /// </summary>
+    readonly KindToggle[] _kindToggles =
+    {
+        NewKindToggle(RemovableKind.Image, L10n.MenuShowImages),
+        NewKindToggle(RemovableKind.Shape, L10n.MenuShowShapes),
+        NewKindToggle(RemovableKind.Drawing, L10n.MenuShowDrawings),
+        NewKindToggle(RemovableKind.Shadow, L10n.MenuShowShadows),
+        NewKindToggle(RemovableKind.Text, L10n.MenuShowText),
+    };
+
+    static KindToggle NewKindToggle(RemovableKind kind, string caption) => new(
+        kind,
+        new ToolStripMenuItem(caption) { Checked = true, CheckOnClick = false },
+        NewKindCheckBox(caption));
 
     /// <summary>
     /// One toolbar filter box. The caption is the same string the menu uses, so
     /// the two surfaces cannot describe the same filter differently, and the
-    /// accessible name prefixes it with the submenu's own caption — four bare
-    /// nouns in a row need to say what they are filtering.
+    /// accessible name prefixes it with the submenu's own caption — a row of
+    /// bare nouns needs to say what they are filtering.
     /// </summary>
     static CheckBox NewKindCheckBox(string caption) => new()
     {
@@ -209,11 +228,9 @@ internal sealed partial class MainForm : Form
 
     // Which object kinds the table / tile view currently shows (表示する種類).
     // At least one kind is always present.
-    readonly HashSet<RemovableKind> _visibleKinds = new()
-    {
-        RemovableKind.Image, RemovableKind.Shape, RemovableKind.Drawing,
-        RemovableKind.Shadow, RemovableKind.Text,
-    };
+    // Filled from _kindToggles in the constructor: every kind starts visible,
+    // and there is one list of kinds rather than two that could disagree.
+    readonly HashSet<RemovableKind> _visibleKinds = new();
 
     // Current sort. Defaults (and resets on every open) to 使用回数 descending.
     DataGridViewColumn _sortColumn = null!;
@@ -295,6 +312,7 @@ internal sealed partial class MainForm : Form
                     IReadOnlyList<string>? startupPdfPaths = null)
     {
         _workflow = workflow;
+        foreach (var toggle in _kindToggles) _visibleKinds.Add(toggle.Kind);
         _tileView = new TileView(TileVisualFor)
         {
             Dock = DockStyle.Fill,
@@ -350,16 +368,15 @@ internal sealed partial class MainForm : Form
         // not" — and one method decides. A menu click is a toggle because the
         // item carries no state of its own; a check box already holds the
         // answer, so it passes what it now shows.
-        _showImagesMenuItem.Click += (_, _) => SetKindVisible(RemovableKind.Image, !_visibleKinds.Contains(RemovableKind.Image));
-        _showShapesMenuItem.Click += (_, _) => SetKindVisible(RemovableKind.Shape, !_visibleKinds.Contains(RemovableKind.Shape));
-        _showDrawingsMenuItem.Click += (_, _) => SetKindVisible(RemovableKind.Drawing, !_visibleKinds.Contains(RemovableKind.Drawing));
-        _showShadowsMenuItem.Click += (_, _) => SetKindVisible(RemovableKind.Shadow, !_visibleKinds.Contains(RemovableKind.Shadow));
-        _showTextMenuItem.Click += (_, _) => SetKindVisible(RemovableKind.Text, !_visibleKinds.Contains(RemovableKind.Text));
-        _showImagesCheck.CheckedChanged += (_, _) => OnKindCheckChanged(RemovableKind.Image, _showImagesCheck);
-        _showShapesCheck.CheckedChanged += (_, _) => OnKindCheckChanged(RemovableKind.Shape, _showShapesCheck);
-        _showDrawingsCheck.CheckedChanged += (_, _) => OnKindCheckChanged(RemovableKind.Drawing, _showDrawingsCheck);
-        _showShadowsCheck.CheckedChanged += (_, _) => OnKindCheckChanged(RemovableKind.Shadow, _showShadowsCheck);
-        _showTextCheck.CheckedChanged += (_, _) => OnKindCheckChanged(RemovableKind.Text, _showTextCheck);
+        foreach (var toggle in _kindToggles)
+        {
+            // The menu item toggles what it shows; the box reports what the user
+            // just did to it. Both land in the same place, which is what keeps
+            // the two surfaces from drifting.
+            toggle.MenuItem.Click += (_, _) =>
+                SetKindVisible(toggle.Kind, !_visibleKinds.Contains(toggle.Kind));
+            toggle.Box.CheckedChanged += (_, _) => OnKindCheckChanged(toggle.Kind, toggle.Box);
+        }
         _manualMenuItem.Click += OnManualClicked;
         _aboutMenuItem.Click += OnAboutClicked;
 

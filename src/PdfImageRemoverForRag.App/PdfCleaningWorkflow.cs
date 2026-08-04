@@ -130,31 +130,6 @@ internal sealed class PdfCleaningWorkflow
         ImageGroups = Array.Empty<CrossFileImageGroup>();
     }
 
-    /// <summary>
-    /// Drop the given object groups (by hash) from every open document and
-    /// rebuild the cross-file grouping. Called after a successful save so the
-    /// objects the user just removed leave the list. The source files on disk
-    /// are untouched — this only updates the in-memory analysis to reflect
-    /// what has already been cleaned.
-    /// </summary>
-    public void RemoveGroups(IReadOnlyCollection<string> hashes)
-    {
-        if (hashes.Count == 0) return;
-
-        // Rewrite each document's group list without the removed hashes.
-        for (int i = 0; i < _documents.Count; i++)
-        {
-            var document = _documents[i];
-            var kept = document.ImageGroups.Where(g => !hashes.Contains(g.Hash)).ToArray();
-            if (kept.Length != document.ImageGroups.Count)
-            {
-                _documents[i] = document with { ImageGroups = kept };
-            }
-        }
-
-        RebuildGroups();
-    }
-
     void RebuildGroups()
     {
         // Merge in Core. ThumbnailBytes stays null throughout the workspace —

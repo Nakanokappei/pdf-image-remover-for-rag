@@ -213,11 +213,10 @@ internal sealed partial class MainForm
         _syncingKindToggles = true;
         try
         {
-            _showImagesMenuItem.Checked = _showImagesCheck.Checked = _visibleKinds.Contains(RemovableKind.Image);
-            _showShapesMenuItem.Checked = _showShapesCheck.Checked = _visibleKinds.Contains(RemovableKind.Shape);
-            _showDrawingsMenuItem.Checked = _showDrawingsCheck.Checked = _visibleKinds.Contains(RemovableKind.Drawing);
-            _showShadowsMenuItem.Checked = _showShadowsCheck.Checked = _visibleKinds.Contains(RemovableKind.Shadow);
-            _showTextMenuItem.Checked = _showTextCheck.Checked = _visibleKinds.Contains(RemovableKind.Text);
+            foreach (var toggle in _kindToggles)
+            {
+                toggle.MenuItem.Checked = toggle.Box.Checked = _visibleKinds.Contains(toggle.Kind);
+            }
         }
         finally
         {

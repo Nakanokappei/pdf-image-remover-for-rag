@@ -188,16 +188,58 @@ internal sealed class PdfCleaningWorkflow
 
         // The units that were flattened are not there to flatten again; the
         // page now holds one picture where they were.
-        var regionsKept = document.OverlapRegions
-            .Where(r => !flattenedRegions.Contains(r))
-            .ToArray();
+        //
+        // Matched by what was flattened, NOT by comparing regions: the panel
+        // hands the save a region built from the ticked members only, so it is
+        // never the same object as the one analysis produced, and comparing
+        // them left every unit in place and offered them again.
+        var flattenedKeys = parts
+            .Select(p => (p.PageNumber, Key: MemberKey(p.Kind, p.Identity)))
+            .ToHashSet();
+
+        var regionsKept = new List<OverlapRegion>();
+        foreach (var region in document.OverlapRegions)
+        {
+            var covers = flattenedRegions.Where(f => f.PageNumber == region.PageNumber).ToList();
+            if (covers.Count == 0)
+            {
+                regionsKept.Add(region);
+                continue;
+            }
+
+            // A member is gone when its kind and identity were reported AND it
+            // sat where the flattening happened — the same string elsewhere on
+            // the page is still drawn.
+            var members = region.Members
+                .Where(m => !(flattenedKeys.Contains((region.PageNumber, MemberKey(m.Kind, m.Identity)))
+                              && covers.Any(c => OverlapDetector.RegionOverlaps(
+                                  c, m.X, m.Y, m.Width, m.Height))))
+                .ToArray();
+
+            if (members.Length == region.Members.Count) regionsKept.Add(region);
+            // Two objects are what makes a unit. One left is nothing to
+            // flatten, and none means the whole unit became the picture.
+            else if (members.Length >= 2)
+            {
+                regionsKept.Add(OverlapDetector.RegionCovering(region.Page, members));
+            }
+        }
 
         _documents[index] = document with
         {
             ImageGroups = groups.ToArray(),
-            OverlapRegions = regionsKept,
+            OverlapRegions = regionsKept.ToArray(),
         };
     }
+
+    /// <summary>
+    /// How a flattened placement is matched against a unit's member. Images and
+    /// shadows share a key because the cleaner reports every image placement as
+    /// an image, whatever the object turned out to be, and the identity is the
+    /// same stream hash either way.
+    /// </summary>
+    static string MemberKey(RemovableKind kind, string identity) =>
+        (kind.IsImageXObject() ? "image" : kind.ToString()) + ":" + identity;
 
     void RebuildGroups()
     {

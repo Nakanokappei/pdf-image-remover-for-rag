@@ -233,6 +233,10 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
                 // other showings of the same string with it — which is exactly
                 // what the delete side is for.
                 var flattenedHere = new List<FlattenImage>();
+                // The resource names whose draw calls flattening deleted. Kept
+                // so the page's entry for an image nothing draws any more can go
+                // with it — see the block below ReplaceContent.
+                var flattenedNames = new HashSet<string>(StringComparer.Ordinal);
                 // Counted apart from the rest: flattening takes draw calls out
                 // too, but it puts a picture of them back, so reporting the two
                 // together would tell a user who only flattened that N things
@@ -242,7 +246,8 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
                 int flattenedOps = 0;
                 foreach (var flatten in pageFlatten)
                 {
-                    int removedForRegion = RemoveRegionMembers(page, sequence, flatten.Region);
+                    int removedForRegion = RemoveRegionMembers(
+                        page, sequence, flatten.Region, flattenedNames);
                     // Nothing matched: the objects are no longer where analysis
                     // saw them, so there is nothing to replace and drawing the
                     // rendering would just lay a second copy over the original.
@@ -267,6 +272,40 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
                     removed += ContentStreamWalker.RemoveShapes(sequence, selectedShapeSignatures);
                 }
                 if (removed == 0) continue;
+
+                // Flattening replaces a place on the page with a picture of
+                // itself, so an image whose only draw call was inside the
+                // region is not drawn any more — but its entry in the page's
+                // resources, and the object behind it, were being left in the
+                // file. A reader that enumerates objects still handed the
+                // original picture to whatever consumed the document, which is
+                // exactly the fault that once forced a release to be withdrawn
+                // for the removal path. Asked of the rewritten stream, so an
+                // image the page draws somewhere else as well is kept, entry
+                // and all.
+                if (flattenedNames.Count > 0)
+                {
+                    var stillDrawn = ContentStreamWalker.FindDrawCalls(sequence)
+                        .Select(call => call.ResourceName)
+                        .ToHashSet(StringComparer.Ordinal);
+                    var undrawnNames = flattenedNames
+                        .Where(name => !stillDrawn.Contains(name))
+                        .ToHashSet(StringComparer.Ordinal);
+
+                    if (undrawnNames.Count > 0 && page.Resources is not null)
+                    {
+                        // The objects themselves are only candidates: whether
+                        // they can go is decided once every page has been
+                        // rewritten, by asking the document what still points
+                        // at them.
+                        foreach (var entry in ImageXObjectCollector.EnumerateImageEntries(page.Resources))
+                        {
+                            if (undrawnNames.Contains(entry.ResourceName))
+                                doomedImages[entry.Dictionary.Internals.ObjectID] = entry.Dictionary;
+                        }
+                        resourceEntriesToDrop.Add((page.Resources, undrawnNames));
+                    }
+                }
 
                 page.Contents.ReplaceContent(sequence);
                 // Only now may the replacements be drawn: ReplaceContent
@@ -338,16 +377,19 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
     /// Delete the region's members at that one place on the page, and return how
     /// many operators (or operator ranges) went.
     /// </summary>
-    static int RemoveRegionMembers(PdfPage page, CSequence sequence, OverlapRegion region)
+    static int RemoveRegionMembers(
+        PdfPage page, CSequence sequence, OverlapRegion region, HashSet<string> flattenedNames)
     {
         // The region names its image members by stream hash, while the page
         // draws them through resource names, so the same resolution plain
-        // removal does is needed here. What is deliberately NOT done is
-        // recording those hashes as removed, or those objects as doomed: the
-        // image bytes are still in the document — inside the rendering, and
-        // usually still drawn elsewhere — so both collectors are given
-        // throwaways rather than the real ones. Deleting a flattened image
-        // would tear it out of every other page that draws it.
+        // removal does is needed here. The names are handed back to the caller,
+        // which decides afterwards — from the rewritten stream — whether the
+        // page still draws them.
+        //
+        // What is deliberately NOT done is recording those hashes as removed,
+        // or those objects as doomed here: a flattened image is usually still
+        // drawn elsewhere, and marking it at this point would tear it out of
+        // every other page that draws it. Both collectors are given throwaways.
         // Shadows count as images here for the same reason they do everywhere
         // else: they are drawn by a Do naming an image entry. Leaving them out
         // would flatten a region and then paint the shadow back over the
@@ -359,6 +401,7 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
             page.Resources, imageHashes,
             new HashSet<string>(StringComparer.Ordinal),
             new Dictionary<PdfObjectID, PdfDictionary>());
+        flattenedNames.UnionWith(namesInRegion);
 
         return ContentStreamWalker.RemoveInRegion(
             sequence, region, namesInRegion,

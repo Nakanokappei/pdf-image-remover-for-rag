@@ -61,6 +61,10 @@ internal sealed partial class MainForm : Form
     // unchecked one — a toggle whose state cannot be seen is worse than no
     // toggle. A hosted CheckBox brings its own glyph and its own UIA toggle
     // pattern.
+    // Held as a field, unlike the other separator, because its right-hand
+    // margin is what keeps the filter boxes off it and that margin is scaled
+    // per DPI like every other hand-picked distance.
+    readonly ToolStripSeparator _filterSeparator = new();
     readonly CheckBox _showImagesCheck = NewKindCheckBox(L10n.MenuShowImages);
     readonly CheckBox _showShapesCheck = NewKindCheckBox(L10n.MenuShowShapes);
     readonly CheckBox _showDrawingsCheck = NewKindCheckBox(L10n.MenuShowDrawings);

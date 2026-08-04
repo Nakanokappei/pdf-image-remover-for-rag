@@ -62,7 +62,7 @@ internal sealed partial class MainForm
             _openToolButton, _saveToolButton,
             new ToolStripSeparator(),
             _selectAllToolButton, _clearSelectionToolButton,
-            new ToolStripSeparator(),
+            _filterSeparator,
             // The kind filters last, so the commands keep the positions the
             // user already knows. Five short captions with no icons: the
             // caption IS the filter, and a glyph for "text" next to a glyph for
@@ -173,11 +173,12 @@ internal sealed partial class MainForm
             box.Margin = new Padding(Dip(4), Dip(2), Dip(4), Dip(2));
         }
 
-        // The first box sits against the separator, where 4 px reads as a
-        // collision rather than a gap: the separator is a hairline with no
-        // padding of its own, so the only space between them is this margin.
-        // The others have a whole check box beside them and need less.
-        _showImagesCheck.Margin = new Padding(Dip(14), Dip(2), Dip(4), Dip(2));
+        // The gap the separator leaves on its right, before the first filter
+        // box. The separator's own default is nearly nothing, so the line and
+        // the first check box read as one crowded lump; the space has to come
+        // from the separator because the boxes' own margins are what sets their
+        // spacing from each other.
+        _filterSeparator.Margin = new Padding(Dip(2), 0, Dip(12), 0);
 
         // The tile view measures itself by hand, so its bitmap size follows the
         // scale here. TileView reads the metrics through its own Dip and needs

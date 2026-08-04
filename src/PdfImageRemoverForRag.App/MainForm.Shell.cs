@@ -25,6 +25,11 @@ internal sealed partial class MainForm
         _tileView.Enabled = !busy;
         _flattenPanel.Enabled = !busy;
         _progressIndicator.Visible = busy;
+        // The pointer says it too. Analysis and saving both run off the UI
+        // thread, so the window keeps repainting and looks ready for input it
+        // is not taking; the status bar is at the far edge of the screen and a
+        // user watching the list does not see it change.
+        UseWaitCursor = busy;
         if (statusText is not null) SetStatus(statusText);
         UpdateSelectionState();
     }

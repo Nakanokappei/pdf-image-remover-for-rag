@@ -22,18 +22,17 @@ internal sealed partial class MainForm
             RebuildDisplay();                     // re-sort in the current order
             AutoSizeContentColumns();             // re-fit to what is left
             FocusFirstRow();
-            // The flatten tree keeps its rows: they describe the SOURCE file,
-            // which is untouched, and every one of them is still there to
-            // flatten. Only the ticks are cleared, so a second save does not
-            // silently repeat the work. (Deletion is different — RemoveGroups
-            // above drops the rows, because the object list is meant to show
-            // what a saved output still contains.)
+            // The flatten tree is rebuilt from the workspace, which the save
+            // has just pruned: a unit that was flattened is not there to
+            // flatten again, and its parts have left the object list with it.
+            // Rebuilding clears the ticks too, so a second save cannot silently
+            // repeat the work.
             //
-            // Clearing them announces a selection change, which refreshes the
-            // status line — and that would replace the message the save just
-            // put there, so it is put back.
+            // That announces a selection change, which refreshes the status
+            // line — and that would replace the message the save just put
+            // there, so it is put back.
             var savedStatus = _statusLabel.Text ?? string.Empty;
-            _flattenPanel.ClearChecks();
+            _flattenPanel.SetDocuments(_workflow.OpenDocuments);
             SetStatus(savedStatus);
         }
     }

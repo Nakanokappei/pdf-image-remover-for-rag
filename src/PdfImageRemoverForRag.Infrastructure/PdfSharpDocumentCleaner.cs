@@ -180,6 +180,10 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
         int pagesModified = 0;
         int totalRemovedOps = 0;
         int regionsFlattened = 0;
+        // Every placement flattening deleted, for the caller to reconcile its
+        // own list against — reported rather than counted, for the reason on
+        // CleaningResult.FlattenedParts.
+        var flattenedParts = new List<FlattenedPart>();
         var removedHashes = new HashSet<string>(StringComparer.Ordinal);
         // Filled while the pages are swept, and acted on once at the end —
         // deleting an object while its page is still being rewritten would be
@@ -247,7 +251,7 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
                 foreach (var flatten in pageFlatten)
                 {
                     int removedForRegion = RemoveRegionMembers(
-                        page, sequence, flatten.Region, flattenedNames);
+                        page, sequence, flatten.Region, flattenedNames, flattenedParts);
                     // Nothing matched: the objects are no longer where analysis
                     // saw them, so there is nothing to replace and drawing the
                     // rendering would just lay a second copy over the original.
@@ -353,7 +357,8 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
                 DrawCallsRemoved: totalRemovedOps,
                 Elapsed: sw.Elapsed,
                 RegionsFlattened: regionsFlattened,
-                ImagesKeptForOtherReferences: imagesKeptBack);
+                ImagesKeptForOtherReferences: imagesKeptBack,
+                FlattenedParts: flattenedParts);
         }
         catch (OperationCanceledException)
         {
@@ -378,7 +383,8 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
     /// many operators (or operator ranges) went.
     /// </summary>
     static int RemoveRegionMembers(
-        PdfPage page, CSequence sequence, OverlapRegion region, HashSet<string> flattenedNames)
+        PdfPage page, CSequence sequence, OverlapRegion region,
+        HashSet<string> flattenedNames, List<FlattenedPart> flattenedParts)
     {
         // The region names its image members by stream hash, while the page
         // draws them through resource names, so the same resolution plain
@@ -403,9 +409,42 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
             new Dictionary<PdfObjectID, PdfDictionary>());
         flattenedNames.UnionWith(namesInRegion);
 
-        return ContentStreamWalker.RemoveInRegion(
+        // What actually went, placement by placement. The list the user reads
+        // is built from placements, so bringing it in line with the saved file
+        // needs the same detail — a string shown four times may lose one
+        // showing to a region and keep the other three.
+        var deleted = new List<(RemovableKind Kind, string Key)>();
+        var count = ContentStreamWalker.RemoveInRegion(
             sequence, region, namesInRegion,
-            new PdfTextDecoder(page.Resources), new PdfFontMetrics(page.Resources));
+            new PdfTextDecoder(page.Resources), new PdfFontMetrics(page.Resources),
+            deleted);
+
+        // Images come back named by resource; the region's own members carry
+        // the hashes those names were resolved from, so the mapping is built
+        // here rather than by hashing the page a second time.
+        var hashByName = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (deleted.Any(d => d.Kind == RemovableKind.Image))
+        {
+            foreach (var entry in ImageXObjectCollector.EnumerateImageEntries(page.Resources))
+            {
+                if (namesInRegion.Contains(entry.ResourceName))
+                    hashByName[entry.ResourceName] = ImageXObjectCollector.ComputeStreamHash(entry.Dictionary);
+            }
+        }
+
+        foreach (var (kind, key) in deleted)
+        {
+            // An image reports its kind as Image even when the object is a
+            // shadow; the identity is the same stream hash either way, and the
+            // caller matches on identity.
+            var identity = kind == RemovableKind.Image
+                ? hashByName.GetValueOrDefault(key)
+                : key;
+            if (identity is not null)
+                flattenedParts.Add(new FlattenedPart(region.PageNumber, kind, identity));
+        }
+
+        return count;
     }
 
     /// <summary>

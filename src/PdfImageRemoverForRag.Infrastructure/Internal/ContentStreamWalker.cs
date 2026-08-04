@@ -261,7 +261,8 @@ internal static class ContentStreamWalker
         OverlapRegion region,
         IReadOnlySet<string> imageResourceNames,
         PdfTextDecoder decoder,
-        PdfFontMetrics metrics)
+        PdfFontMetrics metrics,
+        ICollection<(RemovableKind Kind, string Key)>? deleted = null)
     {
         var textValues = new HashSet<string>(
             region.Members.Where(m => m.Kind == RemovableKind.Text).Select(m => m.Identity),
@@ -281,6 +282,10 @@ internal static class ContentStreamWalker
                 if (!imageResourceNames.Contains(call.ResourceName)) continue;
                 if (!OverlapDetector.RegionOverlaps(region, call.X, call.Y, call.Width, call.Height)) continue;
                 ranges.Add((call.Index, call.Index));
+                // Reported by resource name; the caller holds the mapping back
+                // to the stream hash, and re-hashing here to avoid passing it
+                // would be deciding image identity in a second place.
+                deleted?.Add((RemovableKind.Image, call.ResourceName));
             }
         }
 
@@ -291,6 +296,7 @@ internal static class ContentStreamWalker
                 if (!textValues.Contains(hit.Value)) continue;
                 if (!OverlapDetector.RegionOverlaps(region, hit.X, hit.Y, hit.Width, hit.Height)) continue;
                 ranges.Add((hit.Index, hit.Index));
+                deleted?.Add((RemovableKind.Text, hit.Value));
             }
         }
 
@@ -301,6 +307,7 @@ internal static class ContentStreamWalker
                 if (!shapeSignatures.Contains(hit.Signature)) continue;
                 if (!OverlapDetector.RegionOverlaps(region, hit.X, hit.Y, hit.Width, hit.Height)) continue;
                 ranges.Add((hit.StartIndex, hit.EndIndex));
+                deleted?.Add((RemovableKind.Shape, hit.Signature));
             }
         }
 

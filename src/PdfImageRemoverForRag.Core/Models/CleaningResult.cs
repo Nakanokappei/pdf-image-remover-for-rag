@@ -9,15 +9,7 @@ namespace PdfImageRemoverForRag.Core.Models;
 /// The image groups that are gone from the whole file. Images baked into a
 /// flattened region are deliberately absent: an image flattened on one page is
 /// usually still drawn on others, and the verifier would otherwise demand the
-/// absence of something the file is right to keep. What flattening did take
-/// off a page is reported per placement in <see cref="FlattenedParts"/>.
-/// </param>
-/// <param name="FlattenedParts">
-/// One entry per placement that flattening deleted — the picture, string or
-/// path that a rendering now stands in for. The list the user reads is built
-/// from placements, so it can only be brought in line with the saved file if
-/// the run says which placements went; counting them would not be enough,
-/// since a string shown four times may lose one showing.
+/// absence of something the file is right to keep.
 /// </param>
 /// <param name="DrawCallsRemoved">
 /// Draw calls the run DELETED — nothing else takes their place. The ones
@@ -48,19 +40,4 @@ public sealed record CleaningResult(
     int DrawCallsRemoved,
     TimeSpan Elapsed,
     int RegionsFlattened = 0,
-    int ImagesKeptForOtherReferences = 0,
-    IReadOnlyList<FlattenedPart>? FlattenedParts = null)
-{
-    /// <summary>Never null, so callers do not each have to guard it.</summary>
-    public IReadOnlyList<FlattenedPart> FlattenedParts { get; init; } =
-        FlattenedParts ?? Array.Empty<FlattenedPart>();
-}
-
-/// <summary>
-/// One placement flattening deleted: where it was, and what it was.
-/// <paramref name="Identity"/> is the key that kind is matched on — the stream
-/// hash for an image or a shadow, the shown string for text, the path
-/// signature for a shape — so it can be compared against a group without
-/// deciding identity a second time.
-/// </summary>
-public sealed record FlattenedPart(int PageNumber, RemovableKind Kind, string Identity);
+    int ImagesKeptForOtherReferences = 0);

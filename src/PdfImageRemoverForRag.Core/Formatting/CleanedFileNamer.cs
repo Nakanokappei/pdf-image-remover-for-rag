@@ -27,7 +27,36 @@ public static class CleanedFileNamer
         // Keep the extension casing of the source so "MANUAL.PDF" stays
         // "MANUAL_cleaned.PDF" — small nicety for users on case-sensitive
         // filesystems who round-trip files.
-        return Path.Combine(dir, stem + CleanedSuffix + ext);
+        return Path.Combine(dir, NextStem(stem) + ext);
+    }
+
+    /// <summary>
+    /// The stem a cleaned file gets. Saving again from a file this tool
+    /// already produced counts up rather than suffixing again, so a second
+    /// pass gives <c>manual_cleaned(2).pdf</c> and not
+    /// <c>manual_cleaned_cleaned.pdf</c>. Reading the previous output back in
+    /// is the ordinary way to work here — the workspace moves onto the saved
+    /// file after every save — so the second pass is not an edge case.
+    /// </summary>
+    static string NextStem(string stem)
+    {
+        if (!stem.EndsWith(CleanedSuffix, StringComparison.Ordinal))
+        {
+            // "manual_cleaned(2)" → "manual_cleaned(3)", counting the trailing
+            // number rather than adding a second one.
+            var open = stem.LastIndexOf('(');
+            if (open > 0 && stem.EndsWith(")", StringComparison.Ordinal)
+                && stem[..open].EndsWith(CleanedSuffix, StringComparison.Ordinal)
+                && int.TryParse(stem[(open + 1)..^1], out var counter)
+                && counter > 0)
+            {
+                return stem[..open] + "(" + (counter + 1) + ")";
+            }
+
+            return stem + CleanedSuffix;
+        }
+
+        return stem + "(2)";
     }
 
     /// <summary>

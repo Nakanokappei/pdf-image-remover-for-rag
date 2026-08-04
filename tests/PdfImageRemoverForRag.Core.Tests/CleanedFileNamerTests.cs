@@ -16,6 +16,38 @@ public class CleanedFileNamerTests
     }
 
     [Fact]
+    public void DefaultDestination_CountsUpFromAFileThisToolProduced()
+    {
+        // Saving again from a cleaned file is ordinary here: the workspace
+        // moves onto the saved file after every save, so the second pass would
+        // otherwise be manual_cleaned_cleaned.pdf and the third worse.
+        var src = Path.Combine("out", "manual_cleaned.pdf");
+        Assert.Equal(
+            Path.Combine("out", "manual_cleaned(2).pdf"),
+            CleanedFileNamer.BuildDefaultDestination(src));
+    }
+
+    [Fact]
+    public void DefaultDestination_KeepsCountingRatherThanNesting()
+    {
+        var src = Path.Combine("out", "manual_cleaned(2).pdf");
+        Assert.Equal(
+            Path.Combine("out", "manual_cleaned(3).pdf"),
+            CleanedFileNamer.BuildDefaultDestination(src));
+    }
+
+    [Fact]
+    public void DefaultDestination_LeavesANumberedNameThatIsNotOursAlone()
+    {
+        // A file the user named "report(2).pdf" is not one of ours: the count
+        // only applies after the suffix this tool writes.
+        var src = Path.Combine("in", "report(2).pdf");
+        Assert.Equal(
+            Path.Combine("in", "report(2)_cleaned.pdf"),
+            CleanedFileNamer.BuildDefaultDestination(src));
+    }
+
+    [Fact]
     public void DefaultDestination_PreservesExtensionCasing()
     {
         // Users on case-preserving filesystems expect MANUAL.PDF to stay .PDF.

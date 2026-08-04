@@ -10,8 +10,7 @@ namespace PdfImageRemoverForRag.App;
 
 /// <summary>One saved output file inside a <see cref="BatchSaveResult"/>.</summary>
 internal sealed record SavedFile(
-    string SourcePath, string DestinationPath, int DrawCallsRemoved, int RegionsFlattened,
-    IReadOnlyList<FlattenedPart> FlattenedParts);
+    string SourcePath, string DestinationPath, int DrawCallsRemoved, int RegionsFlattened);
 
 /// <summary>
 /// Aggregate outcome of a multi-file save run. The two totals stay apart all
@@ -80,25 +79,8 @@ internal sealed class PdfCleaningWorkflow
         if (IsOpen(pdfFilePath)) return false;
 
         var stopwatch = Stopwatch.StartNew();
-        var info = await _analyzer
-            .AnalyzeAsync(pdfFilePath, progress: progress, ct: ct)
-            .ConfigureAwait(false);
-
-        // Source bytes go straight to the on-disk store, one file per unique
-        // hash, and are then dropped from the workspace. Nothing image-shaped
-        // survives in memory: the same logo in five files costs one file on
-        // disk and nothing in RAM.
-        foreach (var group in info.ImageGroups)
-        {
-            if (group.ThumbnailBytes is { Length: > 0 } bytes)
-            {
-                _store.SaveSource(group.Hash, bytes);
-            }
-        }
-        _documents.Add(info with
-        {
-            ImageGroups = info.ImageGroups.Select(g => g with { ThumbnailBytes = null }).ToArray(),
-        });
+        var info = await AnalyzeForWorkspaceAsync(pdfFilePath, progress, ct).ConfigureAwait(false);
+        _documents.Add(info);
         RebuildGroups();
 
         _logger.LogInformation(
@@ -109,6 +91,36 @@ internal sealed class PdfCleaningWorkflow
             info.ImageKindCount, info.TotalUsageCount,
             _documents.Count, ImageGroups.Count, stopwatch.ElapsedMilliseconds);
         return true;
+    }
+
+    /// <summary>
+    /// Analyze one file for the workspace: thumbnails go to the on-disk store,
+    /// one file per unique hash, and are then dropped from what is kept.
+    /// Nothing image-shaped survives in memory — the same logo in five files
+    /// costs one file on disk and nothing in RAM.
+    ///
+    /// Shared by opening and by the re-read that follows a save, so a document
+    /// that arrived either way is the same kind of thing afterwards.
+    /// </summary>
+    async Task<PdfDocumentInfo> AnalyzeForWorkspaceAsync(
+        string pdfFilePath, IProgress<AnalysisProgress>? progress, CancellationToken ct)
+    {
+        var info = await _analyzer
+            .AnalyzeAsync(pdfFilePath, progress: progress, ct: ct)
+            .ConfigureAwait(false);
+
+        foreach (var group in info.ImageGroups)
+        {
+            if (group.ThumbnailBytes is { Length: > 0 } bytes)
+            {
+                _store.SaveSource(group.Hash, bytes);
+            }
+        }
+
+        return info with
+        {
+            ImageGroups = info.ImageGroups.Select(g => g with { ThumbnailBytes = null }).ToArray(),
+        };
     }
 
     /// <summary>Close every document. The store keeps its files for the run.</summary>
@@ -142,104 +154,6 @@ internal sealed class PdfCleaningWorkflow
 
         RebuildGroups();
     }
-
-    /// <summary>
-    /// Bring one document's in-memory analysis in line with the file that was
-    /// just written: the placements flattening deleted leave the object list,
-    /// and the units that were flattened leave the Flatten panel.
-    ///
-    /// Deletion has always worked this way — the list is meant to describe what
-    /// a saved output still holds — and flattening was the exception, on the
-    /// grounds that it left the objects in the document. It no longer does, so
-    /// keeping the rows showed the user parts that the output does not contain.
-    ///
-    /// One placement per reported part, not the whole group: a string shown on
-    /// twenty pages that was flattened on one is still on nineteen.
-    /// </summary>
-    void PruneFlattened(
-        string filePath,
-        IReadOnlyList<OverlapRegion> flattenedRegions,
-        IReadOnlyList<FlattenedPart> parts)
-    {
-        int index = _documents.FindIndex(d => CleanedFileNamer.WouldOverwriteSource(d.FilePath, filePath));
-        if (index < 0) return;
-        var document = _documents[index];
-
-        var groups = document.ImageGroups.ToList();
-        foreach (var part in parts)
-        {
-            // An image is reported as Image whatever the object turned out to
-            // be, so a shadow is found through the same stream hash rather than
-            // by matching the kind exactly.
-            int groupIndex = groups.FindIndex(g => part.Kind == RemovableKind.Image
-                ? g.Kind.IsImageXObject() && string.Equals(g.Hash, part.Identity, StringComparison.Ordinal)
-                : g.Kind == part.Kind && string.Equals(g.TextValue, part.Identity, StringComparison.Ordinal));
-            if (groupIndex < 0) continue;
-
-            var group = groups[groupIndex];
-            int occurrenceIndex = group.Occurrences
-                .ToList().FindIndex(o => o.PageNumber == part.PageNumber);
-            if (occurrenceIndex < 0) continue;
-
-            var kept = group.Occurrences.Where((_, i) => i != occurrenceIndex).ToArray();
-            if (kept.Length == 0) groups.RemoveAt(groupIndex);
-            else groups[groupIndex] = group with { Occurrences = kept };
-        }
-
-        // The units that were flattened are not there to flatten again; the
-        // page now holds one picture where they were.
-        //
-        // Matched by what was flattened, NOT by comparing regions: the panel
-        // hands the save a region built from the ticked members only, so it is
-        // never the same object as the one analysis produced, and comparing
-        // them left every unit in place and offered them again.
-        var flattenedKeys = parts
-            .Select(p => (p.PageNumber, Key: MemberKey(p.Kind, p.Identity)))
-            .ToHashSet();
-
-        var regionsKept = new List<OverlapRegion>();
-        foreach (var region in document.OverlapRegions)
-        {
-            var covers = flattenedRegions.Where(f => f.PageNumber == region.PageNumber).ToList();
-            if (covers.Count == 0)
-            {
-                regionsKept.Add(region);
-                continue;
-            }
-
-            // A member is gone when its kind and identity were reported AND it
-            // sat where the flattening happened — the same string elsewhere on
-            // the page is still drawn.
-            var members = region.Members
-                .Where(m => !(flattenedKeys.Contains((region.PageNumber, MemberKey(m.Kind, m.Identity)))
-                              && covers.Any(c => OverlapDetector.RegionOverlaps(
-                                  c, m.X, m.Y, m.Width, m.Height))))
-                .ToArray();
-
-            if (members.Length == region.Members.Count) regionsKept.Add(region);
-            // Two objects are what makes a unit. One left is nothing to
-            // flatten, and none means the whole unit became the picture.
-            else if (members.Length >= 2)
-            {
-                regionsKept.Add(OverlapDetector.RegionCovering(region.Page, members));
-            }
-        }
-
-        _documents[index] = document with
-        {
-            ImageGroups = groups.ToArray(),
-            OverlapRegions = regionsKept.ToArray(),
-        };
-    }
-
-    /// <summary>
-    /// How a flattened placement is matched against a unit's member. Images and
-    /// shadows share a key because the cleaner reports every image placement as
-    /// an image, whatever the object turned out to be, and the identity is the
-    /// same stream hash either way.
-    /// </summary>
-    static string MemberKey(RemovableKind kind, string identity) =>
-        (kind.IsImageXObject() ? "image" : kind.ToString()) + ":" + identity;
 
     void RebuildGroups()
     {
@@ -283,6 +197,7 @@ internal sealed class PdfCleaningWorkflow
         IReadOnlyCollection<string> selectedHashes,
         Func<string, string> resolveDestination,
         IReadOnlyDictionary<string, IReadOnlyList<OverlapRegion>>? regionsToFlattenByFile = null,
+        IProgress<AnalysisProgress>? reanalysisProgress = null,
         CancellationToken ct = default)
     {
         var flattenByFile = regionsToFlattenByFile
@@ -305,10 +220,6 @@ internal sealed class PdfCleaningWorkflow
         }
 
         var savedFiles = new List<SavedFile>();
-        var flattened = new List<(
-            string FilePath,
-            IReadOnlyList<OverlapRegion> Regions,
-            IReadOnlyList<FlattenedPart> Parts)>();
         int totalRemoved = 0;
         int totalFlattened = 0;
         var stopwatch = Stopwatch.StartNew();
@@ -342,19 +253,26 @@ internal sealed class PdfCleaningWorkflow
             savedFiles.Add(saved);
             totalRemoved += saved.DrawCallsRemoved;
             totalFlattened += saved.RegionsFlattened;
-            // Applied after the loop: _documents is being enumerated, and
-            // pruning rewrites its entries.
-            if (saved.FlattenedParts.Count > 0 || documentRegions.Count > 0)
-            {
-                flattened.Add((document.FilePath, documentRegions, saved.FlattenedParts));
-            }
         }
 
-        foreach (var (filePath, regions, parts) in flattened)
+        // The workspace now describes the files that were just written, not the
+        // ones that were open a moment ago. Reading them back is the only way
+        // it can be right about everything at once: what was deleted is gone,
+        // what was flattened is gone, and the picture flattening drew is there
+        // — with its real identity, which nothing in memory could have known.
+        // Keeping the list in step by hand was tried first and produced three
+        // separate defects in one afternoon.
+        foreach (var saved in savedFiles)
         {
-            PruneFlattened(filePath, regions, parts);
+            ct.ThrowIfCancellationRequested();
+            int index = _documents.FindIndex(
+                d => CleanedFileNamer.WouldOverwriteSource(d.FilePath, saved.SourcePath));
+            if (index < 0) continue;
+
+            _documents[index] = await AnalyzeForWorkspaceAsync(
+                saved.DestinationPath, reanalysisProgress, ct).ConfigureAwait(false);
         }
-        if (flattened.Count > 0) RebuildGroups();
+        if (savedFiles.Count > 0) RebuildGroups();
 
         _logger.LogInformation(
             "saved: files={Files} drawCallsRemoved={Removed} regionsFlattened={Flattened} " +
@@ -445,7 +363,7 @@ internal sealed class PdfCleaningWorkflow
 
             File.Move(tempPath, destinationPath, overwrite: true);
             return new SavedFile(document.FilePath, destinationPath,
-                result.DrawCallsRemoved, result.RegionsFlattened, result.FlattenedParts);
+                result.DrawCallsRemoved, result.RegionsFlattened);
         }
         catch (Exception ex)
         {

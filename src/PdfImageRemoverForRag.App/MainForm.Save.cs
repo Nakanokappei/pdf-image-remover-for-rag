@@ -1,5 +1,6 @@
 using PdfImageRemoverForRag.Core.Errors;
 using PdfImageRemoverForRag.Core.Formatting;
+using PdfImageRemoverForRag.Core.Models;
 
 namespace PdfImageRemoverForRag.App;
 
@@ -11,26 +12,23 @@ internal sealed partial class MainForm
 
     async void OnSaveClicked(object? sender, EventArgs e)
     {
-        // Capture the removed set before saving; on success those objects
-        // leave the workspace so the list shows only what remains.
-        var savedHashes = _selectedHashes.ToArray();
         if (await SaveSelectedAsync())
         {
+            // The workspace now describes the files that were just written —
+            // the save re-read them. So every surface is rebuilt from it rather
+            // than adjusted by hand: what was removed is absent, what was
+            // flattened is absent, and the picture flattening drew is a row of
+            // its own. Keeping these in step by hand is what produced three
+            // separate defects in one afternoon.
             _selectedHashes.Clear();
-            _workflow.RemoveGroups(savedHashes);  // drop the rows that were saved away
             RefreshThumbnailImages(_workflow.ImageGroups);
             RebuildDisplay();                     // re-sort in the current order
             AutoSizeContentColumns();             // re-fit to what is left
             FocusFirstRow();
-            // The flatten tree is rebuilt from the workspace, which the save
-            // has just pruned: a unit that was flattened is not there to
-            // flatten again, and its parts have left the object list with it.
-            // Rebuilding clears the ticks too, so a second save cannot silently
-            // repeat the work.
-            //
-            // That announces a selection change, which refreshes the status
-            // line — and that would replace the message the save just put
-            // there, so it is put back.
+            // Rebuilding the tree clears its ticks too, so a second save cannot
+            // silently repeat the work. That announces a selection change,
+            // which refreshes the status line — and that would replace the
+            // message the save just put there, so it is put back.
             var savedStatus = _statusLabel.Text ?? string.Empty;
             _flattenPanel.SetDocuments(_workflow.OpenDocuments);
             SetStatus(savedStatus);
@@ -73,7 +71,12 @@ internal sealed partial class MainForm
         try
         {
             var result = await _workflow.RemoveAndSaveAsync(
-                _selectedHashes.ToArray(), source => destinations[source], flattenByFile);
+                _selectedHashes.ToArray(), source => destinations[source], flattenByFile,
+                // Reading the saved files back is analysis, and on a long
+                // document it takes as long as opening one — so it says so in
+                // the status bar rather than looking hung. The same wording the
+                // open path uses, from the same describer.
+                new Progress<AnalysisProgress>(report => SetStatus(_openProgress.Describe(report))));
             SetStatus(L10n.StatusSaved(
                 result.Files.Count, result.TotalDrawCallsRemoved, result.TotalRegionsFlattened));
             return true;

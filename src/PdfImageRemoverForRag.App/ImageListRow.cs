@@ -74,6 +74,7 @@ internal static class ImageListRow
         RemovableKind.Text => L10n.TypeText,
         RemovableKind.Shape => L10n.TypeShape,
         RemovableKind.Drawing => L10n.TypeDrawing,
+        RemovableKind.Shadow => L10n.TypeShadow,
         _ => L10n.TypeImage,
     };
 
@@ -88,12 +89,11 @@ internal static class ImageListRow
     };
 
     /// <summary>圧縮 cell: filter label for images, "N/A" for text and shapes
-    /// (compression is an image-only attribute).</summary>
-    public static string CompressionLabel(CrossFileImageGroup group) => group.Kind switch
-    {
-        RemovableKind.Image => CompressionLabel(group.Compression),
-        _ => L10n.CompressionNotApplicable,
-    };
+    /// (compression is an image-only attribute). A shadow is an image, and its
+    /// stream is filtered like any other, so it gets the filter label too.</summary>
+    public static string CompressionLabel(CrossFileImageGroup group) => group.Kind.IsImageXObject()
+        ? CompressionLabel(group.Compression)
+        : L10n.CompressionNotApplicable;
 
     /// <summary>
     /// Map PDF filter names to the short labels the 圧縮 column shows

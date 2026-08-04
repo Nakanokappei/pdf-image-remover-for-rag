@@ -20,6 +20,7 @@ internal sealed class ChineseTraditionalStrings : IStrings
     public string MenuShowImages => "圖片";
     public string MenuShowShapes => "圖形";
     public string MenuShowDrawings => "繪圖";
+    public string MenuShowShadows => "陰影";
     public string MenuShowText => "文字";
     public string MenuHelp => "說明(&H)";
     public string MenuManual => "線上手冊(&M)…";
@@ -44,6 +45,7 @@ internal sealed class ChineseTraditionalStrings : IStrings
     public string TypeText => "文字";
     public string TypeShape => "圖形";
     public string TypeDrawing => "繪圖";
+    public string TypeShadow => "陰影";
     public string ColumnSize => "大小";
     public string ColumnUsageCount => "使用次數";
     public string ColumnCompression => "壓縮";

@@ -18,6 +18,7 @@ internal sealed class ChineseSimplifiedStrings : IStrings
     public string MenuShowImages => "图像";
     public string MenuShowShapes => "形状";
     public string MenuShowDrawings => "绘图";
+    public string MenuShowShadows => "阴影";
     public string MenuShowText => "文本";
     public string MenuHelp => "帮助(&H)";
     public string MenuManual => "在线手册(&M)…";
@@ -42,6 +43,7 @@ internal sealed class ChineseSimplifiedStrings : IStrings
     public string TypeText => "文本";
     public string TypeShape => "形状";
     public string TypeDrawing => "绘图";
+    public string TypeShadow => "阴影";
     public string ColumnSize => "尺寸";
     public string ColumnUsageCount => "使用次数";
     public string ColumnCompression => "压缩";

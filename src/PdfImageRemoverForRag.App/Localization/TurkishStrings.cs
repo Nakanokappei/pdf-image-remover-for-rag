@@ -26,6 +26,7 @@ internal sealed class TurkishStrings : IStrings
     public string MenuShowImages => "Görüntüler";
     public string MenuShowShapes => "Şekiller";
     public string MenuShowDrawings => "Çizimler";
+    public string MenuShowShadows => "Gölgeler";
     public string MenuShowText => "Metin";
     public string MenuHelp => "&Yardım";
     public string MenuManual => "Çevrimiçi &Kılavuz…";
@@ -53,6 +54,7 @@ internal sealed class TurkishStrings : IStrings
     public string TypeText => "Metin";
     public string TypeShape => "Şekil";
     public string TypeDrawing => "Çizim";
+    public string TypeShadow => "Gölge";
     public string ColumnSize => "Boyut";
     public string ColumnUsageCount => "Kullanım";
     public string ColumnCompression => "Sıkıştırma";

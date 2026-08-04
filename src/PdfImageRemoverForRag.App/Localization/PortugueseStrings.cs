@@ -22,6 +22,7 @@ internal sealed class PortugueseStrings : IStrings
     public string MenuShowImages => "Imagens";
     public string MenuShowShapes => "Formas";
     public string MenuShowDrawings => "Desenhos";
+    public string MenuShowShadows => "Sombras";
     public string MenuShowText => "Texto";
     public string MenuHelp => "A&juda";
     public string MenuManual => "&Manual Online…";
@@ -47,6 +48,7 @@ internal sealed class PortugueseStrings : IStrings
     public string TypeText => "Texto";
     public string TypeShape => "Forma";
     public string TypeDrawing => "Desenho";
+    public string TypeShadow => "Sombra";
     public string ColumnSize => "Tamanho";
     public string ColumnUsageCount => "Usos";
     public string ColumnCompression => "Compressão";

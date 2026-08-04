@@ -17,6 +17,7 @@ internal sealed class KoreanStrings : IStrings
     public string MenuShowImages => "이미지";
     public string MenuShowShapes => "도형";
     public string MenuShowDrawings => "그림";
+    public string MenuShowShadows => "그림자";
     public string MenuShowText => "텍스트";
     public string MenuHelp => "도움말(&H)";
     public string MenuManual => "온라인 설명서(&M)…";
@@ -41,6 +42,7 @@ internal sealed class KoreanStrings : IStrings
     public string TypeText => "텍스트";
     public string TypeShape => "도형";
     public string TypeDrawing => "그림";
+    public string TypeShadow => "그림자";
     public string ColumnSize => "크기";
     public string ColumnUsageCount => "사용 횟수";
     public string ColumnCompression => "압축";

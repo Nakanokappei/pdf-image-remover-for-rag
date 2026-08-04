@@ -13,7 +13,7 @@ Company logos, headers, footers, watermarks, and ruling lines are ingested along
 - **Your original PDFs are never modified.** Output always goes to a separate file.
 - **Everything runs locally on your PC.** No file leaves the machine, and no data is collected.
 
-### Four kinds of removable objects
+### Five kinds of removable objects
 
 | Type | What gets listed | Notes |
 | --- | --- | --- |
@@ -21,8 +21,29 @@ Company logos, headers, footers, watermarks, and ruling lines are ingested along
 | **Text** | Strings with at least one visible character, shown **2+ times** in a file | One character is enough — a confidentiality marking such as "S". Whitespace-only strings are never listed. For headers, footers, watermarks; CJK / double-byte text is decoded correctly |
 | **Shape** | Every drawn line, rectangle, and curve | Same **shape + line width + color** = one row (position is ignored) |
 | **Drawing** | Artwork placed as a unit | A person silhouette with a speech bubble, and the like: several lines that sit together. The whole picture is removed, not one line at a time |
+| **Shadow** | The picture a drop shadow leaves behind | Word processors and presentation tools export a shadow as a picture of one flat colour with the blurred outline kept separately. On the page it is a faint shadow; pulled out of the file by other software it is a solid black rectangle. See below |
 
-Only **Text** has an occurrence filter. Images, shapes and drawings are listed in full.
+Only **Text** has an occurrence filter. Images, shapes, drawings and shadows are
+listed in full.
+
+### Why shadows have a type of their own
+
+If black rectangles turn up where you expected a diagram, these are almost
+always what they are.
+
+PDF has no way to draw a blur, so a shadow has to be exported as a picture. The
+picture is one flat colour — usually pure black — and the shape of the shadow is
+kept apart from it, in a channel that says how much of that colour to let
+through at each point. Software that reads a PDF page renders the two together
+and you see a soft shadow. Software that pulls images out of the file object by
+object often keeps only the picture, and a picture of pure black is a black
+rectangle.
+
+Removing them costs the page almost nothing, which is why they are listed
+separately: tick **Shadow** on its own and you can clear them in one pass
+without going through the real pictures. Only shadows are affected — a glow,
+soft edges or a reflection is exported together with the object it belongs to,
+so it stays an ordinary **Image**.
 
 ### Two ways to go about it
 
@@ -154,7 +175,7 @@ Below the toolbar the window is split left and right.
 
 ### Filtering by kind
 
-The **check boxes on the toolbar**, or **View → Shown Types**, toggle Images / Shapes / Drawings / Text. The two are the same switch and always agree. Handy when you want to look at one kind at a time.
+The **check boxes on the toolbar**, or **View → Shown Types**, toggle Images / Shapes / Drawings / Shadows / Text. The two are the same switch and always agree. Handy when you want to look at one kind at a time — clearing every kind but **Shadow**, then **Select All**, removes the whole crop of black rectangles in one pass.
 
 At least one kind must stay visible, so the last remaining check cannot be turned off (it springs back if you try). **Select All** applies only to the kinds currently shown.
 

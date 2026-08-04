@@ -20,6 +20,7 @@ internal sealed class EnglishStrings : IStrings
     public string MenuShowImages => "Images";
     public string MenuShowShapes => "Shapes";
     public string MenuShowDrawings => "Drawings";
+    public string MenuShowShadows => "Shadows";
     public string MenuShowText => "Text";
     public string MenuHelp => "&Help";
     public string MenuManual => "Online &Manual…";
@@ -43,6 +44,7 @@ internal sealed class EnglishStrings : IStrings
     public string TypeText => "Text";
     public string TypeShape => "Shape";
     public string TypeDrawing => "Drawing";
+    public string TypeShadow => "Shadow";
     public string ColumnSize => "Size";
     public string ColumnUsageCount => "Usage";
     public string ColumnCompression => "Compression";

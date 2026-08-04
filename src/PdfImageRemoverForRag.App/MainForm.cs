@@ -39,6 +39,7 @@ internal sealed partial class MainForm : Form
     readonly ToolStripMenuItem _showImagesMenuItem = new(L10n.MenuShowImages) { Checked = true, CheckOnClick = false };
     readonly ToolStripMenuItem _showShapesMenuItem = new(L10n.MenuShowShapes) { Checked = true, CheckOnClick = false };
     readonly ToolStripMenuItem _showDrawingsMenuItem = new(L10n.MenuShowDrawings) { Checked = true, CheckOnClick = false };
+    readonly ToolStripMenuItem _showShadowsMenuItem = new(L10n.MenuShowShadows) { Checked = true, CheckOnClick = false };
     readonly ToolStripMenuItem _showTextMenuItem = new(L10n.MenuShowText) { Checked = true, CheckOnClick = false };
     readonly ToolStripMenuItem _manualMenuItem = new(L10n.MenuManual);
     readonly ToolStripMenuItem _aboutMenuItem = new(L10n.MenuAbout);
@@ -63,6 +64,7 @@ internal sealed partial class MainForm : Form
     readonly CheckBox _showImagesCheck = NewKindCheckBox(L10n.MenuShowImages);
     readonly CheckBox _showShapesCheck = NewKindCheckBox(L10n.MenuShowShapes);
     readonly CheckBox _showDrawingsCheck = NewKindCheckBox(L10n.MenuShowDrawings);
+    readonly CheckBox _showShadowsCheck = NewKindCheckBox(L10n.MenuShowShadows);
     readonly CheckBox _showTextCheck = NewKindCheckBox(L10n.MenuShowText);
 
     /// <summary>
@@ -205,7 +207,8 @@ internal sealed partial class MainForm : Form
     // At least one kind is always present.
     readonly HashSet<RemovableKind> _visibleKinds = new()
     {
-        RemovableKind.Image, RemovableKind.Shape, RemovableKind.Drawing, RemovableKind.Text,
+        RemovableKind.Image, RemovableKind.Shape, RemovableKind.Drawing,
+        RemovableKind.Shadow, RemovableKind.Text,
     };
 
     // Current sort. Defaults (and resets on every open) to 使用回数 descending.
@@ -346,10 +349,12 @@ internal sealed partial class MainForm : Form
         _showImagesMenuItem.Click += (_, _) => SetKindVisible(RemovableKind.Image, !_visibleKinds.Contains(RemovableKind.Image));
         _showShapesMenuItem.Click += (_, _) => SetKindVisible(RemovableKind.Shape, !_visibleKinds.Contains(RemovableKind.Shape));
         _showDrawingsMenuItem.Click += (_, _) => SetKindVisible(RemovableKind.Drawing, !_visibleKinds.Contains(RemovableKind.Drawing));
+        _showShadowsMenuItem.Click += (_, _) => SetKindVisible(RemovableKind.Shadow, !_visibleKinds.Contains(RemovableKind.Shadow));
         _showTextMenuItem.Click += (_, _) => SetKindVisible(RemovableKind.Text, !_visibleKinds.Contains(RemovableKind.Text));
         _showImagesCheck.CheckedChanged += (_, _) => OnKindCheckChanged(RemovableKind.Image, _showImagesCheck);
         _showShapesCheck.CheckedChanged += (_, _) => OnKindCheckChanged(RemovableKind.Shape, _showShapesCheck);
         _showDrawingsCheck.CheckedChanged += (_, _) => OnKindCheckChanged(RemovableKind.Drawing, _showDrawingsCheck);
+        _showShadowsCheck.CheckedChanged += (_, _) => OnKindCheckChanged(RemovableKind.Shadow, _showShadowsCheck);
         _showTextCheck.CheckedChanged += (_, _) => OnKindCheckChanged(RemovableKind.Text, _showTextCheck);
         _manualMenuItem.Click += OnManualClicked;
         _aboutMenuItem.Click += OnAboutClicked;

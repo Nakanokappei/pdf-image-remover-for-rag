@@ -23,6 +23,7 @@ internal sealed class SpanishStrings : IStrings
     public string MenuShowImages => "Imágenes";
     public string MenuShowShapes => "Formas";
     public string MenuShowDrawings => "Dibujos";
+    public string MenuShowShadows => "Sombras";
     public string MenuShowText => "Texto";
     public string MenuHelp => "A&yuda";
     public string MenuManual => "&Manual en línea…";
@@ -50,6 +51,7 @@ internal sealed class SpanishStrings : IStrings
     public string TypeText => "Texto";
     public string TypeShape => "Forma";
     public string TypeDrawing => "Dibujo";
+    public string TypeShadow => "Sombra";
     public string ColumnSize => "Tamaño";
     public string ColumnUsageCount => "Usos";
     public string ColumnCompression => "Compresión";

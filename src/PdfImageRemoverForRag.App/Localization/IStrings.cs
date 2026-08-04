@@ -53,6 +53,7 @@ internal interface IStrings
     string MenuShowImages { get; }
     string MenuShowShapes { get; }
     string MenuShowDrawings { get; }
+    string MenuShowShadows { get; }
     string MenuShowText { get; }
     string MenuHelp { get; }
     string MenuManual { get; }
@@ -90,6 +91,14 @@ internal interface IStrings
     /// a translation has to keep them tellable apart.
     /// </summary>
     string TypeDrawing { get; }
+
+    /// <summary>
+    /// A shadow layer: the flat-coloured picture a drop shadow becomes when it
+    /// is exported to PDF. Translate it as the drawing effect a reader knows
+    /// from a word processor or presentation tool ("drop shadow"), not as the
+    /// dark area an object casts in a photograph.
+    /// </summary>
+    string TypeShadow { get; }
     string ColumnSize { get; }
     string ColumnUsageCount { get; }
     string ColumnCompression { get; }

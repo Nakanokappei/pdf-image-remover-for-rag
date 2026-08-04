@@ -26,6 +26,24 @@ public enum RemovableKind
     /// page, never by rewriting the form.
     /// </summary>
     Drawing = 3,
+
+    /// <summary>
+    /// A shadow layer — "Shadow" in the UI. An Image XObject holding ONE flat
+    /// colour, shaped entirely by its soft mask. That is how a drop shadow
+    /// survives being exported to PDF: PowerPoint keeps the shadow's colour in
+    /// the picture and its blurred outline in the mask, because PDF has no
+    /// blur operator to draw it with.
+    ///
+    /// It is listed apart from an ordinary image because of what happens
+    /// downstream. A reader that walks the file's objects writes the picture
+    /// out and drops the mask, so a layer that is nearly invisible on the page
+    /// arrives in a RAG pipeline as a solid black rectangle. Users reported
+    /// exactly that, could not tell which rows caused it, and left them.
+    ///
+    /// Removed exactly as an image is — it IS an Image XObject — so everything
+    /// that resolves images by stream hash covers it too.
+    /// </summary>
+    Shadow = 4,
 }
 
 /// <summary>Questions about a kind that more than one layer has to agree on.</summary>
@@ -43,5 +61,19 @@ public static class RemovableKinds
     /// time they disagreed a released build had to be withdrawn.
     /// </summary>
     public static bool IsIdentifiedByStreamHash(this RemovableKind kind) =>
-        kind is RemovableKind.Image or RemovableKind.Drawing;
+        kind is RemovableKind.Image or RemovableKind.Drawing or RemovableKind.Shadow;
+
+    /// <summary>
+    /// Whether the file draws objects of this kind with a <c>Do</c> operator
+    /// naming an Image XObject. A shadow is one, which is why removing it
+    /// takes the same path an image takes — the resource entry and the draw
+    /// call — and not the form path a drawing takes.
+    ///
+    /// Separate from <see cref="IsIdentifiedByStreamHash"/> because the two
+    /// questions have different answers: a drawing is also identified by a
+    /// stream hash, but the stream is a form's, and looking for it among the
+    /// image entries finds nothing.
+    /// </summary>
+    public static bool IsImageXObject(this RemovableKind kind) =>
+        kind is RemovableKind.Image or RemovableKind.Shadow;
 }

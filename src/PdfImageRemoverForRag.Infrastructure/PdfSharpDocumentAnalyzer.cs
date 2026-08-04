@@ -189,7 +189,8 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
                 // make sense for "repeated noise to delete" (2+ characters, shown
                 // 2+ times) would hide exactly the text flattening exists for.
                 overlapRegions.AddRange(OverlapDetector.Detect(
-                    pageDims[^1], PlacedObjectsOf(directImages, drawCalls, textHits, shapeHits)));
+                    pageDims[^1],
+                    PlacedObjectsOf(directImages, drawCalls, textHits, shapeHits, accumulators)));
 
                 // Form XObjects — enumerate the Image XObjects inside them.
                 // The image is drawn wherever the Form's Do call is placed,
@@ -300,23 +301,33 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
     /// shapes by their path signature. Images reached through a Form XObject are
     /// left out: their content stream is shared with other pages and cannot be
     /// rewritten, which is the same reason they are not safely removable.
+    ///
+    /// The kind is read back from the accumulator that was just built for the
+    /// object rather than assumed to be <see cref="RemovableKind.Image"/>, so a
+    /// shadow that sits in an overlap region is named a shadow in the Flatten
+    /// panel too. Deciding it a second time here is what once had that panel
+    /// calling a drawing an image.
     /// </summary>
     static List<PlacedObject> PlacedObjectsOf(
         IReadOnlyList<ImageXObjectCollector.ImageEntry> directImages,
         IReadOnlyList<ContentStreamWalker.DrawCall> drawCalls,
         IReadOnlyList<ContentStreamWalker.TextHit> textHits,
-        IReadOnlyList<ContentStreamWalker.ShapeHit> shapeHits)
+        IReadOnlyList<ContentStreamWalker.ShapeHit> shapeHits,
+        IReadOnlyDictionary<string, DiscoveryAccumulator> accumulators)
     {
         var placed = new List<PlacedObject>(drawCalls.Count + textHits.Count + shapeHits.Count);
 
         foreach (var image in directImages)
         {
             string hash = ImageXObjectCollector.ComputeStreamHash(image.Dictionary);
+            var kind = accumulators.TryGetValue(image.ObjectId, out var accumulator)
+                ? accumulator.Kind
+                : RemovableKind.Image;
             foreach (var call in drawCalls)
             {
                 if (call.ResourceName != image.ResourceName) continue;
                 placed.Add(new PlacedObject(
-                    RemovableKind.Image, hash, call.X, call.Y, call.Width, call.Height));
+                    kind, hash, call.X, call.Y, call.Width, call.Height));
             }
         }
 
@@ -532,6 +543,9 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
         readonly long _streamByteCount;
         readonly bool _isImageMask;
         public List<PdfImageOccurrence> Occurrences { get; } = new();
+
+        /// <summary>Image or shadow — decided once, from the object's bytes.</summary>
+        public RemovableKind Kind { get; }
         bool _isSafelyRemovable = true;
         string? _unsafeReason;
 
@@ -546,6 +560,13 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
             _compression = ReadFilterLabel(dict);
             _streamByteCount = dict.Stream?.Length ?? 0;
             _isImageMask = dict.Elements.GetBoolean("/ImageMask");
+            // Decided once, here, from the bytes: a shadow layer carries one
+            // flat colour and gets its shape from a mask. Every placement of
+            // the same stream is the same kind, so the question is asked per
+            // object and never per occurrence.
+            Kind = ShadowLayerDetector.IsShadowLayer(dict)
+                ? RemovableKind.Shadow
+                : RemovableKind.Image;
         }
 
         public void MarkUnsafe(string reason)
@@ -569,7 +590,8 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
             IsSafelyRemovable: _isSafelyRemovable,
             UnsafeReason: _unsafeReason,
             ThumbnailBytes: null,
-            Occurrences: Occurrences.ToArray());
+            Occurrences: Occurrences.ToArray(),
+            Kind: Kind);
 
         static string ReadColorSpaceLabel(PdfDictionary dict)
         {

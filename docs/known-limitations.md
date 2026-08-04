@@ -25,36 +25,38 @@ Limitations of the current version. Read together with the README.
 | **Soft masks of images you keep** | A `/SMask` is an image's alpha channel and belongs to its parent, so it is neither listed as a removable object nor removable on its own — deleting it would strip the transparency from an image you chose to keep. Object-enumerating readers may still surface such masks as spurious images, typically near-black rectangles matching their parents' pixel dimensions. Remove the parent image and its mask goes with it. |
 | **Visual confirmation** | The automatic post-save verification is basic (the file opens, page count matches, removed images are absent from both the content streams and the page resources, retained objects remain). Final visual confirmation is left to the user. |
 
-### Telling which soft masks will turn into black rectangles
+### Where the black rectangles come from
 
-The tool does not flag these, and they cannot be seen by looking at the page —
-the mask is doing its job there. They appear downstream, when a reader
-enumerates objects instead of rendering pages and writes every image it finds
-out as a picture. This is what to measure when that happens.
+Almost all of them are shadows, which the tool now lists as a kind of their own
+(**Shadow**). Filter to that kind, select all, save, and they are gone. What
+follows is why they exist, and what is left over that the kind does not cover.
 
-A `/SMask` holds one 8-bit sample per pixel: 0 is transparent, 255 is opaque. A
-reader that does not know it is alpha writes those samples out as grey levels,
-so **transparency becomes darkness**. A mask that is mostly zero therefore
-becomes a mostly black rectangle the size of its parent.
+PDF cannot draw a blur, so a producer exporting a drop shadow has to rasterise
+it: a picture holding **one flat colour**, plus a soft mask holding the blurred
+outline. Rendering the page composites the two and you see a shadow. A reader
+that enumerates objects rather than rendering pages sees two images, and either
+one arrives as a rectangle:
 
-Darkness alone does not decide it. What separates the two cases is whether any
-part of the mask is opaque:
-
-| Measured over the mask's samples | What the extracted image looks like |
+| What such a reader writes out | Why it is dark |
 | --- | --- |
-| Most samples near 0, **and none near 255** | A rectangle with nothing visible in it — the black box people report |
-| Most samples near 0, **but some near 255** | The opaque region's shape, drawn dark. A logo still reads as a logo, which is why it gets reported as something else |
-| Samples spread around mid-grey | A grey panel nobody notices |
+| **The picture** | It is one flat colour, usually pure black. There is nothing else in it to draw |
+| **The mask** | A `/SMask` is one 8-bit sample per pixel, 0 transparent to 255 opaque. Written out as grey levels, **transparency becomes darkness**, so a mostly-transparent mask is a mostly black rectangle |
 
-So a document can hold many masks and produce far fewer black rectangles than
-it has masks. On the file this was worked out from, 7 masks on one page yielded
-exactly 3 black rectangles, and across the document 59 masks yielded 27.
+Both are removed together, because a mask goes with its parent. Measured on the
+document this was worked out from: 39 shadows, 50 objects, and the customer
+reported 3 black rectangles on a page that holds exactly 3 of them.
 
-**The remedy is to remove the parent image**, which takes the mask with it (a
-mask cannot be removed on its own — see the row above). Weigh it first: a mask
-that is 90 % transparent belongs to an image that is barely visible on the
-page, often a soft highlight or a callout laid over a screenshot. Removing it
-removes that artwork too. Check one page before doing the whole document.
+Only shadows are exported this way. A glow, soft edges or a reflection is
+rasterised **together with the object it belongs to**, so the resulting image
+holds real pixels, is listed as an ordinary Image, and extracts as a picture
+rather than a rectangle. That was checked by exporting one slide per effect.
+
+**What the Shadow kind does not cover.** An ordinary image you keep may still
+have a mask, and a reader that writes masks out will surface that mask as a
+near-black rectangle of the parent's dimensions. The mask is not listed on its
+own and cannot be removed on its own — deleting it would strip the transparency
+from an image you chose to keep. Removing the parent takes it with it, but
+that removes the artwork too, so weigh it per page.
 
 ## Text removal
 
@@ -93,6 +95,16 @@ removes that artwork too. Check one page before doing the whole document.
 | **Images inside a form** | Still handled as images (listed, marked not removable), not as part of the drawing. |
 | **Thumbnails** | Every path is drawn through one mapping of the drawing's bounding box, so the parts keep the arrangement they have on the page. Each part keeps its own fill or stroke and its own colour. |
 | **Flattening** | Drawings never join an overlap region. A caption sitting on a form-painted figure is not offered for flattening. |
+
+## Shadow removal
+
+| Limitation | Description |
+| --- | --- |
+| **Scope** | An Image XObject whose samples are **one flat colour** and which carries a soft mask. That is what a producer has to write when it exports a drop shadow, because PDF has no blur operator. **No occurrence-count filter**, like images. |
+| **What is not a shadow** | A picture that merely has a mask (it has a picture in it), and a flat colour with no mask (a filled rectangle the page shows as itself). Glow, soft edges and reflection are rasterised together with their object, so they are pictures too. |
+| **Encodings** | Only samples that can be read plainly are judged — 8 bits per component, DeviceRGB or DeviceGray, unencoded or Flate. A JPEG is never called a shadow; producers generate shadows rather than photograph them, so this has not been seen to matter. |
+| **A black silhouette** | An icon drawn as one flat colour through a mask is indistinguishable from a shadow by these measurements, and is listed as one. It extracts as a black rectangle downstream just the same, so the classification matches the symptom even where it does not match the intent. |
+| **How it is removed** | Exactly as an image: the `Do` call goes, the resource entry goes, and the object and its mask go once nothing still points at them. |
 
 ## Flattening overlaps into an image
 

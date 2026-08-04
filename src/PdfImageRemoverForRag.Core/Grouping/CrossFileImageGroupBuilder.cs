@@ -41,8 +41,8 @@ public static class CrossFileImageGroupBuilder
             .ThenBy(g => g.Hash, StringComparer.Ordinal)
             .ToArray();
 
-        // Kind-aware sequential ids (IMG_ / TXT_ / SHP_ / DRW_) matching display order.
-        int imageIndex = 0, textIndex = 0, shapeIndex = 0, drawingIndex = 0;
+        // Kind-aware sequential ids (IMG_ / TXT_ / SHP_ / DRW_ / SHD_) matching display order.
+        int imageIndex = 0, textIndex = 0, shapeIndex = 0, drawingIndex = 0, shadowIndex = 0;
         var result = new CrossFileImageGroup[sorted.Length];
         for (int i = 0; i < sorted.Length; i++)
         {
@@ -51,6 +51,7 @@ public static class CrossFileImageGroupBuilder
                 RemovableKind.Text => $"TXT_{++textIndex:D3}",
                 RemovableKind.Shape => $"SHP_{++shapeIndex:D3}",
                 RemovableKind.Drawing => $"DRW_{++drawingIndex:D3}",
+                RemovableKind.Shadow => $"SHD_{++shadowIndex:D3}",
                 _ => $"IMG_{++imageIndex:D3}",
             };
             result[i] = sorted[i] with { GroupId = id };

@@ -143,9 +143,14 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
         // list then names only the objects that were seen. Pages referencing a
         // different copy kept their image, and the save failed verification
         // with "page N still draws /ImX" for most of the document.
+        //
+        // Shadows join the images here rather than getting a branch of their
+        // own: a shadow layer IS an Image XObject, drawn by the same Do
+        // operator and named in the same resource dictionary. Only the list
+        // the user reads tells them apart.
         var selectedImageHashes = new HashSet<string>(
             selections
-                .Where(s => s.Kind == RemovableKind.Image && s.Hash is not null)
+                .Where(s => s.Kind.IsImageXObject() && s.Hash is not null)
                 .Select(s => s.Hash!),
             StringComparer.Ordinal);
 
@@ -343,8 +348,12 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
         // usually still drawn elsewhere — so both collectors are given
         // throwaways rather than the real ones. Deleting a flattened image
         // would tear it out of every other page that draws it.
+        // Shadows count as images here for the same reason they do everywhere
+        // else: they are drawn by a Do naming an image entry. Leaving them out
+        // would flatten a region and then paint the shadow back over the
+        // rendering.
         var imageHashes = new HashSet<string>(
-            region.Members.Where(m => m.Kind == RemovableKind.Image).Select(m => m.Identity),
+            region.Members.Where(m => m.Kind.IsImageXObject()).Select(m => m.Identity),
             StringComparer.Ordinal);
         var namesInRegion = ResolveNamesForHashes(
             page.Resources, imageHashes,

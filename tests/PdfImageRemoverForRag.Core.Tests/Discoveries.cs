@@ -22,6 +22,20 @@ internal static class Discoveries
             1000, false, true, null, null, occurrences);
     }
 
+    /// <summary>
+    /// A shadow layer. An Image XObject like <see cref="Image"/> — same stream
+    /// hash identity, same removal path — so the only thing that differs here
+    /// is the kind the analyzer stamped on it.
+    /// </summary>
+    public static ImageDiscovery Shadow(string hash, int usage = 1)
+    {
+        var occurrences = Enumerable.Range(1, usage)
+            .Select(page => new PdfImageOccurrence(page, "1 0 R", "/ImShadow", 0, 0, 120, 80)).ToArray();
+        return new ImageDiscovery("1 0 R", hash, 244, 152, "/DeviceRGB", 8, "/FlateDecode",
+            420, false, true, null, null, occurrences,
+            RemovableKind.Shadow);
+    }
+
     /// <summary>A shown string. Its hash is derived from the value, as the analyzer does.</summary>
     public static ImageDiscovery Text(string value, int usage = 2)
     {

@@ -17,6 +17,7 @@ internal sealed class JapaneseStrings : IStrings
     public string MenuShowImages => "画像";
     public string MenuShowShapes => "図形";
     public string MenuShowDrawings => "図";
+    public string MenuShowShadows => "影";
     public string MenuShowText => "テキスト";
     public string MenuHelp => "ヘルプ(&H)";
     public string MenuManual => "オンラインマニュアル(&M)…";
@@ -40,6 +41,7 @@ internal sealed class JapaneseStrings : IStrings
     public string TypeText => "テキスト";
     public string TypeShape => "図形";
     public string TypeDrawing => "図";
+    public string TypeShadow => "影";
     public string ColumnSize => "サイズ";
     public string ColumnUsageCount => "使用回数";
     public string ColumnCompression => "圧縮";

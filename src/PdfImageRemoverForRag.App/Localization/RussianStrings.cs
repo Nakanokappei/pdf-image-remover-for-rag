@@ -25,6 +25,7 @@ internal sealed class RussianStrings : IStrings
     public string MenuShowImages => "Изображения";
     public string MenuShowShapes => "Фигуры";
     public string MenuShowDrawings => "Рисунки";
+    public string MenuShowShadows => "Тени";
     public string MenuShowText => "Текст";
     public string MenuHelp => "&Справка";
     public string MenuManual => "Онлайн-&руководство…";
@@ -54,6 +55,7 @@ internal sealed class RussianStrings : IStrings
     public string TypeText => "Текст";
     public string TypeShape => "Фигура";
     public string TypeDrawing => "Рисунок";
+    public string TypeShadow => "Тень";
     public string ColumnSize => "Размер";
     public string ColumnUsageCount => "Исп.";
     public string ColumnCompression => "Сжатие";

@@ -72,6 +72,7 @@ public static class SamplePdfWriter
             WriteFormDrawnShapes(Path.Combine(outputDirectory, "form-drawn-shapes.pdf")),
             WriteSingleCharacterText(Path.Combine(outputDirectory, "single-character-text.pdf")),
             WriteSoftMaskedImage(Path.Combine(outputDirectory, "soft-masked-image.pdf")),
+            WriteShadowLayer(Path.Combine(outputDirectory, "shadow-layer.pdf")),
             WriteAnnotationSharedImage(Path.Combine(outputDirectory, "annotation-shared-image.pdf")),
         };
         return written;
@@ -441,6 +442,82 @@ public static class SamplePdfWriter
         // occurrence at a known rectangle.
         var content = page.Contents.AppendContent();
         content.CreateStream(Encoding.ASCII.GetBytes("q 200 0 0 150 60 500 cm /ImSoft Do Q\n"));
+
+        doc.Save(path);
+        return path;
+    }
+
+    static string WriteShadowLayer(string path)
+    {
+        // The three images that decide what counts as a shadow, on one page.
+        //
+        // A shadow layer is one flat colour shaped by a soft mask — that is
+        // what a drop shadow becomes when it is exported, because PDF has no
+        // blur operator to draw one with. The other two are here to pin the
+        // rule from both sides: a picture that also has a mask is NOT a shadow
+        // (it has a picture in it), and a flat colour with no mask is NOT one
+        // either (it is a filled rectangle the page shows as itself).
+        using var doc = NewDocument("shadow-layer sample");
+        var page = doc.AddPage();
+
+        const int width = 48;
+        const int height = 32;
+        var pixels = width * height;
+
+        // The shadow: pure black everywhere, its outline held by the mask,
+        // which fades from the middle outward the way a blur does.
+        var shadowRgb = new byte[pixels * 3];
+        var shadowAlpha = new byte[pixels];
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                int i = (y * width) + x;
+                int fromEdge = Math.Min(Math.Min(x, width - 1 - x), Math.Min(y, height - 1 - y));
+                shadowAlpha[i] = (byte)Math.Min(255, fromEdge * 24);
+            }
+        }
+
+        // The picture: many colours, and a mask of its own, so a test can tell
+        // that the mask is not what makes a shadow.
+        var pictureRgb = new byte[pixels * 3];
+        var pictureAlpha = new byte[pixels];
+        for (int i = 0; i < pixels; i++)
+        {
+            pictureRgb[i * 3] = (byte)(i % 251);
+            pictureRgb[(i * 3) + 1] = (byte)(i % 199);
+            pictureRgb[(i * 3) + 2] = (byte)(i % 97);
+            pictureAlpha[i] = 255;
+        }
+
+        // The flat fill: one colour, no mask.
+        var fillRgb = new byte[pixels * 3];
+        for (int i = 0; i < pixels; i++)
+        {
+            fillRgb[i * 3] = 200;
+            fillRgb[(i * 3) + 1] = 40;
+            fillRgb[(i * 3) + 2] = 40;
+        }
+
+        var shadow = NewImageXObject(doc, width, height, "/DeviceRGB", shadowRgb);
+        shadow.Elements["/SMask"] =
+            NewImageXObject(doc, width, height, "/DeviceGray", shadowAlpha).Reference;
+        var picture = NewImageXObject(doc, width, height, "/DeviceRGB", pictureRgb);
+        picture.Elements["/SMask"] =
+            NewImageXObject(doc, width, height, "/DeviceGray", pictureAlpha).Reference;
+        var fill = NewImageXObject(doc, width, height, "/DeviceRGB", fillRgb);
+
+        var xObjects = new PdfDictionary(doc);
+        xObjects.Elements["/ImShadow"] = shadow.Reference;
+        xObjects.Elements["/ImPicture"] = picture.Reference;
+        xObjects.Elements["/ImFill"] = fill.Reference;
+        page.Resources.Elements["/XObject"] = xObjects;
+
+        var content = page.Contents.AppendContent();
+        content.CreateStream(Encoding.ASCII.GetBytes(
+            "q 120 0 0 80 60 600 cm /ImShadow Do Q\n" +
+            "q 120 0 0 80 60 480 cm /ImPicture Do Q\n" +
+            "q 120 0 0 80 60 360 cm /ImFill Do Q\n"));
 
         doc.Save(path);
         return path;

@@ -20,7 +20,8 @@ internal sealed partial class MainForm
         });
         _shownTypesMenuItem.DropDownItems.AddRange(new ToolStripItem[]
         {
-            _showImagesMenuItem, _showShapesMenuItem, _showDrawingsMenuItem, _showTextMenuItem,
+            _showImagesMenuItem, _showShapesMenuItem, _showDrawingsMenuItem,
+            _showShadowsMenuItem, _showTextMenuItem,
         });
         var viewMenu = new ToolStripMenuItem(L10n.MenuView);
         viewMenu.DropDownItems.AddRange(new ToolStripItem[]
@@ -63,12 +64,13 @@ internal sealed partial class MainForm
             _selectAllToolButton, _clearSelectionToolButton,
             new ToolStripSeparator(),
             // The kind filters last, so the commands keep the positions the
-            // user already knows. Four short captions with no icons: the
+            // user already knows. Five short captions with no icons: the
             // caption IS the filter, and a glyph for "text" next to a glyph for
             // "drawing" would be two more things to learn.
             HostKindCheckBox(_showImagesCheck),
             HostKindCheckBox(_showShapesCheck),
             HostKindCheckBox(_showDrawingsCheck),
+            HostKindCheckBox(_showShadowsCheck),
             HostKindCheckBox(_showTextCheck),
         });
 
@@ -160,9 +162,13 @@ internal sealed partial class MainForm
 
         // The filter boxes size themselves from their text, but the gap between
         // them is a hand-picked number and so has to be scaled like every other
-        // one. 8 logical px apart, which keeps four of them from reading as one
+        // one. 8 logical px apart, which keeps five of them from reading as one
         // block without spending the width a separator would.
-        foreach (var box in new[] { _showImagesCheck, _showShapesCheck, _showDrawingsCheck, _showTextCheck })
+        foreach (var box in new[]
+                 {
+                     _showImagesCheck, _showShapesCheck, _showDrawingsCheck,
+                     _showShadowsCheck, _showTextCheck,
+                 })
         {
             box.Margin = new Padding(Dip(4), Dip(2), Dip(4), Dip(2));
         }

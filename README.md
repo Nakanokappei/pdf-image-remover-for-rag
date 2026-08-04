@@ -18,6 +18,7 @@ Everything runs locally — files never leave your PC, and no data is collected.
 | **Text** | Strings with at least one visible character, shown 2+ times in a file | Headers, footers, watermarks — a one-letter confidentiality marking counts. Whitespace-only strings are never listed. CJK/composite fonts are decoded via `/ToUnicode` |
 | **Shapes** | Every drawn line, rectangle, and curve | Identity is shape + line width + color; position is ignored |
 | **Drawings** | Artwork a Form XObject paints, listed as one object | A silhouette with a speech bubble is one row, not one row per path. Identity is the form's stream hash, so one form on eleven pages is one row |
+| **Shadows** | Images holding one flat colour, shaped by a soft mask | What a drop shadow becomes when a document is exported to PDF. Barely visible on the page, but a reader that walks the file's objects writes the colour out and drops the mask, so each one arrives as a solid black rectangle |
 
 ## Features
 

@@ -20,6 +20,7 @@ internal sealed class ItalianStrings : IStrings
     public string MenuShowImages => "Immagini";
     public string MenuShowShapes => "Forme";
     public string MenuShowDrawings => "Disegni";
+    public string MenuShowShadows => "Ombre";
     public string MenuShowText => "Testo";
     public string MenuHelp => "&Guida";
     public string MenuManual => "&Manuale online…";
@@ -46,6 +47,7 @@ internal sealed class ItalianStrings : IStrings
     public string TypeText => "Testo";
     public string TypeShape => "Forma";
     public string TypeDrawing => "Disegno";
+    public string TypeShadow => "Ombra";
     public string ColumnSize => "Dim.";
     public string ColumnUsageCount => "Utilizzi";
     public string ColumnCompression => "Compress.";

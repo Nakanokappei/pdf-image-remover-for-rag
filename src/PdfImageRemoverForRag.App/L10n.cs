@@ -124,6 +124,7 @@ internal static class L10n
     public static string MenuShowImages => S.MenuShowImages;
     public static string MenuShowShapes => S.MenuShowShapes;
     public static string MenuShowDrawings => S.MenuShowDrawings;
+    public static string MenuShowShadows => S.MenuShowShadows;
     public static string MenuShowText => S.MenuShowText;
     public static string MenuHelp => S.MenuHelp;
     public static string MenuManual => S.MenuManual;
@@ -147,6 +148,7 @@ internal static class L10n
     public static string TypeText => S.TypeText;
     public static string TypeShape => S.TypeShape;
     public static string TypeDrawing => S.TypeDrawing;
+    public static string TypeShadow => S.TypeShadow;
     public static string ColumnSize => S.ColumnSize;
     public static string ColumnUsageCount => S.ColumnUsageCount;
     public static string ColumnCompression => S.ColumnCompression;

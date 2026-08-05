@@ -144,8 +144,8 @@ internal sealed class VietnameseStrings : IStrings
         "Gộp các đối tượng chồng lên nhau thành một ảnh duy nhất. Trang vẫn trông như cũ, "
         + "nhưng văn bản bên trong không còn là văn bản nữa.";
 
-    public string FlattenUnitLabel(int page, int number) =>
-        $"p.{page} Nhóm {number}";
+    public string FlattenUnitLabel(int document, int page, int number) =>
+        $"Nhóm {document}-{page}-{number}";
     public string FlattenObjectNotOverlapping => "Đối tượng này không chồng lên bất kỳ đối tượng nào.";
     public string FlattenNoOverlaps => "Không tìm thấy đối tượng nào chồng lên nhau.";
     public string FlattenWholePageWarning =>

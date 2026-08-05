@@ -144,8 +144,8 @@ internal sealed class FrenchStrings : IStrings
         "Fusionne les objets superposés en une seule image. La page garde le même "
         + "aspect, mais le texte qu'elle contient n'est plus du texte.";
 
-    public string FlattenUnitLabel(int page, int number) =>
-        $"p.{page} Unité {number}";
+    public string FlattenUnitLabel(int document, int page, int number) =>
+        $"Unité {document}-{page}-{number}";
     public string FlattenObjectNotOverlapping => "Cet objet ne chevauche rien.";
     public string FlattenNoOverlaps => "Aucun objet superposé n'a été trouvé.";
     public string FlattenWholePageWarning =>

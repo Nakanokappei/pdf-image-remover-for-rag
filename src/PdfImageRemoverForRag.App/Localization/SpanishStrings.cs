@@ -145,8 +145,8 @@ internal sealed class SpanishStrings : IStrings
         "Funde los objetos superpuestos en una sola imagen. La página se ve igual, "
         + "pero el texto que contiene deja de ser texto.";
 
-    public string FlattenUnitLabel(int page, int number) =>
-        $"p.{page} Unidad {number}";
+    public string FlattenUnitLabel(int document, int page, int number) =>
+        $"Unidad {document}-{page}-{number}";
     public string FlattenObjectNotOverlapping => "Este objeto no se superpone con nada.";
     public string FlattenNoOverlaps => "No se encontraron objetos superpuestos.";
     public string FlattenWholePageWarning =>

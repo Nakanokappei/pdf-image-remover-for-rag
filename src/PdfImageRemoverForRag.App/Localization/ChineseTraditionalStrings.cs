@@ -137,8 +137,8 @@ internal sealed class ChineseTraditionalStrings : IStrings
     public string FlattenDescription =>
         "將重疊的物件平面化為一張影像。頁面外觀不變，但其中的文字將不再是文字。";
 
-    public string FlattenUnitLabel(int page, int number) =>
-        $"p.{page} 平面化單元 {number}";
+    public string FlattenUnitLabel(int document, int page, int number) =>
+        $"平面化單元 {document}-{page}-{number}";
     public string FlattenObjectNotOverlapping => "該物件沒有與任何內容重疊。";
     public string FlattenNoOverlaps => "找不到重疊的物件。";
     public string FlattenWholePageWarning =>

@@ -135,8 +135,8 @@ internal sealed class ChineseSimplifiedStrings : IStrings
     public string FlattenDescription =>
         "将重叠的对象拼合为一张图像。页面外观不变，但其中的文字将不再是文字。";
 
-    public string FlattenUnitLabel(int page, int number) =>
-        $"p.{page} 拼合单元 {number}";
+    public string FlattenUnitLabel(int document, int page, int number) =>
+        $"拼合单元 {document}-{page}-{number}";
     public string FlattenObjectNotOverlapping => "该对象没有与任何内容重叠。";
     public string FlattenNoOverlaps => "未找到重叠的对象。";
     public string FlattenWholePageWarning =>

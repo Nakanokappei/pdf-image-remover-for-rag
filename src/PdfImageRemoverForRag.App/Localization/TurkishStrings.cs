@@ -148,8 +148,8 @@ internal sealed class TurkishStrings : IStrings
         "Üst üste gelen nesneleri tek bir görüntüde birleştirir. Sayfa aynı görünür, "
         + "ancak içindeki metin artık metin olmaz.";
 
-    public string FlattenUnitLabel(int page, int number) =>
-        $"p.{page} Birim {number}";
+    public string FlattenUnitLabel(int document, int page, int number) =>
+        $"Birim {document}-{page}-{number}";
     public string FlattenObjectNotOverlapping => "Bu nesne hiçbir şeyle üst üste gelmiyor.";
     public string FlattenNoOverlaps => "Üst üste gelen nesne bulunamadı.";
     public string FlattenWholePageWarning =>

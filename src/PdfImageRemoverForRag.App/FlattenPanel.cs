@@ -41,7 +41,8 @@ internal readonly record struct LayerThumbnail(
 internal sealed class FlattenPanel : UserControl
 {
     /// <summary>One unit on one page of one file, as the panel lists it.</summary>
-    sealed record UnitEntry(string FilePath, OverlapRegion Region, int NumberOnPage)
+    sealed record UnitEntry(
+        string FilePath, int DocumentNumber, OverlapRegion Region, int NumberOnPage)
     {
         public bool Expanded { get; set; } = true;
     }
@@ -370,8 +371,12 @@ internal sealed class FlattenPanel : UserControl
         _selectedGroup = null;
         _anyDocuments = documents.Count > 0;
 
+        // Numbered in the order the files were opened, because the number has
+        // to mean something the user can see: the first file they opened is 1.
+        int documentNumber = 0;
         foreach (var document in documents)
         {
+            documentNumber++;
             // Numbered within their page, so a unit's label matches what the
             // user is looking at rather than a running total across the file.
             foreach (var page in document.OverlapRegions.GroupBy(r => r.PageNumber).OrderBy(g => g.Key))
@@ -379,7 +384,8 @@ internal sealed class FlattenPanel : UserControl
                 int number = 1;
                 foreach (var region in page)
                 {
-                    _units.Add(new UnitEntry(document.FilePath, region, number++));
+                    _units.Add(new UnitEntry(
+                        document.FilePath, documentNumber, region, number++));
                 }
             }
         }
@@ -502,7 +508,7 @@ internal sealed class FlattenPanel : UserControl
             int ticked = _checked.GetValueOrDefault(unit.Region)?.Count ?? 0;
             return new LayerVisual(
                 IsGroup: true,
-                Title: $"{L10n.FlattenUnitLabel(unit.Region.PageNumber, unit.NumberOnPage)} "
+                Title: $"{L10n.FlattenUnitLabel(unit.DocumentNumber, unit.Region.PageNumber, unit.NumberOnPage)} "
                     + $"({KindSummary(unit.Region)})",
                 Subtitle: $"{Path.GetFileName(unit.FilePath)}  {L10n.UsagePageLabel(unit.Region.PageNumber)}",
                 Thumbnail: null,

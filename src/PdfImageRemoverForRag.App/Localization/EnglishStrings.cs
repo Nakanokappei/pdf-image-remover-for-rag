@@ -138,8 +138,8 @@ internal sealed class EnglishStrings : IStrings
         "Bakes overlapping objects into a single image. The page looks the same, "
         + "but the text inside is no longer text.";
 
-    public string FlattenUnitLabel(int page, int number) =>
-        $"p.{page} Unit {number}";
+    public string FlattenUnitLabel(int document, int page, int number) =>
+        $"Unit {document}-{page}-{number}";
     public string FlattenObjectNotOverlapping => "This object does not overlap anything.";
     public string FlattenNoOverlaps => "No overlapping objects were found.";
     public string FlattenWholePageWarning =>

@@ -260,11 +260,13 @@ internal interface IStrings
     /// tree node label, followed by the kinds it contains in parentheses.
     /// </summary>
     /// <summary>
-    /// A unit's heading. The page comes first because units are numbered
-    /// WITHIN their page — "Unit 3" appears once per page, and a panel showing
-    /// several pages at once read as if it were repeating itself.
+    /// A unit's heading, numbered document-page-unit ("Unit 1-12-3"). Units are
+    /// counted within a page and pages within a document, so the bare count
+    /// repeats itself several times over in a panel that shows more than one
+    /// page — which it does whenever an object appears more than once. Keep the
+    /// three numbers joined by hyphens; only the word is translated.
     /// </summary>
-    string FlattenUnitLabel(int page, int number);
+    string FlattenUnitLabel(int document, int page, int number);
 
     /// <summary>
     /// Shown in the panel when the object selected in the list overlaps nothing

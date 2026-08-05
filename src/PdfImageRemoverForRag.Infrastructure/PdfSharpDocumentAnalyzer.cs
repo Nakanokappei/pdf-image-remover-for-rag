@@ -54,7 +54,8 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
         try
         {
             thumbnails = await _thumbnailProvider.ExtractThumbnailsAsync(
-                pdfFilePath, thumbnailMaxWidth, thumbnailMaxHeight, progress, ct)
+                pdfFilePath, thumbnailMaxWidth, thumbnailMaxHeight,
+                RenderableImageHashes(discoveries), progress, ct)
                 .ConfigureAwait(false);
         }
         catch (OperationCanceledException)
@@ -291,6 +292,35 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
             throw PdfsharpExceptionMapper.Map(ex, "PDF 解析");
         }
     }
+
+    /// <summary>
+    /// The image streams a thumbnail could actually be made from, so extraction
+    /// can stop when it has them — and not start at all when there are none.
+    ///
+    /// The sweep already read every image's filter, and the filter decides:
+    /// JPEG 2000, JBIG2 and CCITT are formats neither library here can turn
+    /// into pixels, and a document made entirely of them once cost ten seconds
+    /// to produce an empty dictionary. Everything else is worth trying; being
+    /// wrong in that direction costs a decode that fails, while being wrong the
+    /// other way silently loses a thumbnail.
+    /// </summary>
+    static IReadOnlyCollection<string> RenderableImageHashes(IReadOnlyList<ImageDiscovery> discoveries)
+    {
+        var hashes = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var discovery in discoveries)
+        {
+            if (!discovery.Kind.IsImageXObject()) continue;
+            if (UndecodableFilters.Any(f => discovery.Compression.Contains(f, StringComparison.Ordinal)))
+            {
+                continue;
+            }
+            hashes.Add(discovery.StreamHash);
+        }
+        return hashes;
+    }
+
+    static readonly string[] UndecodableFilters =
+        { "JPXDecode", "JBIG2Decode", "CCITTFaxDecode" };
 
     /// <summary>
     /// Everything drawn on one page, as overlap detection wants it: kind,

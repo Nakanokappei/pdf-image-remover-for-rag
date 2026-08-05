@@ -30,6 +30,7 @@ public sealed class PdfPigThumbnailProvider : IThumbnailProvider
         string pdfFilePath,
         int maxWidth,
         int maxHeight,
+        IReadOnlyCollection<string>? wantedHashes = null,
         IProgress<AnalysisProgress>? progress = null,
         CancellationToken ct = default)
     {
@@ -39,12 +40,25 @@ public sealed class PdfPigThumbnailProvider : IThumbnailProvider
         _ = maxWidth;
         _ = maxHeight;
 
+        // Nothing worth extracting: do not open the file at all. This parser
+        // walks every page to find the images, which is the expensive half of
+        // analysis, and a document whose images are all JPEG 2000 would pay it
+        // for an empty dictionary.
+        if (wantedHashes is { Count: 0 })
+        {
+            return Task.FromResult<IReadOnlyDictionary<string, byte[]>>(
+                new Dictionary<string, byte[]>(StringComparer.Ordinal));
+        }
+
         return Task.Run<IReadOnlyDictionary<string, byte[]>>(
-            () => Extract(pdfFilePath, progress, ct), ct);
+            () => Extract(pdfFilePath, wantedHashes, progress, ct), ct);
     }
 
     static IReadOnlyDictionary<string, byte[]> Extract(
-        string pdfFilePath, IProgress<AnalysisProgress>? progress, CancellationToken ct)
+        string pdfFilePath,
+        IReadOnlyCollection<string>? wantedHashes,
+        IProgress<AnalysisProgress>? progress,
+        CancellationToken ct)
     {
         var result = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         try
@@ -55,9 +69,17 @@ public sealed class PdfPigThumbnailProvider : IThumbnailProvider
             // closely enough for a progress bar.
             int pageCount = doc.NumberOfPages;
             int pagesDone = 0;
+            // What is still missing. A caller that knows the streams it wants
+            // lets the walk stop at the last one rather than reading pages that
+            // cannot add anything.
+            var outstanding = wantedHashes is null
+                ? null
+                : new HashSet<string>(wantedHashes, StringComparer.Ordinal);
+
             foreach (var page in doc.GetPages())
             {
                 ct.ThrowIfCancellationRequested();
+                if (outstanding is { Count: 0 }) break;
                 progress?.Report(new AnalysisProgress(
                     AnalysisPhase.ExtractingThumbnails, pagesDone++, pageCount));
                 foreach (var image in page.GetImages())
@@ -65,6 +87,9 @@ public sealed class PdfPigThumbnailProvider : IThumbnailProvider
                     var rawBytes = image.RawBytes.ToArray();
                     var hash = StreamHasher.Sha256Hex(rawBytes);
                     if (result.ContainsKey(hash)) continue; // one thumbnail per unique stream
+                    // An image the caller did not ask for is still crossed off:
+                    // it is one fewer reason to keep walking.
+                    if (outstanding is not null && !outstanding.Remove(hash)) continue;
 
                     if (image.TryGetPng(out var png) && png is { Length: > 0 })
                     {

@@ -28,10 +28,23 @@ public interface IThumbnailProvider
     /// <see cref="Models.ImageDiscovery.StreamHash"/>. The size hints are
     /// advisory — callers scale for display.
     /// </summary>
+    /// <param name="wantedHashes">
+    /// The image streams a thumbnail is worth producing for, by the same hash
+    /// the keys use. Null asks for everything, which is what a caller with
+    /// nothing better to say should pass.
+    ///
+    /// It exists because extraction re-reads the whole document with a second
+    /// parser, and on a long file that is nearly all of the analysis time: an
+    /// EMPTY set lets an implementation skip the work entirely, and a known set
+    /// lets it stop as soon as it has them. Measured at 9.8 seconds of a 10.9
+    /// second analysis on a 136-page file whose images could not be decoded at
+    /// all — ten seconds spent to produce nothing.
+    /// </param>
     Task<IReadOnlyDictionary<string, byte[]>> ExtractThumbnailsAsync(
         string pdfFilePath,
         int maxWidth,
         int maxHeight,
+        IReadOnlyCollection<string>? wantedHashes = null,
         IProgress<AnalysisProgress>? progress = null,
         CancellationToken ct = default);
 }

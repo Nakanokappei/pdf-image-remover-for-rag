@@ -405,6 +405,15 @@ internal sealed partial class MainForm : Form
         _tileView.TileContextRequested += OnTileContextRequested;
 
         _flattenPanel.SelectionChanged += OnFlattenSelectionChanged;
+        // A hand-made merge or split goes back to the workspace, and the panel
+        // is rebuilt from it — the panel describes the documents, so it must
+        // not be the only place a correction exists.
+        _flattenPanel.UnitsEdited += (_, e) =>
+        {
+            _workflow.ReplaceOverlapRegions(e.FilePath, e.Units);
+            _flattenPanel.SetDocuments(_workflow.OpenDocuments);
+            ShowFlattenPanelForCurrentRow();
+        };
         // The panel holds no bitmaps and knows nothing of the workspace: it
         // asks while painting, so its rows can never outlive an eviction and it
         // never has to be told a thumbnail arrived.

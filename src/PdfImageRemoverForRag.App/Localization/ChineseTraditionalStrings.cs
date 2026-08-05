@@ -131,6 +131,8 @@ internal sealed class ChineseTraditionalStrings : IStrings
     public string ContextMenuUsageLocations => "顯示使用位置(&U)…";
 
     public string FlattenPanelTitle => "平面化";
+    public string FlattenMerge => "合併所選";
+    public string FlattenSplit => "分割所選";
 
     public string FlattenDescription =>
         "將重疊的物件平面化為一張影像。頁面外觀不變，但其中的文字將不再是文字。";

@@ -141,6 +141,8 @@ internal sealed class TurkishStrings : IStrings
     public string ContextMenuUsageLocations => "&Kullanım Konumlarını Göster…";
 
     public string FlattenPanelTitle => "Birleştir";
+    public string FlattenMerge => "Birleştir";
+    public string FlattenSplit => "Ayır";
 
     public string FlattenDescription =>
         "Üst üste gelen nesneleri tek bir görüntüde birleştirir. Sayfa aynı görünür, "

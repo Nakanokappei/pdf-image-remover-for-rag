@@ -238,6 +238,16 @@ internal interface IStrings
     string FlattenPanelTitle { get; }
 
     /// <summary>
+    /// Buttons that correct a unit the detector got wrong: merge gathers the
+    /// ticked objects into one unit, split takes them out of the one they are
+    /// in. They act on what is ticked, not on whole units, so word them that
+    /// way — and keep them short, since three buttons share the panel's title
+    /// bar and the panel can be dragged narrow.
+    /// </summary>
+    string FlattenMerge { get; }
+    string FlattenSplit { get; }
+
+    /// <summary>
     /// One line under the title, explaining what the panel is for. It has to
     /// answer "why would I want this": the page looks unchanged afterwards, and
     /// what changes is invisible — the text stops being text.

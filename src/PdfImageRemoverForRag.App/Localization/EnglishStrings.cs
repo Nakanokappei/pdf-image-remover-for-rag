@@ -131,6 +131,8 @@ internal sealed class EnglishStrings : IStrings
     public string ContextMenuUsageLocations => "Show &Usage Locations…";
 
     public string FlattenPanelTitle => "Flatten";
+    public string FlattenMerge => "Merge selected";
+    public string FlattenSplit => "Split selected";
 
     public string FlattenDescription =>
         "Bakes overlapping objects into a single image. The page looks the same, "

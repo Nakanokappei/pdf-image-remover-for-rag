@@ -130,6 +130,25 @@ internal sealed class PdfCleaningWorkflow
         ImageGroups = Array.Empty<CrossFileImageGroup>();
     }
 
+    /// <summary>
+    /// Replace one file's flatten units with a list the user edited by hand.
+    /// Detection is right almost every time; when it is not, the correction has
+    /// to live in the workspace, because that is what the save reads from and
+    /// what the panel is rebuilt from.
+    ///
+    /// Not persisted: a save re-reads the file it wrote, and the units of that
+    /// file are detected afresh. Carrying hand edits across a save would mean
+    /// claiming they still describe a document that has changed underneath
+    /// them.
+    /// </summary>
+    public void ReplaceOverlapRegions(string filePath, IReadOnlyList<OverlapRegion> regions)
+    {
+        int index = _documents.FindIndex(
+            d => CleanedFileNamer.WouldOverwriteSource(d.FilePath, filePath));
+        if (index < 0) return;
+        _documents[index] = _documents[index] with { OverlapRegions = regions };
+    }
+
     void RebuildGroups()
     {
         // Merge in Core. ThumbnailBytes stays null throughout the workspace —

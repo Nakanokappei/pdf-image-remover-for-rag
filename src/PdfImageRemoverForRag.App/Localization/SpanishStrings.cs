@@ -138,6 +138,8 @@ internal sealed class SpanishStrings : IStrings
     public string ContextMenuUsageLocations => "Mostrar &ubicaciones de uso…";
 
     public string FlattenPanelTitle => "Acoplar";
+    public string FlattenMerge => "Unir selección";
+    public string FlattenSplit => "Dividir selección";
 
     public string FlattenDescription =>
         "Funde los objetos superpuestos en una sola imagen. La página se ve igual, "

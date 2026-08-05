@@ -137,6 +137,8 @@ internal sealed class VietnameseStrings : IStrings
     public string ContextMenuUsageLocations => "Hiển thị &Vị trí Sử dụng…";
 
     public string FlattenPanelTitle => "Gộp";
+    public string FlattenMerge => "Gộp lựa chọn";
+    public string FlattenSplit => "Tách lựa chọn";
 
     public string FlattenDescription =>
         "Gộp các đối tượng chồng lên nhau thành một ảnh duy nhất. Trang vẫn trông như cũ, "

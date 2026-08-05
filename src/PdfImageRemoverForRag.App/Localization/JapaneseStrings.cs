@@ -127,6 +127,8 @@ internal sealed class JapaneseStrings : IStrings
     public string ContextMenuUsageLocations => "使用箇所を表示(&U)…";
 
     public string FlattenPanelTitle => "統合";
+    public string FlattenMerge => "選択を合流";
+    public string FlattenSplit => "選択を分割";
 
     public string FlattenDescription =>
         "重なっているオブジェクトをまとめて画像化します。見た目は変わりませんが、"

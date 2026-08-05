@@ -230,6 +230,8 @@ internal static class L10n
     // --- the flatten panel --------------------------------------------------
 
     public static string FlattenPanelTitle => S.FlattenPanelTitle;
+    public static string FlattenMerge => S.FlattenMerge;
+    public static string FlattenSplit => S.FlattenSplit;
     public static string FlattenDescription => S.FlattenDescription;
     public static string FlattenUnitLabel(int number) => S.FlattenUnitLabel(number);
     public static string FlattenObjectNotOverlapping => S.FlattenObjectNotOverlapping;

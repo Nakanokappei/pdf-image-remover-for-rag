@@ -142,6 +142,8 @@ internal sealed class RussianStrings : IStrings
     public string ContextMenuUsageLocations => "Показать &места использования…";
 
     public string FlattenPanelTitle => "Объединить";
+    public string FlattenMerge => "Объединить";
+    public string FlattenSplit => "Разделить";
 
     public string FlattenDescription =>
         "Сводит перекрывающиеся объекты в одно изображение. Страница выглядит так же, "

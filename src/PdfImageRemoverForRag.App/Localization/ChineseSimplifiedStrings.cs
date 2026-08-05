@@ -129,6 +129,8 @@ internal sealed class ChineseSimplifiedStrings : IStrings
     public string ContextMenuUsageLocations => "显示使用位置(&U)…";
 
     public string FlattenPanelTitle => "拼合";
+    public string FlattenMerge => "合并所选";
+    public string FlattenSplit => "拆分所选";
 
     public string FlattenDescription =>
         "将重叠的对象拼合为一张图像。页面外观不变，但其中的文字将不再是文字。";

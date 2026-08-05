@@ -135,6 +135,8 @@ internal sealed class PortugueseStrings : IStrings
     public string ContextMenuUsageLocations => "Mostrar &locais de utilização…";
 
     public string FlattenPanelTitle => "Achatar";
+    public string FlattenMerge => "Unir seleção";
+    public string FlattenSplit => "Dividir seleção";
 
     public string FlattenDescription =>
         "Funde os objetos sobrepostos numa única imagem. A página fica igual, "

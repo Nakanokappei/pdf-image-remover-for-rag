@@ -92,6 +92,23 @@ internal sealed class FlattenPanel : UserControl
         Enabled = false,
         UseMnemonic = false,
     };
+
+    // Detection is right almost every time; these are for the rest. Both act on
+    // what is TICKED, which is what makes them each other's opposite: merge
+    // gathers the ticks into one unit, split takes them out of the one they are
+    // in. Docked right in reverse order, so they read merge, split, clear.
+    readonly Button _splitSelection = NewUnitEditButton(L10n.FlattenSplit);
+    readonly Button _mergeSelection = NewUnitEditButton(L10n.FlattenMerge);
+
+    static Button NewUnitEditButton(string caption) => new()
+    {
+        Dock = DockStyle.Right,
+        Text = caption,
+        FlatStyle = FlatStyle.System,
+        AutoSize = false,
+        Enabled = false,
+        UseMnemonic = false,
+    };
     readonly Label _description = new()
     {
         Dock = DockStyle.Top,
@@ -185,9 +202,17 @@ internal sealed class FlattenPanel : UserControl
         _title.Font = new Font(Font, FontStyle.Bold);
         _clearChecks.AccessibleName = $"{L10n.ToolClearSelection} ({L10n.FlattenPanelTitle})";
         _clearChecks.Click += (_, _) => ClearChecks();
+        _mergeSelection.AccessibleName = $"{L10n.FlattenMerge} ({L10n.FlattenPanelTitle})";
+        _splitSelection.AccessibleName = $"{L10n.FlattenSplit} ({L10n.FlattenPanelTitle})";
+        _mergeSelection.Click += (_, _) => EditUnits(merge: true);
+        _splitSelection.Click += (_, _) => EditUnits(merge: false);
 
+        // Added in this order because Dock.Right stacks each new control
+        // inboard of the last: clear ends up rightmost, then split, then merge.
         _titleBar.Controls.Add(_title);
         _titleBar.Controls.Add(_clearChecks);
+        _titleBar.Controls.Add(_splitSelection);
+        _titleBar.Controls.Add(_mergeSelection);
 
         var listSide = new Panel { Dock = DockStyle.Fill };
         listSide.Controls.Add(_list);
@@ -240,7 +265,10 @@ internal sealed class FlattenPanel : UserControl
     void ApplyDpiDependentLayout()
     {
         _title.Padding = new Padding(Dip(8), 0, Dip(8), 0);
-        _clearChecks.Width = TextRenderer.MeasureText(_clearChecks.Text, _clearChecks.Font).Width + Dip(24);
+        foreach (var button in new[] { _clearChecks, _splitSelection, _mergeSelection })
+        {
+            button.Width = TextRenderer.MeasureText(button.Text, button.Font).Width + Dip(24);
+        }
         // One standard button tall, and the bar is sized to it: the button
         // fills whatever height it is docked into, so the bar is what decides
         // whether it looks like a button or a slab.
@@ -355,6 +383,18 @@ internal sealed class FlattenPanel : UserControl
                 }
             }
         }
+
+        // A merge or a split has just rearranged the units; the objects that
+        // were ticked are the same objects, so the ticks go back on.
+        if (_pendingChecks is { Count: > 0 } restore)
+        {
+            foreach (var unit in _units)
+            {
+                var here = unit.Region.Members.Where(restore.Contains).ToArray();
+                if (here.Length > 0) _checked[unit.Region] = new HashSet<PlacedObject>(here);
+            }
+        }
+        _pendingChecks = null;
 
         // Files can be open with nothing in them to flatten. Say why, or the
         // panel staying empty on every selection reads as it being broken.
@@ -616,6 +656,86 @@ internal sealed class FlattenPanel : UserControl
     public int CheckedObjectCount => _checked.Values.Sum(set => set.Count);
 
     /// <summary>
+    /// Raised when the user has merged or split units by hand, with the file
+    /// whose units changed and the list that replaces them. The panel does not
+    /// own the workspace — it describes one — so the change is handed back to
+    /// whoever does.
+    /// </summary>
+    public event EventHandler<UnitsEditedEventArgs>? UnitsEdited;
+
+    internal sealed class UnitsEditedEventArgs : EventArgs
+    {
+        public UnitsEditedEventArgs(string filePath, IReadOnlyList<OverlapRegion> units)
+        {
+            FilePath = filePath;
+            Units = units;
+        }
+
+        public string FilePath { get; }
+        public IReadOnlyList<OverlapRegion> Units { get; }
+    }
+
+    /// <summary>
+    /// What merging and splitting act on: the units of the one file the ticks
+    /// are in, and the ticked objects themselves. Ticks in more than one file
+    /// answer an empty scope, which disables both buttons — a unit is a
+    /// rectangle on one page and there is no such rectangle across two files.
+    /// </summary>
+    (IReadOnlyList<OverlapRegion> Units, IReadOnlyList<PlacedObject> Selection) EditingScope()
+    {
+        var ticked = _units
+            .Where(u => _checked.TryGetValue(u.Region, out var set) && set.Count > 0)
+            .ToList();
+        if (ticked.Count == 0) return (Array.Empty<OverlapRegion>(), Array.Empty<PlacedObject>());
+
+        var filePath = ticked[0].FilePath;
+        if (ticked.Any(u => !string.Equals(u.FilePath, filePath, StringComparison.OrdinalIgnoreCase)))
+        {
+            return (Array.Empty<OverlapRegion>(), Array.Empty<PlacedObject>());
+        }
+
+        var selection = ticked
+            .SelectMany(u => u.Region.Members.Where(_checked[u.Region].Contains))
+            .ToArray();
+        // Every unit of that file, not only the ticked ones: a merge has to see
+        // the units it is taking objects out of.
+        var units = _units
+            .Where(u => string.Equals(u.FilePath, filePath, StringComparison.OrdinalIgnoreCase))
+            .Select(u => u.Region)
+            .ToArray();
+        return (units, selection);
+    }
+
+    /// <summary>
+    /// Merge or split, then hand the new unit list back. The ticks are put back
+    /// on afterwards: they are the same objects, so the user's selection
+    /// survives an operation that rearranges the units around it.
+    /// </summary>
+    void EditUnits(bool merge)
+    {
+        var (units, selection) = EditingScope();
+        if (units.Count == 0) return;
+
+        var edited = merge
+            ? FlattenUnitEditing.Merge(units, selection)
+            : FlattenUnitEditing.Split(units, selection);
+        if (ReferenceEquals(edited, units)) return;
+
+        var filePath = _units
+            .First(u => units.Contains(u.Region))
+            .FilePath;
+        _pendingChecks = selection;
+        UnitsEdited?.Invoke(this, new UnitsEditedEventArgs(filePath, edited));
+    }
+
+    /// <summary>
+    /// Ticks to re-apply after the workspace hands the panel its documents
+    /// back. Cleared as soon as they are used, so an unrelated rebuild — a save,
+    /// a file being opened — still starts with nothing ticked.
+    /// </summary>
+    IReadOnlyList<PlacedObject>? _pendingChecks;
+
+    /// <summary>
     /// Announce a change of ticks, and keep the panel's own clear button in
     /// step with them. Every path that touches <c>_checked</c> comes through
     /// here, so the button can never claim there is something to clear when
@@ -624,6 +744,9 @@ internal sealed class FlattenPanel : UserControl
     void RaiseSelectionChanged()
     {
         _clearChecks.Enabled = _checked.Count > 0;
+        var (units, selection) = EditingScope();
+        _mergeSelection.Enabled = FlattenUnitEditing.CanMerge(units, selection);
+        _splitSelection.Enabled = FlattenUnitEditing.CanSplit(units, selection);
         RefreshWholePageWarning();
         SelectionChanged?.Invoke(this, EventArgs.Empty);
     }

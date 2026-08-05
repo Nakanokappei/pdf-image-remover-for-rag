@@ -135,6 +135,8 @@ internal sealed class GermanStrings : IStrings
     public string ContextMenuUsageLocations => "&Verwendungsorte anzeigen…";
 
     public string FlattenPanelTitle => "Zusammenfügen";
+    public string FlattenMerge => "Zusammenführen";
+    public string FlattenSplit => "Trennen";
 
     public string FlattenDescription =>
         "Fügt überlappende Objekte zu einem einzigen Bild zusammen. Die Seite sieht "

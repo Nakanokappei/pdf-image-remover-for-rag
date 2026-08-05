@@ -137,6 +137,8 @@ internal sealed class FrenchStrings : IStrings
     public string ContextMenuUsageLocations => "Afficher les &emplacements d'utilisation…";
 
     public string FlattenPanelTitle => "Aplatir";
+    public string FlattenMerge => "Fusionner";
+    public string FlattenSplit => "Séparer";
 
     public string FlattenDescription =>
         "Fusionne les objets superposés en une seule image. La page garde le même "

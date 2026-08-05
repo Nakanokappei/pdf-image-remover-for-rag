@@ -133,6 +133,8 @@ internal sealed class HindiStrings : IStrings
     public string ContextMenuUsageLocations => "उपयोग स्थान दिखाएँ(&U)…";
 
     public string FlattenPanelTitle => "मिलाएँ";
+    public string FlattenMerge => "चयन मिलाएँ";
+    public string FlattenSplit => "चयन अलग करें";
 
     public string FlattenDescription =>
         "एक-दूसरे पर आने वाली वस्तुओं को एक ही छवि में मिला देता है। पृष्ठ वैसा ही दिखता है, "

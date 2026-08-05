@@ -128,6 +128,8 @@ internal sealed class KoreanStrings : IStrings
     public string ContextMenuUsageLocations => "사용 위치 표시(&U)…";
 
     public string FlattenPanelTitle => "병합";
+    public string FlattenMerge => "선택 합치기";
+    public string FlattenSplit => "선택 나누기";
 
     public string FlattenDescription =>
         "겹쳐 있는 개체를 한 장의 이미지로 병합합니다. 페이지 모양은 그대로이지만 "

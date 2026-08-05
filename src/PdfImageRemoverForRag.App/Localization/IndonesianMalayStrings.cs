@@ -139,6 +139,8 @@ internal sealed class IndonesianMalayStrings : IStrings
     public string ContextMenuUsageLocations => "Tampilkan &Lokasi Penggunaan…";
 
     public string FlattenPanelTitle => "Gabungkan";
+    public string FlattenMerge => "Gabungkan";
+    public string FlattenSplit => "Pisahkan";
 
     public string FlattenDescription =>
         "Menggabungkan objek yang bertumpang tindih menjadi satu gambar. Halaman tetap "

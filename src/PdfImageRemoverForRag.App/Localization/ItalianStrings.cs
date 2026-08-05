@@ -134,6 +134,8 @@ internal sealed class ItalianStrings : IStrings
     public string ContextMenuUsageLocations => "Mostra &posizioni di utilizzo…";
 
     public string FlattenPanelTitle => "Unisci";
+    public string FlattenMerge => "Unisci";
+    public string FlattenSplit => "Dividi";
 
     public string FlattenDescription =>
         "Fonde gli oggetti sovrapposti in un'unica immagine. La pagina resta uguale, "

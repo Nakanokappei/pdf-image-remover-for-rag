@@ -395,6 +395,7 @@ internal sealed class FlattenPanel : UserControl
             }
         }
         _pendingChecks = null;
+        FocusPinnedUnit();
 
         // Files can be open with nothing in them to flatten. Say why, or the
         // panel staying empty on every selection reads as it being broken.
@@ -426,6 +427,8 @@ internal sealed class FlattenPanel : UserControl
         if (ReferenceEquals(_selectedGroup, group)) return;
 
         _selectedGroup = group;
+        // Looking at another object ends the edit that was being shown.
+        _pinnedUnits = Array.Empty<OverlapRegion>();
         RebuildRows(resetScroll: true);
 
         // Point the preview at the first unit so selecting on the left already
@@ -445,7 +448,8 @@ internal sealed class FlattenPanel : UserControl
         _rows.Clear();
         for (int i = 0; i < _units.Count; i++)
         {
-            if (_selectedGroup is null || !UnitContains(_units[i], _selectedGroup)) continue;
+            bool pinned = _pinnedUnits.Any(r => ReferenceEquals(r, _units[i].Region));
+            if (!pinned && (_selectedGroup is null || !UnitContains(_units[i], _selectedGroup))) continue;
 
             _rows.Add(new Row(i, null));
             if (!_units[i].Expanded) continue;
@@ -498,7 +502,8 @@ internal sealed class FlattenPanel : UserControl
             int ticked = _checked.GetValueOrDefault(unit.Region)?.Count ?? 0;
             return new LayerVisual(
                 IsGroup: true,
-                Title: $"{L10n.FlattenUnitLabel(unit.NumberOnPage)} ({KindSummary(unit.Region)})",
+                Title: $"{L10n.FlattenUnitLabel(unit.Region.PageNumber, unit.NumberOnPage)} "
+                    + $"({KindSummary(unit.Region)})",
                 Subtitle: $"{Path.GetFileName(unit.FilePath)}  {L10n.UsagePageLabel(unit.Region.PageNumber)}",
                 Thumbnail: null,
                 TextContent: null,
@@ -640,6 +645,33 @@ internal sealed class FlattenPanel : UserControl
     static RectangleF RectOf(PlacedObject o) =>
         new((float)o.X, (float)o.Y, (float)o.Width, (float)o.Height);
 
+    /// <summary>
+    /// Put the cursor on the unit a merge or a split has just made, so the
+    /// result is what the user is looking at rather than something they have to
+    /// find. Silent when there is none.
+    /// </summary>
+    void FocusPinnedUnit()
+    {
+        if (_pinnedUnits.Count == 0) return;
+
+        RebuildRows(resetScroll: false);
+        for (int i = 0; i < _rows.Count; i++)
+        {
+            if (_rows[i].Object is not null) continue;
+            if (!_pinnedUnits.Any(r => ReferenceEquals(r, _units[_rows[i].UnitIndex].Region))) continue;
+
+            _list.SetFocusedRow(i);
+            ShowPreviewFor(_rows[i]);
+            return;
+        }
+    }
+
+    /// <summary>
+    /// Repaint the rows: their thumbnails come from the same cache the object
+    /// list uses, and the host fills that in the background.
+    /// </summary>
+    public void RefreshThumbnails() => _list.Invalidate();
+
     /// <summary>Clear every tick. Called after a save.</summary>
     public void ClearChecks()
     {
@@ -689,7 +721,9 @@ internal sealed class FlattenPanel : UserControl
         if (ticked.Count == 0) return (Array.Empty<OverlapRegion>(), Array.Empty<PlacedObject>());
 
         var filePath = ticked[0].FilePath;
-        if (ticked.Any(u => !string.Equals(u.FilePath, filePath, StringComparison.OrdinalIgnoreCase)))
+        var pageNumber = ticked[0].Region.PageNumber;
+        if (ticked.Any(u => !string.Equals(u.FilePath, filePath, StringComparison.OrdinalIgnoreCase)
+                            || u.Region.PageNumber != pageNumber))
         {
             return (Array.Empty<OverlapRegion>(), Array.Empty<PlacedObject>());
         }
@@ -697,10 +731,17 @@ internal sealed class FlattenPanel : UserControl
         var selection = ticked
             .SelectMany(u => u.Region.Members.Where(_checked[u.Region].Contains))
             .ToArray();
-        // Every unit of that file, not only the ticked ones: a merge has to see
+        // Every unit of that page, not only the ticked ones: a merge has to see
         // the units it is taking objects out of.
+        //
+        // ONE PAGE, and that is not only about what a merge may join. A member
+        // carries no page number and compares by value, so a footer printed at
+        // the same spot on twenty pages is twenty EQUAL objects: handed every
+        // unit in the file, "which units hold this selection" answered twenty,
+        // and both buttons stayed dead on every document with a running header.
         var units = _units
-            .Where(u => string.Equals(u.FilePath, filePath, StringComparison.OrdinalIgnoreCase))
+            .Where(u => string.Equals(u.FilePath, filePath, StringComparison.OrdinalIgnoreCase)
+                        && u.Region.PageNumber == pageNumber)
             .Select(u => u.Region)
             .ToArray();
         return (units, selection);
@@ -721,6 +762,14 @@ internal sealed class FlattenPanel : UserControl
             : FlattenUnitEditing.Split(units, selection);
         if (ReferenceEquals(edited, units)) return;
 
+        // The unit an edit just made holds the objects that were ticked, which
+        // are not necessarily the object selected in the list on the left — and
+        // the panel lists only the units of THAT object. Without pinning, a
+        // merge answered by making its own result disappear.
+        _pinnedUnits = edited
+            .Where(r => !units.Any(u => ReferenceEquals(u, r)))
+            .ToArray();
+
         var filePath = _units
             .First(u => units.Contains(u.Region))
             .FilePath;
@@ -734,6 +783,14 @@ internal sealed class FlattenPanel : UserControl
     /// a file being opened — still starts with nothing ticked.
     /// </summary>
     IReadOnlyList<PlacedObject>? _pendingChecks;
+
+    /// <summary>
+    /// Units made by the last merge or split. They are listed whatever the
+    /// object list has selected, until the user moves that selection — the
+    /// result of an action has to be visible, and the action is over as soon as
+    /// they look somewhere else.
+    /// </summary>
+    IReadOnlyList<OverlapRegion> _pinnedUnits = Array.Empty<OverlapRegion>();
 
     /// <summary>
     /// Announce a change of ticks, and keep the panel's own clear button in

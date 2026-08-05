@@ -142,7 +142,8 @@ internal sealed class GermanStrings : IStrings
         "Fügt überlappende Objekte zu einem einzigen Bild zusammen. Die Seite sieht "
         + "unverändert aus, doch der Text darin ist danach kein Text mehr.";
 
-    public string FlattenUnitLabel(int number) => $"Einheit {number}";
+    public string FlattenUnitLabel(int page, int number) =>
+        $"p.{page} Einheit {number}";
     public string FlattenObjectNotOverlapping => "Dieses Objekt überlappt mit nichts.";
     public string FlattenNoOverlaps => "Es wurden keine überlappenden Objekte gefunden.";
     public string FlattenWholePageWarning =>

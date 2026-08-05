@@ -149,7 +149,8 @@ internal sealed class RussianStrings : IStrings
         "Сводит перекрывающиеся объекты в одно изображение. Страница выглядит так же, "
         + "но текст внутри перестаёт быть текстом.";
 
-    public string FlattenUnitLabel(int number) => $"Группа {number}";
+    public string FlattenUnitLabel(int page, int number) =>
+        $"p.{page} Группа {number}";
     public string FlattenObjectNotOverlapping => "Этот объект ни с чем не перекрывается.";
     public string FlattenNoOverlaps => "Перекрывающиеся объекты не найдены.";
     public string FlattenWholePageWarning =>

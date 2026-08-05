@@ -140,7 +140,8 @@ internal sealed class HindiStrings : IStrings
         "एक-दूसरे पर आने वाली वस्तुओं को एक ही छवि में मिला देता है। पृष्ठ वैसा ही दिखता है, "
         + "पर उसके भीतर का पाठ अब पाठ नहीं रहता।";
 
-    public string FlattenUnitLabel(int number) => $"इकाई {number}";
+    public string FlattenUnitLabel(int page, int number) =>
+        $"p.{page} इकाई {number}";
     public string FlattenObjectNotOverlapping => "यह वस्तु किसी से नहीं मिलती।";
     public string FlattenNoOverlaps => "एक-दूसरे पर आने वाली कोई वस्तु नहीं मिली।";
     public string FlattenWholePageWarning =>

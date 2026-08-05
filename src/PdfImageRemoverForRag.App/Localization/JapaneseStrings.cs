@@ -134,7 +134,8 @@ internal sealed class JapaneseStrings : IStrings
         "重なっているオブジェクトをまとめて画像化します。見た目は変わりませんが、"
         + "その部分のテキストはテキストでなくなります。";
 
-    public string FlattenUnitLabel(int number) => $"統合単位 {number}";
+    public string FlattenUnitLabel(int page, int number) =>
+        $"p.{page} 統合単位 {number}";
     public string FlattenObjectNotOverlapping => "このオブジェクトは何とも重なっていません。";
     public string FlattenNoOverlaps => "重なっているオブジェクトはありません。";
     public string FlattenWholePageWarning =>

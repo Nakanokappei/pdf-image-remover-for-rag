@@ -284,6 +284,17 @@ internal static class ContentStreamWalker
         // paint a drawing into a picture nobody asked to flatten.
         bool Wanted(bool isMember) => side == RegionSide.Members ? isMember : !isMember;
 
+        // Deleting the members touches only what sits inside the region — the
+        // same string elsewhere on the page must survive. Deleting the OTHERS
+        // is for a copy that exists to be photographed through the region's
+        // rectangle, so what falls outside it cannot matter, and testing for
+        // overlap there only creates a way to miss something: a Form XObject's
+        // rectangle is computed from the unit square rather than its own /BBox,
+        // and a drawing whose rectangle came out wrong stayed in the picture.
+        bool InScope(double x, double y, double width, double height) =>
+            side == RegionSide.Others
+            || OverlapDetector.RegionOverlaps(region, x, y, width, height);
+
         var textValues = new HashSet<string>(
             region.Members.Where(m => m.Kind == RemovableKind.Text).Select(m => m.Identity),
             StringComparer.Ordinal);
@@ -298,21 +309,21 @@ internal static class ContentStreamWalker
         foreach (var call in FindDrawCalls(sequence))
         {
             if (!Wanted(imageResourceNames.Contains(call.ResourceName))) continue;
-            if (!OverlapDetector.RegionOverlaps(region, call.X, call.Y, call.Width, call.Height)) continue;
+            if (!InScope(call.X, call.Y, call.Width, call.Height)) continue;
             ranges.Add((call.Index, call.Index));
         }
 
         foreach (var hit in FindTexts(sequence, decoder, metrics))
         {
             if (!Wanted(textValues.Contains(hit.Value))) continue;
-            if (!OverlapDetector.RegionOverlaps(region, hit.X, hit.Y, hit.Width, hit.Height)) continue;
+            if (!InScope(hit.X, hit.Y, hit.Width, hit.Height)) continue;
             ranges.Add((hit.Index, hit.Index));
         }
 
         foreach (var hit in FindShapes(sequence))
         {
             if (!Wanted(shapeSignatures.Contains(hit.Signature))) continue;
-            if (!OverlapDetector.RegionOverlaps(region, hit.X, hit.Y, hit.Width, hit.Height)) continue;
+            if (!InScope(hit.X, hit.Y, hit.Width, hit.Height)) continue;
             ranges.Add((hit.StartIndex, hit.EndIndex));
         }
 

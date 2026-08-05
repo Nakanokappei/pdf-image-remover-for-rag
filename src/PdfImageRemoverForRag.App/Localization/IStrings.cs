@@ -259,7 +259,12 @@ internal interface IStrings
     /// page: one such place is baked into one image. Keep it short — it is a
     /// tree node label, followed by the kinds it contains in parentheses.
     /// </summary>
-    string FlattenUnitLabel(int number);
+    /// <summary>
+    /// A unit's heading. The page comes first because units are numbered
+    /// WITHIN their page — "Unit 3" appears once per page, and a panel showing
+    /// several pages at once read as if it were repeating itself.
+    /// </summary>
+    string FlattenUnitLabel(int page, int number);
 
     /// <summary>
     /// Shown in the panel when the object selected in the list overlaps nothing

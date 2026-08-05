@@ -248,7 +248,7 @@ internal sealed partial class MainForm
     /// change, so a scroll that is still moving never triggers work, and one
     /// that has stopped feels immediate.
     /// </summary>
-    const int ThumbnailSettleMs = 500;
+    const int ThumbnailSettleMs = 250;
 
     /// <summary>
     /// Restart the settle timer. Called from every scroll and from every
@@ -370,6 +370,10 @@ internal sealed partial class MainForm
         // eviction. Repainting is the whole update.
         if (_isTileView) _tileView.Invalidate();
         else ApplyLoadedRowThumbnails();
+        // And the panel, which draws thumbnails of its own from the same cache.
+        // It was left out, so its rows stayed empty until the pointer crossed
+        // them and Windows repainted for its own reasons.
+        _flattenPanel.RefreshThumbnails();
     }
 
     /// <summary>

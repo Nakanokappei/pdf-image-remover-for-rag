@@ -135,7 +135,8 @@ internal sealed class KoreanStrings : IStrings
         "겹쳐 있는 개체를 한 장의 이미지로 병합합니다. 페이지 모양은 그대로이지만 "
         + "그 안의 텍스트는 더 이상 텍스트가 아닙니다.";
 
-    public string FlattenUnitLabel(int number) => $"병합 단위 {number}";
+    public string FlattenUnitLabel(int page, int number) =>
+        $"p.{page} 병합 단위 {number}";
     public string FlattenObjectNotOverlapping => "이 개체는 아무것과도 겹치지 않습니다.";
     public string FlattenNoOverlaps => "겹쳐 있는 개체가 없습니다.";
     public string FlattenWholePageWarning =>

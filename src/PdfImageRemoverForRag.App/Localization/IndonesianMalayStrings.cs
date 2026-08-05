@@ -146,7 +146,8 @@ internal sealed class IndonesianMalayStrings : IStrings
         "Menggabungkan objek yang bertumpang tindih menjadi satu gambar. Halaman tetap "
         + "sama, tetapi teks di dalamnya tidak lagi berupa teks.";
 
-    public string FlattenUnitLabel(int number) => $"Unit {number}";
+    public string FlattenUnitLabel(int page, int number) =>
+        $"p.{page} Unit {number}";
     public string FlattenObjectNotOverlapping => "Objek ini tidak bertumpang tindih dengan apa pun.";
     public string FlattenNoOverlaps => "Tidak ada objek yang bertumpang tindih.";
     public string FlattenWholePageWarning =>

@@ -233,7 +233,8 @@ internal static class L10n
     public static string FlattenMerge => S.FlattenMerge;
     public static string FlattenSplit => S.FlattenSplit;
     public static string FlattenDescription => S.FlattenDescription;
-    public static string FlattenUnitLabel(int number) => S.FlattenUnitLabel(number);
+    public static string FlattenUnitLabel(int page, int number) =>
+        S.FlattenUnitLabel(page, number);
     public static string FlattenObjectNotOverlapping => S.FlattenObjectNotOverlapping;
     public static string FlattenNoOverlaps => S.FlattenNoOverlaps;
     public static string FlattenWholePageWarning => S.FlattenWholePageWarning;

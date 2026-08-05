@@ -60,6 +60,7 @@ internal sealed class WindowsPageRasterizer : IPageRasterizer
         int pageNumber,
         PageRegion region,
         int targetDpi,
+        bool transparentBackground = false,
         CancellationToken ct = default)
     {
         try
@@ -88,7 +89,8 @@ internal sealed class WindowsPageRasterizer : IPageRasterizer
                 displayed.Width * DipsPerPoint, displayed.Height * DipsPerPoint);
             int wanted = PixelWidthFor(displayed, targetDpi);
 
-            using var bitmap = await RenderAtWidthAsync(page, sourceRect, wanted, ct);
+            using var bitmap = await RenderAtWidthAsync(
+                page, sourceRect, wanted, transparentBackground, ct);
             if (bitmap is null) return null;
 
             // Handed back the way the CONTENT has it, because that is the space
@@ -120,9 +122,10 @@ internal sealed class WindowsPageRasterizer : IPageRasterizer
     /// promise about the maximum size holds whatever the API does.
     /// </summary>
     async Task<Bitmap?> RenderAtWidthAsync(
-        PdfPage page, Windows.Foundation.Rect sourceRect, int wantedPixelWidth, CancellationToken ct)
+        PdfPage page, Windows.Foundation.Rect sourceRect, int wantedPixelWidth,
+        bool transparentBackground, CancellationToken ct)
     {
-        var bitmap = await RenderOnceAsync(page, sourceRect, wantedPixelWidth, ct);
+        var bitmap = await RenderOnceAsync(page, sourceRect, wantedPixelWidth, transparentBackground, ct);
         if (bitmap is null) return null;
 
         double ratio = bitmap.Width / Math.Max(1.0, wantedPixelWidth / _pixelsPerRequestedUnit);
@@ -130,7 +133,8 @@ internal sealed class WindowsPageRasterizer : IPageRasterizer
 
         if (Math.Abs(bitmap.Width - wantedPixelWidth) > wantedPixelWidth * SizeTolerance)
         {
-            var corrected = await RenderOnceAsync(page, sourceRect, wantedPixelWidth, ct);
+            var corrected = await RenderOnceAsync(
+                page, sourceRect, wantedPixelWidth, transparentBackground, ct);
             if (corrected is not null)
             {
                 bitmap.Dispose();
@@ -159,7 +163,8 @@ internal sealed class WindowsPageRasterizer : IPageRasterizer
 
     /// <summary>One render pass, decoded into a stream-independent bitmap.</summary>
     async Task<Bitmap?> RenderOnceAsync(
-        PdfPage page, Windows.Foundation.Rect sourceRect, int wantedPixelWidth, CancellationToken ct)
+        PdfPage page, Windows.Foundation.Rect sourceRect, int wantedPixelWidth,
+        bool transparentBackground, CancellationToken ct)
     {
         // The request is in whatever unit the renderer treats DestinationWidth
         // as; the learned ratio converts from the pixels we actually want.
@@ -169,6 +174,13 @@ internal sealed class WindowsPageRasterizer : IPageRasterizer
             SourceRect = sourceRect,
             DestinationWidth = request,
         };
+        // Alpha zero leaves the paper unpainted, so the result carries
+        // transparency wherever the page draws nothing. Measured before it was
+        // relied on: the renderer honours it, and the default is opaque white.
+        if (transparentBackground)
+        {
+            options.BackgroundColor = Windows.UI.Color.FromArgb(0, 255, 255, 255);
+        }
 
         using var stream = new InMemoryRandomAccessStream();
         await page.RenderToStreamAsync(stream, options);

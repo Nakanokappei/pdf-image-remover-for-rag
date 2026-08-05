@@ -26,11 +26,44 @@ internal sealed class FlatColourRasterizer : IPageRasterizer
 
     public List<(int PageNumber, PageRegion Region, int Dpi)> Requests { get; } = new();
 
+    /// <summary>The files it was asked to render, in order — flattening renders
+    /// from a copy holding only the ticked objects, and that copy is what a
+    /// test has to be able to look at.</summary>
+    public List<string> RenderedFiles { get; } = new();
+
+    /// <summary>Whether the caller asked for a transparent background.</summary>
+    public List<bool> Transparency { get; } = new();
+
+    /// <summary>
+    /// What the page it was pointed at actually draws, read at the moment of
+    /// the call — the caller deletes its copy straight afterwards, so a test
+    /// cannot go back and look.
+    /// </summary>
+    public List<(string Text, int Images)> RenderedContent { get; } = new();
+
+    static (string Text, int Images) ReadContent(string path, int pageNumber)
+    {
+        try
+        {
+            using var document = UglyToad.PdfPig.PdfDocument.Open(path);
+            var page = document.GetPage(pageNumber);
+            return (page.Text, page.GetImages().Count());
+        }
+        catch
+        {
+            return (string.Empty, 0);
+        }
+    }
+
     public Task<byte[]?> RenderRegionAsync(
         string pdfFilePath, int pageNumber, PageRegion region, int targetDpi,
+        bool transparentBackground = false,
         CancellationToken ct = default)
     {
         Requests.Add((pageNumber, region, targetDpi));
+        RenderedFiles.Add(pdfFilePath);
+        Transparency.Add(transparentBackground);
+        RenderedContent.Add(ReadContent(pdfFilePath, pageNumber));
         if (!_succeeds) return Task.FromResult<byte[]?>(null);
 
         // Pixel dimensions in proportion to the region, so a wrong aspect ratio

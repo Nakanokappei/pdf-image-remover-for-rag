@@ -256,13 +256,34 @@ internal static class ContentStreamWalker
     ///
     /// Returns the number of operators (or operator ranges) removed.
     /// </summary>
+    /// <summary>
+    /// Which side of a region's membership an operator has to be on to be
+    /// deleted. Flattening needs both: the page loses the members, and the
+    /// picture drawn in their place is rendered from a copy that has lost
+    /// everything else.
+    /// </summary>
+    public enum RegionSide
+    {
+        /// <summary>The objects the region is made of.</summary>
+        Members,
+
+        /// <summary>Everything else that reaches into the region's rectangle.</summary>
+        Others,
+    }
+
     public static int RemoveInRegion(
         CSequence sequence,
         OverlapRegion region,
         IReadOnlySet<string> imageResourceNames,
         PdfTextDecoder decoder,
-        PdfFontMetrics metrics)
+        PdfFontMetrics metrics,
+        RegionSide side = RegionSide.Members)
     {
+        // Deleting the others means every draw call that is not a member —
+        // including forms, which are never region members and would otherwise
+        // paint a drawing into a picture nobody asked to flatten.
+        bool Wanted(bool isMember) => side == RegionSide.Members ? isMember : !isMember;
+
         var textValues = new HashSet<string>(
             region.Members.Where(m => m.Kind == RemovableKind.Text).Select(m => m.Identity),
             StringComparer.Ordinal);
@@ -274,34 +295,25 @@ internal static class ContentStreamWalker
         // back-to-front so earlier indices stay valid.
         var ranges = new List<(int Start, int End)>();
 
-        if (imageResourceNames.Count > 0)
+        foreach (var call in FindDrawCalls(sequence))
         {
-            foreach (var call in FindDrawCalls(sequence))
-            {
-                if (!imageResourceNames.Contains(call.ResourceName)) continue;
-                if (!OverlapDetector.RegionOverlaps(region, call.X, call.Y, call.Width, call.Height)) continue;
-                ranges.Add((call.Index, call.Index));
-            }
+            if (!Wanted(imageResourceNames.Contains(call.ResourceName))) continue;
+            if (!OverlapDetector.RegionOverlaps(region, call.X, call.Y, call.Width, call.Height)) continue;
+            ranges.Add((call.Index, call.Index));
         }
 
-        if (textValues.Count > 0)
+        foreach (var hit in FindTexts(sequence, decoder, metrics))
         {
-            foreach (var hit in FindTexts(sequence, decoder, metrics))
-            {
-                if (!textValues.Contains(hit.Value)) continue;
-                if (!OverlapDetector.RegionOverlaps(region, hit.X, hit.Y, hit.Width, hit.Height)) continue;
-                ranges.Add((hit.Index, hit.Index));
-            }
+            if (!Wanted(textValues.Contains(hit.Value))) continue;
+            if (!OverlapDetector.RegionOverlaps(region, hit.X, hit.Y, hit.Width, hit.Height)) continue;
+            ranges.Add((hit.Index, hit.Index));
         }
 
-        if (shapeSignatures.Count > 0)
+        foreach (var hit in FindShapes(sequence))
         {
-            foreach (var hit in FindShapes(sequence))
-            {
-                if (!shapeSignatures.Contains(hit.Signature)) continue;
-                if (!OverlapDetector.RegionOverlaps(region, hit.X, hit.Y, hit.Width, hit.Height)) continue;
-                ranges.Add((hit.StartIndex, hit.EndIndex));
-            }
+            if (!Wanted(shapeSignatures.Contains(hit.Signature))) continue;
+            if (!OverlapDetector.RegionOverlaps(region, hit.X, hit.Y, hit.Width, hit.Height)) continue;
+            ranges.Add((hit.StartIndex, hit.EndIndex));
         }
 
         foreach (var range in ranges.OrderByDescending(r => r.Start))

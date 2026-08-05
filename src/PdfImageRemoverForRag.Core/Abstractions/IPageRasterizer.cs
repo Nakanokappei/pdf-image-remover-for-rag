@@ -47,10 +47,18 @@ public interface IPageRasterizer
     /// Resolution to render at. Implementations may render below it to stay
     /// inside their own pixel budget, and should never render above it.
     /// </param>
+    /// <param name="transparentBackground">
+    /// Leave the paper unpainted, so the result carries alpha where the page
+    /// draws nothing. Flattening needs it: the picture it produces holds only
+    /// the objects the user ticked, and an opaque background would hide the
+    /// neighbours they chose to keep. A preview wants the opposite — paper is
+    /// what a page looks like.
+    /// </param>
     Task<byte[]?> RenderRegionAsync(
         string pdfFilePath,
         int pageNumber,
         PageRegion region,
         int targetDpi,
+        bool transparentBackground = false,
         CancellationToken ct = default);
 }

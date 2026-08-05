@@ -115,11 +115,33 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
         foreach (var region in regions)
         {
             ct.ThrowIfCancellationRequested();
-            var png = await _rasterizer!
-                .RenderRegionAsync(sourcePath, region.PageNumber, PageRegion.Of(region), FlattenDpi, ct)
-                .ConfigureAwait(false);
-            if (png is null || png.Length == 0) continue;
-            images.Add(new FlattenImage(region, png));
+
+            // Rendered from a copy holding only the ticked objects, on a
+            // transparent background — see FlattenSourceIsolator for what
+            // rendering the page as it stands did instead. Falling back to the
+            // page itself keeps the old behaviour when the copy cannot be
+            // written, which is a cropped neighbour in the picture rather than
+            // no picture at all.
+            var isolatedPath = Path.Combine(
+                Path.GetTempPath(), $"pdfimageremover-flatten-{Guid.NewGuid():N}.pdf");
+            var rendered = FlattenSourceIsolator.Write(sourcePath, region, isolatedPath);
+
+            try
+            {
+                var png = await _rasterizer!
+                    .RenderRegionAsync(
+                        rendered ?? sourcePath,
+                        rendered is null ? region.PageNumber : 1,
+                        PageRegion.Of(region), FlattenDpi,
+                        transparentBackground: rendered is not null, ct)
+                    .ConfigureAwait(false);
+                if (png is null || png.Length == 0) continue;
+                images.Add(new FlattenImage(region, png));
+            }
+            finally
+            {
+                if (rendered is not null) TryDelete(rendered);
+            }
         }
         return images;
     }

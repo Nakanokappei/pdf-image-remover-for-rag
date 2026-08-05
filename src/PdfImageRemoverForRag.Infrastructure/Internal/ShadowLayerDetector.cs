@@ -50,10 +50,27 @@ internal static class ShadowLayerDetector
         // Only encodings that undo to samples can be judged. A JPEG shadow is
         // not a thing producers make (they are generated, not photographed),
         // so nothing real is lost by declining to decode one.
-        var filter = image.Elements.GetName("/Filter");
-        if (filter is not ("/FlateDecode" or "")) return false;
+        //
+        // Read as an item rather than through GetName: a /Filter may be an
+        // ARRAY, and asking for its name answers the same empty string an
+        // absent filter does — which would send an encoded stream on to be
+        // decoded as samples.
+        var filter = image.Elements["/Filter"];
+        if (filter is not null && (filter as PdfName)?.Value != "/FlateDecode") return false;
 
-        var samples = image.Stream?.UnfilteredValue;
+        // And PDFsharp throws for filters it cannot undo. A real document in
+        // hand carries JPXDecode images with soft masks, so this is the
+        // ordinary case, not a defensive flourish: an image that cannot be
+        // decoded is not a shadow as far as anyone can tell.
+        byte[]? samples;
+        try
+        {
+            samples = image.Stream?.UnfilteredValue;
+        }
+        catch (NotImplementedException)
+        {
+            return false;
+        }
         if (samples is null) return false;
 
         var width = image.Elements.GetInteger("/Width");

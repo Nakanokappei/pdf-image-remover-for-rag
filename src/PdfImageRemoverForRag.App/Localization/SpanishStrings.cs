@@ -57,7 +57,7 @@ internal sealed class SpanishStrings : IStrings
     public string ColumnCompression => "Compresión";
     public string ColumnEstimatedSize => "Tam. est.";
     public string ColumnWarning => "Aviso";
-    public string AccessibleDeleteColumn => "Quitar";
+    public string ColumnDelete => "Quitar";
     public string TextSize(int characterCount) => $"{characterCount} caracteres";
     public string RowNumber(int number) => $"Fila {number}";
 

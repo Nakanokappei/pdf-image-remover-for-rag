@@ -84,10 +84,25 @@ internal static class L10n
     // and never reach a translator.
 
     /// <summary>
-    /// The delete column shows only a checkbox, so its header is a compact
-    /// check glyph rather than a word that never fits the narrow column.
+    /// The tick mark both panes put in front of their heading. Not translated —
+    /// it is a symbol, and both sides have to use the SAME one or the pairing
+    /// stops being visible.
     /// </summary>
-    public static string ColumnDelete => "☑";
+    public const string CheckGlyph = "☑";
+
+    /// <summary>
+    /// The object list's tick column: what a save REMOVES. The word matters
+    /// because the flatten panel across the window has ticks of its own that
+    /// mean something else; a bare glyph on both sides left the user to work
+    /// out which was which.
+    /// </summary>
+    public static string ColumnDeleteHeader => $"{CheckGlyph} {S.ColumnDelete}";
+
+    /// <summary>The same word without the glyph, for the spoken name.</summary>
+    public static string ColumnDelete => S.ColumnDelete;
+
+    /// <summary>The flatten panel's title: what a save FLATTENS.</summary>
+    public static string FlattenPanelHeader => $"{CheckGlyph} {S.FlattenPanelTitle}";
 
     /// <summary>Compression cell for non-image objects (they have none).</summary>
     public static string CompressionNotApplicable => "N/A";
@@ -154,7 +169,6 @@ internal static class L10n
     public static string ColumnCompression => S.ColumnCompression;
     public static string ColumnEstimatedSize => S.ColumnEstimatedSize;
     public static string ColumnWarning => S.ColumnWarning;
-    public static string AccessibleDeleteColumn => S.AccessibleDeleteColumn;
     public static string TextSize(int characterCount) => S.TextSize(characterCount);
     public static string RowNumber(int number) => S.RowNumber(number);
 

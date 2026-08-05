@@ -77,7 +77,9 @@ internal sealed class FlattenPanel : UserControl
     {
         Dock = DockStyle.Fill,
         AutoSize = false,
-        Text = L10n.FlattenPanelTitle,
+        // The glyph pairs it with the object list's ☑ column across the
+        // window: one side's ticks remove, this side's flatten.
+        Text = L10n.FlattenPanelHeader,
         TextAlign = ContentAlignment.MiddleLeft,
         UseMnemonic = false,
     };

@@ -61,7 +61,7 @@ internal sealed class RussianStrings : IStrings
     public string ColumnCompression => "Сжатие";
     public string ColumnEstimatedSize => "Прибл. размер";
     public string ColumnWarning => "Предупр.";
-    public string AccessibleDeleteColumn => "Удалить";
+    public string ColumnDelete => "Удалить";
     public string TextSize(int characterCount) => $"{characterCount} симв.";
     public string RowNumber(int number) => $"Строка {number}";
 

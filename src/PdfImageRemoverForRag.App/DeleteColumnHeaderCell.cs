@@ -33,7 +33,7 @@ internal sealed class DeleteColumnHeaderCell : DataGridViewColumnHeaderCell
         [AllowNull]
         public override string Name
         {
-            get => L10n.AccessibleDeleteColumn;
+            get => L10n.ColumnDelete;
             set { /* fixed name; ignore assignment */ }
         }
     }

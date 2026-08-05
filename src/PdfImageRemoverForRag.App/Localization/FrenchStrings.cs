@@ -56,7 +56,7 @@ internal sealed class FrenchStrings : IStrings
     public string ColumnCompression => "Compr.";
     public string ColumnEstimatedSize => "Taille est.";
     public string ColumnWarning => "Avertissement";
-    public string AccessibleDeleteColumn => "Supprimer";
+    public string ColumnDelete => "Supprimer";
     public string TextSize(int characterCount) => $"{characterCount} car.";
     public string RowNumber(int number) => $"Ligne {number}";
 

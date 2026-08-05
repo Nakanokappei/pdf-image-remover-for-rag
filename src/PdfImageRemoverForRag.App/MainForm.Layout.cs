@@ -317,11 +317,12 @@ internal sealed partial class MainForm
             _deleteColumn, _thumbnailColumn, _objectIdColumn, _typeColumn, _sizeColumn,
             _usageCountColumn, _compressionColumn, _estimatedSizeColumn, _warningColumn);
 
-        // Give the ☑ column a spoken name: its glyph header reads as "ballot box"
-        // to a screen reader otherwise. Replacing the header cell clears its
-        // value, so re-apply the glyph as the header text on the new cell.
+        // Give the ☑ column a spoken name: the glyph in its header reads as
+        // "ballot box" to a screen reader otherwise, and what is wanted is the
+        // word beside it. Replacing the header cell clears its value, so
+        // re-apply the header text on the new cell.
         _deleteColumn.HeaderCell = new DeleteColumnHeaderCell();
-        _deleteColumn.HeaderText = L10n.ColumnDelete;
+        _deleteColumn.HeaderText = L10n.ColumnDeleteHeader;
 
         // Give the thumbnail cells a spoken name — they hold no value, so a
         // screen reader would announce them as empty. Swapping the template

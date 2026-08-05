@@ -53,7 +53,7 @@ internal sealed class ItalianStrings : IStrings
     public string ColumnCompression => "Compress.";
     public string ColumnEstimatedSize => "Dim. stim.";
     public string ColumnWarning => "Avviso";
-    public string AccessibleDeleteColumn => "Rimuovi";
+    public string ColumnDelete => "Rimuovi";
     public string TextSize(int characterCount) => $"{characterCount} caratteri";
     public string RowNumber(int number) => $"Riga {number}";
 

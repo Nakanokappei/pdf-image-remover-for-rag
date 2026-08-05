@@ -48,7 +48,7 @@ internal sealed class KoreanStrings : IStrings
     public string ColumnCompression => "압축";
     public string ColumnEstimatedSize => "예상 용량";
     public string ColumnWarning => "경고";
-    public string AccessibleDeleteColumn => "삭제";
+    public string ColumnDelete => "삭제";
     public string TextSize(int characterCount) => $"{characterCount}자";
     public string RowNumber(int number) => $"{number}행";
 

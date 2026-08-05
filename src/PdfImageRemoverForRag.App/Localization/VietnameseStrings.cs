@@ -56,7 +56,7 @@ internal sealed class VietnameseStrings : IStrings
     public string ColumnCompression => "Nén";
     public string ColumnEstimatedSize => "Ước tính";
     public string ColumnWarning => "Cảnh báo";
-    public string AccessibleDeleteColumn => "Xóa";
+    public string ColumnDelete => "Xóa";
     public string TextSize(int characterCount) => $"{characterCount} ký tự";
     public string RowNumber(int number) => $"Hàng {number}";
 

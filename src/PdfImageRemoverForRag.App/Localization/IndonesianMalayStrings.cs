@@ -58,7 +58,7 @@ internal sealed class IndonesianMalayStrings : IStrings
     public string ColumnCompression => "Kompresi";
     public string ColumnEstimatedSize => "Perk. Ukuran";
     public string ColumnWarning => "Peringatan";
-    public string AccessibleDeleteColumn => "Hapus";
+    public string ColumnDelete => "Hapus";
     public string TextSize(int characterCount) => $"{characterCount} karakter";
     public string RowNumber(int number) => $"Baris {number}";
 

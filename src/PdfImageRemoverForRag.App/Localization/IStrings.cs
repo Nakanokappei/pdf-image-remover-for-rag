@@ -106,11 +106,13 @@ internal interface IStrings
     string ColumnWarning { get; }
 
     /// <summary>
-    /// Screen-reader name for the delete column, whose visible header is only a
-    /// ☑ glyph (which a screen reader would read as "ballot box"). Use the same
-    /// remove/delete verb the language uses elsewhere in the app.
+    /// The delete column's header, and what a screen reader calls it. Use the
+    /// same remove/delete verb the language uses elsewhere in the app: the
+    /// column's ticks are what a save removes, and the panel on the other side
+    /// of the window ticks things to flatten, so each side has to say which it
+    /// is. The ☑ glyph in front of it is added in code, not translated.
     /// </summary>
-    string AccessibleDeleteColumn { get; }
+    string ColumnDelete { get; }
 
     /// <summary>Size cell for a text object: character count.</summary>
     string TextSize(int characterCount);

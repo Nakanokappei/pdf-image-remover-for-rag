@@ -50,7 +50,7 @@ internal sealed class EnglishStrings : IStrings
     public string ColumnCompression => "Compression";
     public string ColumnEstimatedSize => "Est. Size";
     public string ColumnWarning => "Warning";
-    public string AccessibleDeleteColumn => "Remove";
+    public string ColumnDelete => "Remove";
     public string TextSize(int characterCount) => $"{characterCount} chars";
     public string RowNumber(int number) => $"Row {number}";
 

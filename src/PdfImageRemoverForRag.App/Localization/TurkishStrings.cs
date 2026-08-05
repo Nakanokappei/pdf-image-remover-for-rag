@@ -60,7 +60,7 @@ internal sealed class TurkishStrings : IStrings
     public string ColumnCompression => "Sıkıştırma";
     public string ColumnEstimatedSize => "Tah. boyut";
     public string ColumnWarning => "Uyarı";
-    public string AccessibleDeleteColumn => "Kaldır";
+    public string ColumnDelete => "Kaldır";
     public string TextSize(int characterCount) => $"{characterCount} karakter";
     public string RowNumber(int number) => $"Satır {number}";
 

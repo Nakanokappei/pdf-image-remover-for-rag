@@ -51,7 +51,7 @@ internal sealed class ChineseTraditionalStrings : IStrings
     public string ColumnCompression => "壓縮";
     public string ColumnEstimatedSize => "預估容量";
     public string ColumnWarning => "警告";
-    public string AccessibleDeleteColumn => "移除";
+    public string ColumnDelete => "移除";
     public string TextSize(int characterCount) => $"{characterCount} 個字元";
     public string RowNumber(int number) => $"第 {number} 列";
 

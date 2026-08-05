@@ -54,7 +54,7 @@ internal sealed class PortugueseStrings : IStrings
     public string ColumnCompression => "Compressão";
     public string ColumnEstimatedSize => "Tam. Est.";
     public string ColumnWarning => "Aviso";
-    public string AccessibleDeleteColumn => "Remover";
+    public string ColumnDelete => "Remover";
     public string TextSize(int characterCount) => $"{characterCount} caracteres";
     public string RowNumber(int number) => $"Linha {number}";
 

@@ -54,7 +54,7 @@ internal sealed class GermanStrings : IStrings
     public string ColumnCompression => "Kompr.";
     public string ColumnEstimatedSize => "Gesch. Größe";
     public string ColumnWarning => "Warnung";
-    public string AccessibleDeleteColumn => "Entfernen";
+    public string ColumnDelete => "Entfernen";
     public string TextSize(int characterCount) => $"{characterCount} Zeichen";
     public string RowNumber(int number) => $"Zeile {number}";
 

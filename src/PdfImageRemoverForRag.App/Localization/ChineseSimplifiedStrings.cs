@@ -49,7 +49,7 @@ internal sealed class ChineseSimplifiedStrings : IStrings
     public string ColumnCompression => "压缩";
     public string ColumnEstimatedSize => "估计容量";
     public string ColumnWarning => "警告";
-    public string AccessibleDeleteColumn => "删除";
+    public string ColumnDelete => "删除";
     public string TextSize(int characterCount) => $"{characterCount} 个字符";
     public string RowNumber(int number) => $"第 {number} 行";
 

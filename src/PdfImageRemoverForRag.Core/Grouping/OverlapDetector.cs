@@ -94,12 +94,12 @@ public static class OverlapDetector
             regions.Add(BuildRegion(page, members));
         }
 
-        // Stable order: top-left first, reading order down the page (PDF Y grows
-        // upward, so the largest Y is the top).
-        return regions
-            .OrderByDescending(r => r.Y + r.Height)
-            .ThenBy(r => r.X)
-            .ToArray();
+        // Reading order down the page, so the panel's units are numbered the way
+        // a reader meets them. Two units whose tops are a hair apart count as
+        // one line and go left to right; sorting on the top alone made that
+        // difference decide, which reads as an arbitrary order on a page whose
+        // columns do not start at exactly the same height.
+        return ReadingOrder.Sort(regions);
     }
 
     /// <summary>
@@ -162,14 +162,15 @@ public static class OverlapDetector
             if (r > right) right = r;
             if (t > top) top = t;
         }
-        // Members in a stable order so the region's signature does not depend on
-        // the order the analyzer happened to walk the content stream in.
-        var ordered = members
-            .OrderBy(m => m.Kind)
-            .ThenBy(m => m.Identity, StringComparer.Ordinal)
-            .ThenBy(m => m.X)
-            .ThenBy(m => m.Y)
-            .ToArray();
+        // Members in reading order — the order the Flatten panel lists them in,
+        // and the order a user checks them off against the page. It was by kind
+        // and identity before, which is stable but tells the reader nothing:
+        // every image first, then every string, wherever they sit.
+        //
+        // Still independent of the order the analyzer walked the content stream
+        // in, which is what "stable" had to mean: position decides, and objects
+        // at the very same place fall back to kind and identity.
+        var ordered = ReadingOrder.Sort(members);
         return new OverlapRegion(
             page.PageNumber, left, bottom, right - left, top - bottom, ordered,
             page.WidthPoints, page.HeightPoints);

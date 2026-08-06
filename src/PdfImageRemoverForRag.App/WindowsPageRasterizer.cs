@@ -26,12 +26,22 @@ internal sealed class WindowsPageRasterizer : IPageRasterizer
     const double DipsPerPoint = 96.0 / 72.0;
 
     /// <summary>
-    /// Longest side, in pixels, any rendered region may have. A region can be a
-    /// whole page, and a whole page at a high DPI is a bitmap large enough for
-    /// GDI+ to fail the allocation — which is exactly how the thumbnail
-    /// pipeline once died at object 229 of 1,255.
+    /// Longest side, in pixels, any rendered region may have.
+    ///
+    /// Two reasons, and the smaller one decides it. A region can be a whole
+    /// page, and a whole page at a high DPI is a bitmap large enough for GDI+ to
+    /// fail the allocation — which is how the thumbnail pipeline once died at
+    /// object 229 of 1,255. And the picture ends up in a file that goes to a RAG
+    /// pipeline whose reader displays it: 1920 is the standard screen, so pixels
+    /// past it are file size and nothing else (the customer's upload limit is
+    /// 15 MB, which a few full-page pictures can reach).
+    ///
+    /// The size is decided HERE rather than by shrinking afterwards, because the
+    /// renderer can simply be asked for it. A whole A4 page comes out at about
+    /// 164 DPI, which is the resolution that fits — not a reduction of the 200
+    /// the caller asks for.
     /// </summary>
-    const int MaxPixelsOnLongSide = 4000;
+    const int MaxPixelsOnLongSide = 1920;
 
     /// <summary>
     /// How far off the requested pixel size may land before a second attempt is

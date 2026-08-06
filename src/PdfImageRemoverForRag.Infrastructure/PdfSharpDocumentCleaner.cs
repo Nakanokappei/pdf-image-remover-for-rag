@@ -37,7 +37,18 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
     /// </summary>
     const int FlattenDpi = 200;
 
+    /// <summary>
+    /// The screen the output is for, and the most a JPEG may be encoded at.
+    /// Both come from what the file is for: it goes to a RAG pipeline whose
+    /// reader displays it on an ordinary screen, and whose upload limit a manual
+    /// full of screenshots reaches easily.
+    /// </summary>
+    const int ScreenWidth = 1920;
+    const int ScreenHeight = 1080;
+    const int ScreenJpegQuality = 85;
+
     readonly IPageRasterizer? _rasterizer;
+    readonly IImageResampler? _resampler;
 
     /// <param name="rasterizer">
     /// Renders the regions a caller asks to flatten. Optional because plain
@@ -45,9 +56,15 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
     /// Windows-only (see <see cref="IPageRasterizer"/>) while this assembly has
     /// to keep building and testing on macOS.
     /// </param>
-    public PdfSharpDocumentCleaner(IPageRasterizer? rasterizer = null)
+    /// <param name="resampler">
+    /// Redraws images at the size they will be looked at. Optional for the same
+    /// two reasons, and absent means images are written out as they came in.
+    /// </param>
+    public PdfSharpDocumentCleaner(
+        IPageRasterizer? rasterizer = null, IImageResampler? resampler = null)
     {
         _rasterizer = rasterizer;
+        _resampler = resampler;
     }
 
     public async Task<CleaningResult> CleanAsync(
@@ -55,6 +72,7 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
         string destinationPath,
         IReadOnlyList<ImageRemovalSelection> selections,
         IReadOnlyList<OverlapRegion>? regionsToFlatten = null,
+        bool fitImagesToScreen = false,
         CancellationToken ct = default)
     {
         var regions = regionsToFlatten ?? Array.Empty<OverlapRegion>();
@@ -94,8 +112,12 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
         // rather than being waited on inside the synchronous rewrite.
         var flattenImages = await RenderRegionsAsync(sourcePath, regions, ct).ConfigureAwait(false);
 
+        // Fitting is asked for only when the file being written is the one the
+        // user keeps, and it needs a resampler to do it with.
+        var resampler = fitImagesToScreen ? _resampler : null;
+
         return await Task
-            .Run(() => CleanSync(sourcePath, destinationPath, selections, flattenImages, ct), ct)
+            .Run(() => CleanSync(sourcePath, destinationPath, selections, flattenImages, resampler, ct), ct)
             .ConfigureAwait(false);
     }
 
@@ -148,7 +170,8 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
 
     static CleaningResult CleanSync(string sourcePath, string destinationPath,
         IReadOnlyList<ImageRemovalSelection> selections,
-        IReadOnlyList<FlattenImage> flattenImages, CancellationToken ct)
+        IReadOnlyList<FlattenImage> flattenImages,
+        IImageResampler? resampler, CancellationToken ct)
     {
         var sw = Stopwatch.StartNew();
         // Selections carry a GroupId but the cleaner needs a set of PDF
@@ -352,6 +375,14 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
             // keeping images out of RAG, removing the reference is the job.
             int imagesKeptBack = PruneRemovedImages(doc, resourceEntriesToDrop, doomedImages);
 
+            // Last, because it acts on what the file will actually hold: the
+            // pictures flattening drew are images like any other by now, and
+            // anything removed above is no longer here to be redrawn.
+            var resizedImages = resampler is null
+                ? Array.Empty<string>()
+                : ScreenFitPass.Apply(
+                    doc, resampler, ScreenWidth, ScreenHeight, ScreenJpegQuality, ct);
+
             // Save via a temp file. On disposal-time failure we clean up the
             // temp so the caller never has to reason about half-written state.
             var tempPath = destinationPath + ".tmp";
@@ -375,7 +406,8 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
                 DrawCallsRemoved: totalRemovedOps,
                 Elapsed: sw.Elapsed,
                 RegionsFlattened: regionsFlattened,
-                ImagesKeptForOtherReferences: imagesKeptBack);
+                ImagesKeptForOtherReferences: imagesKeptBack,
+                ResizedImageHashes: resizedImages);
         }
         catch (OperationCanceledException)
         {

@@ -40,4 +40,5 @@ public sealed record CleaningResult(
     int DrawCallsRemoved,
     TimeSpan Elapsed,
     int RegionsFlattened = 0,
-    int ImagesKeptForOtherReferences = 0);
+    int ImagesKeptForOtherReferences = 0,
+    IReadOnlyList<string>? ResizedImageHashes = null);

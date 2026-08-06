@@ -320,8 +320,12 @@ internal sealed class PdfCleaningWorkflow
         if (places.Count > 0)
         {
             nextCopy = WorkingCopyPath(document.FilePath);
+            // Not fitted to the screen: this copy is an intermediate the user
+            // never keeps, and re-encoding its pictures here would only mean
+            // encoding them again on the next rebuild.
             var result = await _cleaner.CleanAsync(
-                    document.FilePath, nextCopy, Array.Empty<ImageRemovalSelection>(), places, ct)
+                    document.FilePath, nextCopy, Array.Empty<ImageRemovalSelection>(), places,
+                    fitImagesToScreen: false, ct)
                 .ConfigureAwait(false);
             _logger.LogInformation(
                 "flattened: placesAsked={Asked} placesFlattened={Flattened} pagesModified={Pages}",
@@ -531,8 +535,11 @@ internal sealed class PdfCleaningWorkflow
                 return new SavedFile(document.FilePath, destinationPath, 0, 0);
             }
 
+            // This is the file the user keeps, so it is the one whose images are
+            // redrawn at the size they will be looked at.
             var result = await _cleaner
-                .CleanAsync(sourcePath, tempPath, selections, Array.Empty<OverlapRegion>(), ct)
+                .CleanAsync(sourcePath, tempPath, selections, Array.Empty<OverlapRegion>(),
+                    fitImagesToScreen: true, ct)
                 .ConfigureAwait(false);
 
             // Logged before verification so a verification failure can be read
@@ -560,7 +567,15 @@ internal sealed class PdfCleaningWorkflow
                 .Select(g => g.Hash)
                 .ToArray();
             var removedHashes = verifiableHashes.Where(selectedHashes.Contains).ToArray();
-            var retainedHashes = verifiableHashes.Except(removedHashes, StringComparer.Ordinal).ToArray();
+            // An image redrawn at screen size is no longer the stream it was, so
+            // looking for its old bytes in the output would report it missing.
+            // It is not missing; it is smaller, which is what was asked for.
+            var resized = new HashSet<string>(
+                result.ResizedImageHashes ?? Array.Empty<string>(), StringComparer.Ordinal);
+            var retainedHashes = verifiableHashes
+                .Except(removedHashes, StringComparer.Ordinal)
+                .Where(hash => !resized.Contains(hash))
+                .ToArray();
             var report = await _verifier.VerifyAsync(
                 sourcePath, tempPath, removedHashes, retainedHashes, ct)
                 .ConfigureAwait(false);

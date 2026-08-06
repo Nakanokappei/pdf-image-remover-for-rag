@@ -20,10 +20,18 @@ public interface IPdfDocumentCleaner
     /// drops the appearance — so they are separate arguments, and a single run
     /// flattens before it removes.
     /// </param>
+    /// <param name="fitImagesToScreen">
+    /// Redraw every image the output holds at the size it will be looked at,
+    /// which is what keeps a screenshot-heavy manual under an upload limit. Off
+    /// by default, and asked for only when the file being written is the one the
+    /// user keeps: doing it to an intermediate would re-encode the same pictures
+    /// again on the next pass.
+    /// </param>
     Task<CleaningResult> CleanAsync(
         string sourcePath,
         string destinationPath,
         IReadOnlyList<ImageRemovalSelection> selections,
         IReadOnlyList<OverlapRegion>? regionsToFlatten = null,
+        bool fitImagesToScreen = false,
         CancellationToken ct = default);
 }

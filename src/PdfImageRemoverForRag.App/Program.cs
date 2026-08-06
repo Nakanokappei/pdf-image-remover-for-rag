@@ -39,7 +39,7 @@ internal static class Program
             // the operating system's own, which is why it is injected from here
             // rather than built inside Infrastructure (that layer keeps
             // building and testing on macOS).
-            new PdfSharpDocumentCleaner(new WindowsPageRasterizer()),
+            new PdfSharpDocumentCleaner(new WindowsPageRasterizer(), new WindowsImageResampler()),
             new PdfSharpDocumentVerifier(),
             thumbnailStore,
             logger);

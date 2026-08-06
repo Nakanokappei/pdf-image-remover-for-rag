@@ -26,22 +26,26 @@ internal sealed class WindowsPageRasterizer : IPageRasterizer
     const double DipsPerPoint = 96.0 / 72.0;
 
     /// <summary>
-    /// Longest side, in pixels, any rendered region may have.
+    /// The screen a rendered region has to fit inside, in pixels. Not a limit on
+    /// the longest side: width is measured against the width and height against
+    /// the height, so a page-shaped region is bounded by its height and a
+    /// banner-shaped one by its width.
     ///
     /// Two reasons, and the smaller one decides it. A region can be a whole
     /// page, and a whole page at a high DPI is a bitmap large enough for GDI+ to
     /// fail the allocation — which is how the thumbnail pipeline once died at
     /// object 229 of 1,255. And the picture ends up in a file that goes to a RAG
-    /// pipeline whose reader displays it: 1920 is the standard screen, so pixels
-    /// past it are file size and nothing else (the customer's upload limit is
-    /// 15 MB, which a few full-page pictures can reach).
+    /// pipeline whose reader displays it: the customer's standard screen is
+    /// 1920x1080, so pixels past it are file size and nothing else (their upload
+    /// limit is 15 MB, which a few full-page pictures can reach).
     ///
     /// The size is decided HERE rather than by shrinking afterwards, because the
-    /// renderer can simply be asked for it. A whole A4 page comes out at about
-    /// 164 DPI, which is the resolution that fits — not a reduction of the 200
+    /// renderer can simply be asked for it. A whole A4 page comes out about 763
+    /// pixels wide — the resolution that fits, not a reduction of the 200 DPI
     /// the caller asks for.
     /// </summary>
-    const int MaxPixelsOnLongSide = 1920;
+    const int MaxPixelWidth = 1920;
+    const int MaxPixelHeight = 1080;
 
     /// <summary>
     /// How far off the requested pixel size may land before a second attempt is
@@ -154,10 +158,9 @@ internal sealed class WindowsPageRasterizer : IPageRasterizer
 
         // Last line of defence: the ceiling is about memory and file size, and
         // it has to hold even if the renderer ignores the request entirely.
-        int longest = Math.Max(bitmap.Width, bitmap.Height);
-        if (longest > MaxPixelsOnLongSide)
+        if (bitmap.Width > MaxPixelWidth || bitmap.Height > MaxPixelHeight)
         {
-            double scale = MaxPixelsOnLongSide / (double)longest;
+            double scale = ScaleToFit(bitmap.Width, bitmap.Height);
             var reduced = new Bitmap(
                 Math.Max(1, (int)(bitmap.Width * scale)), Math.Max(1, (int)(bitmap.Height * scale)));
             using (var g = Graphics.FromImage(reduced))
@@ -258,20 +261,25 @@ internal sealed class WindowsPageRasterizer : IPageRasterizer
     }
 
     /// <summary>
-    /// Pixel width for the requested resolution, reduced if either side would
-    /// otherwise exceed <see cref="MaxPixelsOnLongSide"/>. Never rounds up past
-    /// the requested DPI. Takes the region as the renderer will lay it out, so
-    /// on a quarter-turned page the width asked for is the turned one.
+    /// Pixel width for the requested resolution, reduced to whatever fits the
+    /// screen the picture is for. Never rounds up past the requested DPI. Takes
+    /// the region as the renderer will lay it out, so on a quarter-turned page
+    /// the width asked for is the turned one.
     /// </summary>
     static int PixelWidthFor(PageRegion region, int targetDpi)
     {
         double scale = targetDpi / 72.0;
         double width = region.Width * scale;
-        double height = region.Height * scale;
-        double longest = Math.Max(width, height);
-        if (longest > MaxPixelsOnLongSide) width *= MaxPixelsOnLongSide / longest;
-        return Math.Max(1, (int)Math.Round(width));
+        return Math.Max(1, (int)Math.Round(width * ScaleToFit(width, region.Height * scale)));
     }
+
+    /// <summary>
+    /// How much a picture of this size has to shrink to fit the screen: the
+    /// tighter of the two ratios, and never an enlargement.
+    /// </summary>
+    static double ScaleToFit(double width, double height) => Math.Min(
+        1.0,
+        Math.Min(MaxPixelWidth / Math.Max(1.0, width), MaxPixelHeight / Math.Max(1.0, height)));
 
     async Task<PdfDocument?> LoadDocumentAsync(string filePath)
     {

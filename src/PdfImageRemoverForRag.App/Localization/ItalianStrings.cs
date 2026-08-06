@@ -142,7 +142,7 @@ internal sealed class ItalianStrings : IStrings
 
     public string FlattenPanelTitle => "Oggetti";
     public string FlattenMenu => "Comandi oggetto";
-    public string FlattenApply => "Unisci oggetti visibili";
+    public string FlattenApply => "Unisci gli oggetti visibili dell'unità selezionata";
     public string FlattenUndo => "Annulla unione";
     public string FlattenMerge => "Unisci";
     public string FlattenSplit => "Dividi";

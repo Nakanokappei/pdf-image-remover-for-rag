@@ -146,7 +146,7 @@ internal sealed class SpanishStrings : IStrings
 
     public string FlattenPanelTitle => "Objetos";
     public string FlattenMenu => "Comandos de objeto";
-    public string FlattenApply => "Combinar objetos visibles";
+    public string FlattenApply => "Combinar objetos visibles de la unidad seleccionada";
     public string FlattenUndo => "Deshacer acoplado";
     public string FlattenMerge => "Unir selección";
     public string FlattenSplit => "Dividir selección";

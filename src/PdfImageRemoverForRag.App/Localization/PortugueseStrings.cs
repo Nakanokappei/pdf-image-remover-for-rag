@@ -143,7 +143,7 @@ internal sealed class PortugueseStrings : IStrings
 
     public string FlattenPanelTitle => "Objetos";
     public string FlattenMenu => "Comandos de objeto";
-    public string FlattenApply => "Mesclar objetos visíveis";
+    public string FlattenApply => "Mesclar objetos visíveis da unidade selecionada";
     public string FlattenUndo => "Desfazer achatamento";
     public string FlattenMerge => "Unir seleção";
     public string FlattenSplit => "Dividir seleção";

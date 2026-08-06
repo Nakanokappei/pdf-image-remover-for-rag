@@ -137,7 +137,7 @@ internal sealed class ChineseSimplifiedStrings : IStrings
 
     public string FlattenPanelTitle => "对象";
     public string FlattenMenu => "对象命令";
-    public string FlattenApply => "合并可见对象";
+    public string FlattenApply => "合并所选单元中的可见对象";
     public string FlattenUndo => "撤销拼合";
     public string FlattenMerge => "合并所选";
     public string FlattenSplit => "拆分所选";

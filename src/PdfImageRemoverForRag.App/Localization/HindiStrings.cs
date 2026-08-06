@@ -141,7 +141,7 @@ internal sealed class HindiStrings : IStrings
 
     public string FlattenPanelTitle => "ऑब्जेक्ट";
     public string FlattenMenu => "ऑब्जेक्ट कमांड";
-    public string FlattenApply => "दृश्य ऑब्जेक्ट मिलाएँ";
+    public string FlattenApply => "चयनित यूनिट के दृश्य ऑब्जेक्ट मिलाएँ";
     public string FlattenUndo => "मिलाना पूर्ववत करें";
     public string FlattenMerge => "चयन मिलाएँ";
     public string FlattenSplit => "चयन अलग करें";

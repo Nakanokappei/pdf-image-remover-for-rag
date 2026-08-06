@@ -145,7 +145,7 @@ internal sealed class FrenchStrings : IStrings
 
     public string FlattenPanelTitle => "Objets";
     public string FlattenMenu => "Commandes d'objet";
-    public string FlattenApply => "Fusionner les objets visibles";
+    public string FlattenApply => "Fusionner les objets visibles de l'unité sélectionnée";
     public string FlattenUndo => "Annuler l'aplatissement";
     public string FlattenMerge => "Fusionner";
     public string FlattenSplit => "Séparer";

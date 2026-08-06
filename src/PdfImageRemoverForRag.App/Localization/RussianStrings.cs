@@ -150,7 +150,7 @@ internal sealed class RussianStrings : IStrings
 
     public string FlattenPanelTitle => "Объекты";
     public string FlattenMenu => "Команды объектов";
-    public string FlattenApply => "Объединить видимые объекты";
+    public string FlattenApply => "Объединить видимые объекты выбранного блока";
     public string FlattenUndo => "Отменить объединение";
     public string FlattenMerge => "Объединить";
     public string FlattenSplit => "Разделить";

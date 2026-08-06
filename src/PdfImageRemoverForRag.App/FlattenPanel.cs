@@ -382,7 +382,7 @@ internal sealed class FlattenPanel : UserControl
     void RefreshWholePageWarning()
     {
         bool covers = false;
-        foreach (var (unit, members) in SelectedByUnit())
+        foreach (var (unit, members) in VisibleInSelectedUnits())
         {
             if (OverlapDetector.CoversWholePage(
                     OverlapDetector.RegionCovering(unit.Region.Page, members)))
@@ -746,25 +746,40 @@ internal sealed class FlattenPanel : UserControl
     }
 
     /// <summary>
-    /// The places to combine, per source file — each covering the selected
-    /// layers of one unit that are actually SHOWN. A hidden layer is one the
-    /// save is going to take out, so baking it into the picture would put it
-    /// back as pixels; it is left out, and the save removes it as asked.
+    /// What is SHOWN in each unit the selection touches. Which objects inside it
+    /// are selected does not narrow this: the command says "in the selected
+    /// unit", so selecting anything in a unit asks for that unit — and picking
+    /// out some of its objects is what Split Selection is for.
+    ///
+    /// Hidden objects stay out. One of those is going to be taken out by the
+    /// save, and drawing it into the picture would put it back as pixels.
+    /// </summary>
+    IReadOnlyList<(UnitEntry Unit, IReadOnlyList<PlacedObject> Members)> VisibleInSelectedUnits()
+    {
+        var result = new List<(UnitEntry, IReadOnlyList<PlacedObject>)>();
+        foreach (var (unit, _) in SelectedByUnit())
+        {
+            var shown = unit.Region.Members.Where(m => !Hidden(unit, m)).ToArray();
+            if (shown.Length > 0) result.Add((unit, shown));
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// The places to combine, per source file — one per unit the selection
+    /// touches, covering what is shown in it.
     /// </summary>
     public IReadOnlyDictionary<string, IReadOnlyList<OverlapRegion>> SelectedRegionsByFile()
     {
         var byFile = new Dictionary<string, List<OverlapRegion>>(StringComparer.OrdinalIgnoreCase);
-        foreach (var (unit, members) in SelectedByUnit())
+        foreach (var (unit, shown) in VisibleInSelectedUnits())
         {
-            var shown = members.Where(m => !Hidden(unit, m)).ToArray();
-            if (shown.Length == 0) continue;
-
             if (!byFile.TryGetValue(unit.FilePath, out var regions))
             {
                 regions = new List<OverlapRegion>();
                 byFile[unit.FilePath] = regions;
             }
-            regions.Add(OverlapDetector.RegionCovering(unit.Region.Page, shown));
+            regions.Add(OverlapDetector.RegionCovering(unit.Region.Page, shown.ToArray()));
         }
         return byFile.ToDictionary(
             kv => kv.Key,
@@ -894,10 +909,10 @@ internal sealed class FlattenPanel : UserControl
     void RefreshCommandState()
     {
         var selected = SelectedByUnit();
-        // Anything selected and SHOWN can be combined, whatever units it is
-        // spread over — each unit's shown layers become one picture. With every
-        // selected layer hidden there is nothing to draw.
-        _flattenSelection.Enabled = selected.Any(x => x.Members.Any(m => !Hidden(x.Unit, m)));
+        // A unit with anything shown in it can be combined, whatever is selected
+        // inside it — the command acts on the unit. Only a unit with everything
+        // hidden has nothing to draw.
+        _flattenSelection.Enabled = VisibleInSelectedUnits().Count > 0;
         _clearSelection.Enabled = selected.Count > 0;
         _undoFlatten.Enabled = CanUndoFlatten;
 

@@ -147,7 +147,7 @@ internal sealed class IndonesianMalayStrings : IStrings
 
     public string FlattenPanelTitle => "Objek";
     public string FlattenMenu => "Perintah objek";
-    public string FlattenApply => "Gabungkan objek terlihat";
+    public string FlattenApply => "Gabungkan objek terlihat dalam unit terpilih";
     public string FlattenUndo => "Batalkan penggabungan";
     public string FlattenMerge => "Gabungkan";
     public string FlattenSplit => "Pisahkan";

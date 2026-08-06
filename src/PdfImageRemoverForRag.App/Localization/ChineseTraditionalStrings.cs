@@ -139,7 +139,7 @@ internal sealed class ChineseTraditionalStrings : IStrings
 
     public string FlattenPanelTitle => "物件";
     public string FlattenMenu => "物件命令";
-    public string FlattenApply => "合併可見物件";
+    public string FlattenApply => "合併所選單元中的可見物件";
     public string FlattenUndo => "復原平面化";
     public string FlattenMerge => "合併所選";
     public string FlattenSplit => "分割所選";

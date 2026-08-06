@@ -143,7 +143,7 @@ internal sealed class GermanStrings : IStrings
 
     public string FlattenPanelTitle => "Objekte";
     public string FlattenMenu => "Objektbefehle";
-    public string FlattenApply => "Sichtbare Objekte zusammenfügen";
+    public string FlattenApply => "Sichtbare Objekte der gewählten Einheit zusammenfügen";
     public string FlattenUndo => "Zusammenfügen aufheben";
     public string FlattenMerge => "Zusammenführen";
     public string FlattenSplit => "Trennen";

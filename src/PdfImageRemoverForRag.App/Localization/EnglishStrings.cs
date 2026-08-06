@@ -139,7 +139,7 @@ internal sealed class EnglishStrings : IStrings
 
     public string FlattenPanelTitle => "Objects";
     public string FlattenMenu => "Object commands";
-    public string FlattenApply => "Merge visible objects";
+    public string FlattenApply => "Merge visible objects in the selected unit";
     public string FlattenUndo => "Undo flatten";
     public string FlattenMerge => "Merge selected";
     public string FlattenSplit => "Split selected";

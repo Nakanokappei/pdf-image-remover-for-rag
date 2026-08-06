@@ -75,6 +75,10 @@ public static class SamplePdfWriter
             WriteShadowLayer(Path.Combine(outputDirectory, "shadow-layer.pdf")),
             WriteAnnotationSharedImage(Path.Combine(outputDirectory, "annotation-shared-image.pdf")),
         };
+        written.AddRange(WriteFlattenUnits(
+            Path.Combine(outputDirectory, "flatten-units-a.pdf"),
+            Path.Combine(outputDirectory, "flatten-units-b.pdf"),
+            logoPng));
         return written;
     }
 
@@ -219,6 +223,84 @@ public static class SamplePdfWriter
             XBrushes.Black, 60, 100);
         doc.Save(path);
         return path;
+    }
+
+    /// <summary>
+    /// Two flatten units on one page that share an image, plus a companion file
+    /// holding the same image — the document merging and splitting by hand can
+    /// actually be tried on.
+    /// </summary>
+    /// <remarks>
+    /// The panel lists the units the object selected on the LEFT takes part in,
+    /// so two units only appear together when one object is in both: here the
+    /// same logo, drawn at the top of the page and again lower down, each with a
+    /// caption over it. The upper unit takes a filled rectangle as well, which
+    /// gives it three members and something to split off.
+    ///
+    /// The captions are drawn on both pages because a text string has to be
+    /// shown twice in a file before it counts as removable, and a unit needs two
+    /// KINDS — one occurrence would leave the picture with nothing to overlap.
+    /// Page 2 is offset so its objects are not value-equal to page 1's.
+    ///
+    /// <paramref name="companionPath"/> gets the same logo over a caption, which
+    /// is what makes one image group span two files: without that the panel can
+    /// never list units from two files at once, and the rule that refuses to
+    /// merge across files cannot be tried.
+    /// </remarks>
+    static string[] WriteFlattenUnits(string path, string companionPath, byte[] logoPng)
+    {
+        var caption = new XFont("Segoe WP", 12, XFontStyleEx.Regular);
+
+        // The page both operations are meant for: an upper unit of three
+        // members and a lower one of two, far enough apart not to be detected
+        // as one.
+        using (var doc = NewDocument("flatten-units sample"))
+        {
+            var page = doc.AddPage();
+            using (var gfx = XGraphics.FromPdfPage(page))
+            {
+                using var logo = XImage.FromStream(new MemoryStream(logoPng));
+                gfx.DrawImage(logo, 60, 80, 160, 60);
+                gfx.DrawString("Figure 1", caption, XBrushes.Black, 70, 125);
+                gfx.DrawRectangle(XBrushes.Orange, 190, 95, 50, 30);
+
+                gfx.DrawImage(logo, 60, 400, 160, 60);
+                gfx.DrawString("Figure 2", caption, XBrushes.Black, 70, 445);
+
+                DrawParagraph(gfx, "Merging and splitting flatten units",
+                    "The logo above and the logo below are the same image.",
+                    "Selecting it lists both units, which is what merging needs.");
+            }
+
+            // Second page: the captions repeat here so they count as removable
+            // text, and its unit is what a cross-page attempt is refused on.
+            var second = doc.AddPage();
+            using (var gfx = XGraphics.FromPdfPage(second))
+            {
+                using var logo = XImage.FromStream(new MemoryStream(logoPng));
+                gfx.DrawImage(logo, 90, 110, 160, 60);
+                gfx.DrawString("Figure 1", caption, XBrushes.Black, 100, 155);
+                gfx.DrawString("Figure 2", caption, XBrushes.Black, 100, 500);
+            }
+            doc.Save(path);
+        }
+
+        // The companion: the same logo, so one group reaches into both files.
+        using (var doc = NewDocument("flatten-units companion sample"))
+        {
+            for (int i = 1; i <= 2; i++)
+            {
+                var page = doc.AddPage();
+                using var gfx = XGraphics.FromPdfPage(page);
+                using var logo = XImage.FromStream(new MemoryStream(logoPng));
+                gfx.DrawImage(logo, 60, 80, 160, 60);
+                gfx.DrawString("Figure 1", caption, XBrushes.Black, 70, 125);
+                gfx.DrawString($"Companion page {i}.", caption, XBrushes.Black, 60, 200);
+            }
+            doc.Save(companionPath);
+        }
+
+        return new[] { path, companionPath };
     }
 
     static string WriteRepeatedShapes(string path)

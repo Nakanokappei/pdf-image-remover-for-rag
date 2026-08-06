@@ -81,6 +81,13 @@ internal sealed class ChineseTraditionalStrings : IStrings
     public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
         $"已儲存 {fileCount} 個檔案 — 移除 {drawCallsRemoved} 處繪製指令，影像化 {regionsFlattened} 處，儲存後驗證正常";
 
+    public string StatusFlattening => "正在平面化…";
+
+    public string StatusFlattened(int places) =>
+        $"已平面化 {places} 處 — 儲存後寫入檔案";
+
+    public string StatusFlattenUndone => "已復原平面化";
+
     public string StatusSelection(int selectedCount) =>
         $"已選取 {selectedCount} 個物件準備移除";
 
@@ -131,6 +138,9 @@ internal sealed class ChineseTraditionalStrings : IStrings
     public string ContextMenuUsageLocations => "顯示使用位置(&U)…";
 
     public string FlattenPanelTitle => "平面化";
+    public string ColumnSelect => "選取";
+    public string FlattenApply => "平面化所選";
+    public string FlattenUndo => "復原平面化";
     public string FlattenMerge => "合併所選";
     public string FlattenSplit => "分割所選";
 

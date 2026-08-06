@@ -84,6 +84,13 @@ internal sealed class GermanStrings : IStrings
     public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
         $"{fileCount} Datei(en) gespeichert — {drawCallsRemoved} Zeichenbefehl(e) entfernt, {regionsFlattened} Bereich(e) in ein Bild umgewandelt, Prüfung OK";
 
+    public string StatusFlattening => "Wird zusammengefügt…";
+
+    public string StatusFlattened(int places) =>
+        $"{places} Stelle(n) zusammengefügt — zum Schreiben speichern";
+
+    public string StatusFlattenUndone => "Zusammenfügen aufgehoben";
+
     public string StatusSelection(int selectedCount) =>
         $"{selectedCount} Objekt(e) zum Entfernen ausgewählt";
 
@@ -135,6 +142,9 @@ internal sealed class GermanStrings : IStrings
     public string ContextMenuUsageLocations => "&Verwendungsorte anzeigen…";
 
     public string FlattenPanelTitle => "Zusammenfügen";
+    public string ColumnSelect => "Auswahl";
+    public string FlattenApply => "Auswahl zusammenfügen";
+    public string FlattenUndo => "Zusammenfügen aufheben";
     public string FlattenMerge => "Zusammenführen";
     public string FlattenSplit => "Trennen";
 

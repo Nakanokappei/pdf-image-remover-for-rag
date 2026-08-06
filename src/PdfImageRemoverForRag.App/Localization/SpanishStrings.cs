@@ -87,6 +87,13 @@ internal sealed class SpanishStrings : IStrings
     public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
         $"Se guardaron {fileCount} archivo(s) — se quitaron {drawCallsRemoved} llamada(s) de dibujo, se convirtieron {regionsFlattened} área(s) en imagen, verificación correcta";
 
+    public string StatusFlattening => "Acoplando…";
+
+    public string StatusFlattened(int places) =>
+        $"{places} zona(s) acoplada(s) — guarde para escribirlas";
+
+    public string StatusFlattenUndone => "Acoplado deshecho";
+
     public string StatusSelection(int selectedCount) =>
         $"{selectedCount} objeto(s) seleccionado(s) para quitar";
 
@@ -138,6 +145,9 @@ internal sealed class SpanishStrings : IStrings
     public string ContextMenuUsageLocations => "Mostrar &ubicaciones de uso…";
 
     public string FlattenPanelTitle => "Acoplar";
+    public string ColumnSelect => "Selección";
+    public string FlattenApply => "Acoplar selección";
+    public string FlattenUndo => "Deshacer acoplado";
     public string FlattenMerge => "Unir selección";
     public string FlattenSplit => "Dividir selección";
 

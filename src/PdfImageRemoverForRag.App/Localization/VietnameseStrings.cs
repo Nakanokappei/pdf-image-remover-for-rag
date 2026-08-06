@@ -86,6 +86,13 @@ internal sealed class VietnameseStrings : IStrings
     public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
         $"Đã lưu {fileCount} tệp — đã xóa {drawCallsRemoved} lệnh vẽ, đã gộp {regionsFlattened} vùng, kiểm tra hợp lệ";
 
+    public string StatusFlattening => "Đang gộp…";
+
+    public string StatusFlattened(int places) =>
+        $"Đã gộp {places} vị trí — lưu để ghi ra tệp";
+
+    public string StatusFlattenUndone => "Đã hoàn tác gộp";
+
     public string StatusSelection(int selectedCount) =>
         $"Đã chọn {selectedCount} đối tượng để xóa";
 
@@ -137,6 +144,9 @@ internal sealed class VietnameseStrings : IStrings
     public string ContextMenuUsageLocations => "Hiển thị &Vị trí Sử dụng…";
 
     public string FlattenPanelTitle => "Gộp";
+    public string ColumnSelect => "Chọn";
+    public string FlattenApply => "Gộp mục đã chọn";
+    public string FlattenUndo => "Hoàn tác gộp";
     public string FlattenMerge => "Gộp lựa chọn";
     public string FlattenSplit => "Tách lựa chọn";
 

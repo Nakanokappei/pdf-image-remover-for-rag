@@ -91,6 +91,13 @@ internal sealed class RussianStrings : IStrings
     public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
         $"Файлов сохранено: {fileCount} — удалено фрагментов отрисовки: {drawCallsRemoved}, сведено областей: {regionsFlattened}, проверка пройдена";
 
+    public string StatusFlattening => "Объединение…";
+
+    public string StatusFlattened(int places) =>
+        $"Объединено мест: {places} — сохраните, чтобы записать";
+
+    public string StatusFlattenUndone => "Объединение отменено";
+
     public string StatusSelection(int selectedCount) =>
         $"Выбрано объектов для удаления: {selectedCount}";
 
@@ -142,6 +149,9 @@ internal sealed class RussianStrings : IStrings
     public string ContextMenuUsageLocations => "Показать &места использования…";
 
     public string FlattenPanelTitle => "Объединить";
+    public string ColumnSelect => "Выбрано";
+    public string FlattenApply => "Объединить выбранное";
+    public string FlattenUndo => "Отменить объединение";
     public string FlattenMerge => "Объединить";
     public string FlattenSplit => "Разделить";
 

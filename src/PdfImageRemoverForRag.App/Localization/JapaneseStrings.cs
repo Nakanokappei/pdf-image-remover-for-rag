@@ -77,6 +77,13 @@ internal sealed class JapaneseStrings : IStrings
     public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
         $"{fileCount} ファイルを保存しました（削除 {drawCallsRemoved} 箇所 / 画像化 {regionsFlattened} 箇所、保存後検証 OK）";
 
+    public string StatusFlattening => "統合しています…";
+
+    public string StatusFlattened(int places) =>
+        $"{places} 箇所を統合しました（保存すると出力に反映されます）";
+
+    public string StatusFlattenUndone => "統合を解除しました";
+
     public string StatusSelection(int selectedCount) =>
         $"削除対象：{selectedCount} 件を選択中";
 
@@ -127,6 +134,9 @@ internal sealed class JapaneseStrings : IStrings
     public string ContextMenuUsageLocations => "使用箇所を表示(&U)…";
 
     public string FlattenPanelTitle => "統合";
+    public string ColumnSelect => "選択";
+    public string FlattenApply => "選択を統合";
+    public string FlattenUndo => "統合を解除";
     public string FlattenMerge => "選択を合流";
     public string FlattenSplit => "選択を分割";
 

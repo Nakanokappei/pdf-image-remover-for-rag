@@ -78,6 +78,13 @@ internal sealed class KoreanStrings : IStrings
     public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
         $"{fileCount}개 파일을 저장했습니다 — 그리기 명령 {drawCallsRemoved}개 삭제, {regionsFlattened}개 영역 이미지화, 검증 정상";
 
+    public string StatusFlattening => "병합 중…";
+
+    public string StatusFlattened(int places) =>
+        $"{places}곳을 병합했습니다 — 저장하면 파일에 기록됩니다";
+
+    public string StatusFlattenUndone => "병합을 취소했습니다";
+
     public string StatusSelection(int selectedCount) =>
         $"삭제 대상 {selectedCount}개 선택됨";
 
@@ -128,6 +135,9 @@ internal sealed class KoreanStrings : IStrings
     public string ContextMenuUsageLocations => "사용 위치 표시(&U)…";
 
     public string FlattenPanelTitle => "병합";
+    public string ColumnSelect => "선택";
+    public string FlattenApply => "선택 병합";
+    public string FlattenUndo => "병합 취소";
     public string FlattenMerge => "선택 합치기";
     public string FlattenSplit => "선택 나누기";
 

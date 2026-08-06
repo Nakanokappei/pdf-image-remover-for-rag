@@ -83,6 +83,13 @@ internal sealed class HindiStrings : IStrings
     public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
         $"{fileCount} फ़ाइल सहेजी गईं — {drawCallsRemoved} ड्रॉ कॉल हटाए गए, {regionsFlattened} क्षेत्र चित्र में बदले गए, सत्यापन ठीक रहा";
 
+    public string StatusFlattening => "मिलाया जा रहा है…";
+
+    public string StatusFlattened(int places) =>
+        $"{places} स्थान मिलाए गए — फ़ाइल में लिखने के लिए सहेजें";
+
+    public string StatusFlattenUndone => "मिलाना पूर्ववत किया गया";
+
     public string StatusSelection(int selectedCount) =>
         $"{selectedCount} ऑब्जेक्ट हटाने के लिए चुने गए";
 
@@ -133,6 +140,9 @@ internal sealed class HindiStrings : IStrings
     public string ContextMenuUsageLocations => "उपयोग स्थान दिखाएँ(&U)…";
 
     public string FlattenPanelTitle => "मिलाएँ";
+    public string ColumnSelect => "चयन";
+    public string FlattenApply => "चयनित मिलाएँ";
+    public string FlattenUndo => "मिलाना पूर्ववत करें";
     public string FlattenMerge => "चयन मिलाएँ";
     public string FlattenSplit => "चयन अलग करें";
 

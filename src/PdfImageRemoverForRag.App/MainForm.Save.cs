@@ -20,18 +20,11 @@ internal sealed partial class MainForm
             // flattened is absent, and the picture flattening drew is a row of
             // its own. Keeping these in step by hand is what produced three
             // separate defects in one afternoon.
-            _selectedHashes.Clear();
-            RefreshThumbnailImages(_workflow.ImageGroups);
-            RebuildDisplay();                     // re-sort in the current order
-            AutoSizeContentColumns();             // re-fit to what is left
-            FocusFirstRow();
-            // Rebuilding the tree clears its ticks too, so a second save cannot
-            // silently repeat the work. That announces a selection change,
-            // which refreshes the status line — and that would replace the
-            // message the save just put there, so it is put back.
-            var savedStatus = _statusLabel.Text ?? string.Empty;
-            _flattenPanel.SetDocuments(_workflow.OpenDocuments);
-            SetStatus(savedStatus);
+            //
+            // The message the save put in the status bar is passed back in
+            // because rebuilding clears the ticks, and a selection change
+            // refreshes that line.
+            RebuildAfterWorkspaceChanged(_statusLabel.Text ?? string.Empty);
         }
     }
 
@@ -57,12 +50,13 @@ internal sealed partial class MainForm
     /// </summary>
     async Task<bool> SaveSelectedAsync()
     {
-        // One run does both operations, so either tab's selection is enough to
-        // have something to save.
-        var flattenByFile = FlattenSelection();
-        if (_isBusy || (_selectedHashes.Count == 0 && flattenByFile.Count == 0)) return false;
+        // Ticks in the object list are what a save removes; the flatten panel's
+        // are not part of it any more, because flattening happens when it is
+        // asked for. What a save writes from that side is what was already
+        // flattened, which the workspace holds.
+        if (_isBusy || (_selectedHashes.Count == 0 && !_workflow.HasFlattenedPlaces)) return false;
 
-        var affectedFiles = _workflow.GetAffectedFiles(_selectedHashes, flattenByFile.Keys.ToArray());
+        var affectedFiles = _workflow.GetAffectedFiles(_selectedHashes);
         if (affectedFiles.Count == 0) return false;
 
         if (!TryResolveDestinations(affectedFiles, out var destinations)) return false;
@@ -71,7 +65,7 @@ internal sealed partial class MainForm
         try
         {
             var result = await _workflow.RemoveAndSaveAsync(
-                _selectedHashes.ToArray(), source => destinations[source], flattenByFile,
+                _selectedHashes.ToArray(), source => destinations[source],
                 // Reading the saved files back is analysis, and on a long
                 // document it takes as long as opening one — so it says so in
                 // the status bar rather than looking hung. The same wording the

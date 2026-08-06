@@ -80,6 +80,13 @@ internal sealed class EnglishStrings : IStrings
     public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
         $"Saved {fileCount} file(s) — {drawCallsRemoved} draw call(s) removed, {regionsFlattened} region(s) flattened, verification OK";
 
+    public string StatusFlattening => "Flattening…";
+
+    public string StatusFlattened(int places) =>
+        $"{places} place(s) flattened — save to write them out";
+
+    public string StatusFlattenUndone => "Flatten undone";
+
     public string StatusSelection(int selectedCount) =>
         $"{selectedCount} object(s) selected for removal";
 
@@ -131,6 +138,9 @@ internal sealed class EnglishStrings : IStrings
     public string ContextMenuUsageLocations => "Show &Usage Locations…";
 
     public string FlattenPanelTitle => "Flatten";
+    public string ColumnSelect => "Selected";
+    public string FlattenApply => "Flatten selected";
+    public string FlattenUndo => "Undo flatten";
     public string FlattenMerge => "Merge selected";
     public string FlattenSplit => "Split selected";
 

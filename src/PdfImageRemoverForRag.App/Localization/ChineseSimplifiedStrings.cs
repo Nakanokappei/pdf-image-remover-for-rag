@@ -79,6 +79,13 @@ internal sealed class ChineseSimplifiedStrings : IStrings
     public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
         $"已保存 {fileCount} 个文件（删除 {drawCallsRemoved} 处绘制调用，图像化 {regionsFlattened} 处，保存后验证正常）";
 
+    public string StatusFlattening => "正在拼合…";
+
+    public string StatusFlattened(int places) =>
+        $"已拼合 {places} 处 — 保存后写入文件";
+
+    public string StatusFlattenUndone => "已撤销拼合";
+
     public string StatusSelection(int selectedCount) =>
         $"已选择 {selectedCount} 个对象待删除";
 
@@ -129,6 +136,9 @@ internal sealed class ChineseSimplifiedStrings : IStrings
     public string ContextMenuUsageLocations => "显示使用位置(&U)…";
 
     public string FlattenPanelTitle => "拼合";
+    public string ColumnSelect => "选择";
+    public string FlattenApply => "拼合所选";
+    public string FlattenUndo => "撤销拼合";
     public string FlattenMerge => "合并所选";
     public string FlattenSplit => "拆分所选";
 

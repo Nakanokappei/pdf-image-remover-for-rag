@@ -83,6 +83,13 @@ internal sealed class ItalianStrings : IStrings
     public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
         $"Salvati {fileCount} file — {drawCallsRemoved} chiamate di disegno rimosse, {regionsFlattened} aree convertite in immagine, verifica OK";
 
+    public string StatusFlattening => "Unione in corso…";
+
+    public string StatusFlattened(int places) =>
+        $"{places} area(e) unita(e) — salva per scriverle";
+
+    public string StatusFlattenUndone => "Unione annullata";
+
     public string StatusSelection(int selectedCount) =>
         $"{selectedCount} oggetti selezionati per la rimozione";
 
@@ -134,6 +141,9 @@ internal sealed class ItalianStrings : IStrings
     public string ContextMenuUsageLocations => "Mostra &posizioni di utilizzo…";
 
     public string FlattenPanelTitle => "Unisci";
+    public string ColumnSelect => "Selezione";
+    public string FlattenApply => "Unisci selezione";
+    public string FlattenUndo => "Annulla unione";
     public string FlattenMerge => "Unisci";
     public string FlattenSplit => "Dividi";
 

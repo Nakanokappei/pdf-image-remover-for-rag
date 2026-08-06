@@ -84,31 +84,34 @@ internal sealed class FlattenPanel : UserControl
         TextAlign = ContentAlignment.MiddleLeft,
         UseMnemonic = false,
     };
-    readonly Button _clearChecks = new()
+    // The commands, all acting on what is TICKED and all taking effect at once:
+    // flatten replaces the ticked objects with a picture of themselves, undo
+    // takes one of those pictures back, merge gathers ticks into one unit and
+    // split takes them out of the one they are in. A tick reserves nothing —
+    // that was the confusing part, with two of these acting immediately and
+    // flattening waiting for a save that had not been asked for yet.
+    //
+    // A row of their own rather than the title bar: five commands cannot share
+    // one line with a heading at any width, and a toolbar puts what does not fit
+    // in its overflow instead of clipping it.
+    readonly ToolStrip _commands = new()
     {
-        Dock = DockStyle.Right,
-        Text = L10n.ToolClearSelection,
-        FlatStyle = FlatStyle.System,
-        AutoSize = false,
-        Enabled = false,
-        UseMnemonic = false,
+        Dock = DockStyle.Top,
+        GripStyle = ToolStripGripStyle.Hidden,
+        RenderMode = ToolStripRenderMode.System,
+        LayoutStyle = ToolStripLayoutStyle.HorizontalStackWithOverflow,
     };
+    readonly ToolStripButton _flattenSelection = NewCommand(L10n.FlattenApply);
+    readonly ToolStripButton _undoFlatten = NewCommand(L10n.FlattenUndo);
+    readonly ToolStripButton _mergeSelection = NewCommand(L10n.FlattenMerge);
+    readonly ToolStripButton _splitSelection = NewCommand(L10n.FlattenSplit);
+    readonly ToolStripButton _clearChecks = NewCommand(L10n.ToolClearSelection);
 
-    // Detection is right almost every time; these are for the rest. Both act on
-    // what is TICKED, which is what makes them each other's opposite: merge
-    // gathers the ticks into one unit, split takes them out of the one they are
-    // in. Docked right in reverse order, so they read merge, split, clear.
-    readonly Button _splitSelection = NewUnitEditButton(L10n.FlattenSplit);
-    readonly Button _mergeSelection = NewUnitEditButton(L10n.FlattenMerge);
-
-    static Button NewUnitEditButton(string caption) => new()
+    static ToolStripButton NewCommand(string caption) => new(caption)
     {
-        Dock = DockStyle.Right,
-        Text = caption,
-        FlatStyle = FlatStyle.System,
-        AutoSize = false,
+        DisplayStyle = ToolStripItemDisplayStyle.Text,
         Enabled = false,
-        UseMnemonic = false,
+        AutoToolTip = false,
     };
     readonly Label _description = new()
     {
@@ -151,6 +154,27 @@ internal sealed class FlattenPanel : UserControl
 
     /// <summary>Raised whenever the set of ticked objects changes.</summary>
     public event EventHandler? SelectionChanged;
+
+    /// <summary>
+    /// Raised when the user asks for the ticked objects to be flattened now.
+    /// The panel does not do it: flattening writes a file, and the workspace is
+    /// what owns files.
+    /// </summary>
+    public event EventHandler? FlattenRequested;
+
+    /// <summary>Raised when the user asks to take back the flatten they are looking at.</summary>
+    public event EventHandler? UndoFlattenRequested;
+
+    /// <summary>
+    /// Whether the object selected in the list is a picture some flatten drew,
+    /// which is the only thing the undo command can act on. Decided by the host
+    /// — it is the workspace that knows what has been flattened.
+    /// </summary>
+    public bool CanUndoFlatten
+    {
+        get => _undoFlatten.Enabled;
+        set => _undoFlatten.Enabled = value;
+    }
 
     /// <summary>
     /// Raised when the rows on screen change, so the host can fetch the
@@ -201,19 +225,26 @@ internal sealed class FlattenPanel : UserControl
         _preview.AccessibleName = L10n.AccessibleFlattenPreview;
         _wholePageWarning.ForeColor = MainForm.WarningTextColour;
         _title.Font = new Font(Font, FontStyle.Bold);
-        _clearChecks.AccessibleName = $"{L10n.ToolClearSelection} ({L10n.FlattenPanelTitle})";
-        _clearChecks.Click += (_, _) => ClearChecks();
-        _mergeSelection.AccessibleName = $"{L10n.FlattenMerge} ({L10n.FlattenPanelTitle})";
-        _splitSelection.AccessibleName = $"{L10n.FlattenSplit} ({L10n.FlattenPanelTitle})";
+        // The panel's name goes on every command, so a screen reader reading one
+        // out of context still says which side of the window it belongs to.
+        foreach (var command in new[]
+                 { _flattenSelection, _undoFlatten, _mergeSelection, _splitSelection, _clearChecks })
+        {
+            command.AccessibleName = $"{command.Text} ({L10n.FlattenPanelTitle})";
+        }
+        _flattenSelection.Click += (_, _) => FlattenRequested?.Invoke(this, EventArgs.Empty);
+        _undoFlatten.Click += (_, _) => UndoFlattenRequested?.Invoke(this, EventArgs.Empty);
         _mergeSelection.Click += (_, _) => EditUnits(merge: true);
         _splitSelection.Click += (_, _) => EditUnits(merge: false);
+        _clearChecks.Click += (_, _) => ClearChecks();
 
-        // Added in this order because Dock.Right stacks each new control
-        // inboard of the last: clear ends up rightmost, then split, then merge.
         _titleBar.Controls.Add(_title);
-        _titleBar.Controls.Add(_clearChecks);
-        _titleBar.Controls.Add(_splitSelection);
-        _titleBar.Controls.Add(_mergeSelection);
+        _commands.Items.AddRange(new ToolStripItem[]
+        {
+            _flattenSelection, _undoFlatten, new ToolStripSeparator(),
+            _mergeSelection, _splitSelection, new ToolStripSeparator(),
+            _clearChecks,
+        });
 
         var listSide = new Panel { Dock = DockStyle.Fill };
         listSide.Controls.Add(_list);
@@ -228,6 +259,7 @@ internal sealed class FlattenPanel : UserControl
         Controls.Add(_split);
         Controls.Add(_wholePageWarning);
         Controls.Add(_description);
+        Controls.Add(_commands);
         Controls.Add(_titleBar);
     }
 
@@ -266,15 +298,11 @@ internal sealed class FlattenPanel : UserControl
     void ApplyDpiDependentLayout()
     {
         _title.Padding = new Padding(Dip(8), 0, Dip(8), 0);
-        foreach (var button in new[] { _clearChecks, _splitSelection, _mergeSelection })
-        {
-            button.Width = TextRenderer.MeasureText(button.Text, button.Font).Width + Dip(24);
-        }
-        // One standard button tall, and the bar is sized to it: the button
-        // fills whatever height it is docked into, so the bar is what decides
-        // whether it looks like a button or a slab.
-        _titleBar.Height = Dip(30);
-        _titleBar.Padding = new Padding(0, Dip(3), Dip(8), Dip(3));
+        // The heading sits on its own line now, so the bar only has to be as
+        // tall as one line of bold text. The command row below sizes itself.
+        _titleBar.Height = Dip(26);
+        _titleBar.Padding = new Padding(0, Dip(3), Dip(8), 0);
+        _commands.Padding = new Padding(Dip(4), 0, Dip(4), Dip(2));
         _description.Padding = new Padding(Dip(8), 0, Dip(8), Dip(6));
         FitDescriptionHeight();
         _split.SplitterWidth = Math.Max(4, Dip(4));
@@ -807,6 +835,10 @@ internal sealed class FlattenPanel : UserControl
     void RaiseSelectionChanged()
     {
         _clearChecks.Enabled = _checked.Count > 0;
+        // Anything ticked can be flattened, whatever units it is spread over —
+        // each unit's ticked objects become one picture, which is the same rule
+        // the save used to apply on its own.
+        _flattenSelection.Enabled = _checked.Count > 0;
         var (units, selection) = EditingScope();
         _mergeSelection.Enabled = FlattenUnitEditing.CanMerge(units, selection);
         _splitSelection.Enabled = FlattenUnitEditing.CanSplit(units, selection);

@@ -88,6 +88,13 @@ internal sealed class IndonesianMalayStrings : IStrings
     public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
         $"{fileCount} file disimpan — {drawCallsRemoved} panggilan gambar dihapus, {regionsFlattened} area dijadikan gambar, verifikasi OK";
 
+    public string StatusFlattening => "Menggabungkan…";
+
+    public string StatusFlattened(int places) =>
+        $"{places} tempat digabungkan — simpan untuk menulisnya";
+
+    public string StatusFlattenUndone => "Penggabungan dibatalkan";
+
     public string StatusSelection(int selectedCount) =>
         $"{selectedCount} objek dipilih untuk dihapus";
 
@@ -139,6 +146,9 @@ internal sealed class IndonesianMalayStrings : IStrings
     public string ContextMenuUsageLocations => "Tampilkan &Lokasi Penggunaan…";
 
     public string FlattenPanelTitle => "Gabungkan";
+    public string ColumnSelect => "Pilihan";
+    public string FlattenApply => "Gabungkan pilihan";
+    public string FlattenUndo => "Batalkan penggabungan";
     public string FlattenMerge => "Gabungkan";
     public string FlattenSplit => "Pisahkan";
 

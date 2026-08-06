@@ -41,6 +41,20 @@ internal sealed class PdfCleaningWorkflow
     readonly List<PdfDocumentInfo> _documents = new();
     readonly ThumbnailStore _store;
 
+    // Flattening happens when the user asks for it, not when they save, so the
+    // file the workspace describes is not always the file on their disk: it is
+    // a working copy in the temp folder, rebuilt from their file every time the
+    // set of flattened places changes.
+    //
+    // The document keeps THEIR path — it is the name every surface shows and
+    // the name the save's destination is derived from — and these two say what
+    // has been done to it and where the bytes really are. Every read of the
+    // document's bytes goes through ReadPathOf; nothing else needs to know.
+    readonly Dictionary<string, List<OverlapRegion>> _flattenedPlaces =
+        new(StringComparer.OrdinalIgnoreCase);
+    readonly Dictionary<string, string> _workingCopies =
+        new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Currently open documents (metadata only, thumbnails stripped).</summary>
     public IReadOnlyList<PdfDocumentInfo> OpenDocuments => _documents;
 
@@ -126,6 +140,10 @@ internal sealed class PdfCleaningWorkflow
     /// <summary>Close every document. The store keeps its files for the run.</summary>
     public void CloseAll()
     {
+        // The working copies describe documents that are no longer open, so
+        // they are deleted here rather than left for the temp folder to collect.
+        foreach (var filePath in _workingCopies.Keys.ToArray()) DiscardWorkingCopy(filePath);
+        _flattenedPlaces.Clear();
         _documents.Clear();
         ImageGroups = Array.Empty<CrossFileImageGroup>();
     }
@@ -149,6 +167,196 @@ internal sealed class PdfCleaningWorkflow
         _documents[index] = _documents[index] with { OverlapRegions = regions };
     }
 
+    // =======================================================================
+    // Flattening, before the save
+    // =======================================================================
+
+    /// <summary>
+    /// True when a place has been flattened but not yet written to a file the
+    /// user owns. The save button asks, because a run with nothing ticked still
+    /// has this to write.
+    /// </summary>
+    public bool HasFlattenedPlaces => _flattenedPlaces.Values.Any(places => places.Count > 0);
+
+    /// <summary>Where a document's bytes actually are: its working copy, or the file itself.</summary>
+    string ReadPathOf(string filePath) =>
+        _workingCopies.TryGetValue(filePath, out var copy) ? copy : filePath;
+
+    List<OverlapRegion> PlacesFlattenedIn(string filePath) =>
+        _flattenedPlaces.TryGetValue(filePath, out var places)
+            ? places
+            : _flattenedPlaces[filePath] = new List<OverlapRegion>();
+
+    int IndexOfDocument(string filePath) => _documents.FindIndex(
+        d => CleanedFileNamer.WouldOverwriteSource(d.FilePath, filePath));
+
+    /// <summary>
+    /// Flatten these places now, so the result is on screen before anything is
+    /// saved. Merging and splitting take effect the moment they are asked for,
+    /// and flattening reserving itself for the save was the odd one out — a tick
+    /// that did nothing visible until a file was written.
+    ///
+    /// Returns how many places were flattened.
+    /// </summary>
+    public async Task<int> FlattenAsync(
+        IReadOnlyDictionary<string, IReadOnlyList<OverlapRegion>> placesByFile,
+        IProgress<AnalysisProgress>? progress = null,
+        CancellationToken ct = default)
+    {
+        int flattened = 0;
+        foreach (var (filePath, places) in placesByFile)
+        {
+            ct.ThrowIfCancellationRequested();
+            int index = IndexOfDocument(filePath);
+            if (index < 0 || places.Count == 0) continue;
+
+            var applied = PlacesFlattenedIn(_documents[index].FilePath);
+            foreach (var place in places) AbsorbAndAdd(applied, place);
+            await RebuildWorkingCopyAsync(index, progress, ct).ConfigureAwait(false);
+            flattened += places.Count;
+        }
+        return flattened;
+    }
+
+    /// <summary>
+    /// Add one place to what has been flattened in a file, absorbing any earlier
+    /// flatten it swallows.
+    ///
+    /// The picture an earlier flatten drew is an object like any other, so the
+    /// user can tick it and flatten it again together with a neighbour. Its
+    /// bytes exist only in the working copy, and the copy is always rebuilt from
+    /// the user's own file — so a place naming it would find nothing there. What
+    /// the new place really covers is the objects the earlier one covered, and
+    /// that is what is stored: the earlier place is dropped and its members join
+    /// the new one.
+    /// </summary>
+    static void AbsorbAndAdd(List<OverlapRegion> applied, OverlapRegion place)
+    {
+        var members = new List<PlacedObject>();
+        foreach (var member in place.Members)
+        {
+            int swallowed = member.Kind == RemovableKind.Image
+                ? applied.FindIndex(earlier => earlier.PageNumber == place.PageNumber
+                    && IsPictureAt(member.X, member.Y, member.Width, member.Height, earlier))
+                : -1;
+            if (swallowed < 0)
+            {
+                members.Add(member);
+                continue;
+            }
+            members.AddRange(applied[swallowed].Members);
+            applied.RemoveAt(swallowed);
+        }
+        applied.Add(place with { Members = members });
+    }
+
+    /// <summary>
+    /// Whether a rectangle is where a flatten drew its picture: the cleaner
+    /// places the picture over exactly the place it flattened, so the geometry
+    /// identifies it. To within a tenth of a point — the rectangle makes a round
+    /// trip through the file and comes back that close.
+    /// </summary>
+    static bool IsPictureAt(double x, double y, double width, double height, OverlapRegion place) =>
+        Math.Abs(x - place.X) < 0.1
+        && Math.Abs(y - place.Y) < 0.1
+        && Math.Abs(width - place.Width) < 0.1
+        && Math.Abs(height - place.Height) < 0.1;
+
+    /// <summary>
+    /// The place a flatten drew this occurrence for, or null when it is an
+    /// ordinary image. What makes the undo button live, and what it acts on.
+    /// </summary>
+    public OverlapRegion? FlattenBehind(string filePath, PdfImageOccurrence occurrence)
+    {
+        int index = IndexOfDocument(filePath);
+        if (index < 0 || !_flattenedPlaces.TryGetValue(_documents[index].FilePath, out var places))
+        {
+            return null;
+        }
+        return places.FirstOrDefault(place => place.PageNumber == occurrence.PageNumber
+            && IsPictureAt(occurrence.X, occurrence.Y, occurrence.Width, occurrence.Height, place));
+    }
+
+    /// <summary>
+    /// Take one flatten back: the place is dropped and the working copy is built
+    /// again from the user's file with the rest, which puts the objects it
+    /// covered back in the list.
+    /// </summary>
+    public async Task<bool> UndoFlattenAsync(
+        string filePath,
+        OverlapRegion place,
+        IProgress<AnalysisProgress>? progress = null,
+        CancellationToken ct = default)
+    {
+        int index = IndexOfDocument(filePath);
+        if (index < 0) return false;
+
+        var applied = PlacesFlattenedIn(_documents[index].FilePath);
+        if (!applied.Remove(place)) return false;
+
+        await RebuildWorkingCopyAsync(index, progress, ct).ConfigureAwait(false);
+        return true;
+    }
+
+    /// <summary>
+    /// Write the file the workspace describes: the user's file with every place
+    /// they have flattened baked in, all in one pass. Then read it back, which
+    /// is the same rule the save follows — the list says what a file holds, and
+    /// never what we believe we did to it.
+    ///
+    /// Not verified. The verifier's question is whether a removal survived the
+    /// write, this run removes nothing, and it costs a second parse of the whole
+    /// document on every press. The save that finally writes the user's file
+    /// verifies as it always did.
+    /// </summary>
+    async Task RebuildWorkingCopyAsync(
+        int index, IProgress<AnalysisProgress>? progress, CancellationToken ct)
+    {
+        var document = _documents[index];
+        var places = PlacesFlattenedIn(document.FilePath);
+
+        var readPath = document.FilePath;
+        string? nextCopy = null;
+        if (places.Count > 0)
+        {
+            nextCopy = WorkingCopyPath(document.FilePath);
+            var result = await _cleaner.CleanAsync(
+                    document.FilePath, nextCopy, Array.Empty<ImageRemovalSelection>(), places, ct)
+                .ConfigureAwait(false);
+            _logger.LogInformation(
+                "flattened: placesAsked={Asked} placesFlattened={Flattened} pagesModified={Pages}",
+                places.Count, result.RegionsFlattened, result.PagesModified);
+            readPath = nextCopy;
+        }
+
+        var info = await AnalyzeForWorkspaceAsync(readPath, progress, ct).ConfigureAwait(false);
+        DiscardWorkingCopy(document.FilePath);
+        if (nextCopy is not null) _workingCopies[document.FilePath] = nextCopy;
+
+        // Labelled with the user's path, whatever it was read from: that is the
+        // document they opened, now showing what they have done to it.
+        _documents[index] = info with { FilePath = document.FilePath };
+        RebuildGroups();
+    }
+
+    static string WorkingCopyPath(string filePath)
+    {
+        // One folder for the run, a new name every rebuild: the previous copy is
+        // deleted only after the new one has been read, and a re-used path could
+        // not be deleted while it was still the file being described.
+        var folder = Path.Combine(Path.GetTempPath(), "PdfImageRemoverForRag", "working");
+        Directory.CreateDirectory(folder);
+        return Path.Combine(folder,
+            $"{Path.GetFileNameWithoutExtension(filePath)}-{Guid.NewGuid():N}.pdf");
+    }
+
+    void DiscardWorkingCopy(string filePath)
+    {
+        if (!_workingCopies.TryGetValue(filePath, out var copy)) return;
+        _workingCopies.Remove(filePath);
+        TryDeleteTempFile(copy);
+    }
+
     void RebuildGroups()
     {
         // Merge in Core. ThumbnailBytes stays null throughout the workspace —
@@ -168,35 +376,33 @@ internal sealed class PdfCleaningWorkflow
     {
         return _documents
             .Where(d => d.ImageGroups.Any(g => selectedHashes.Contains(g.Hash))
-                        || filesToFlatten?.Any(f => CleanedFileNamer.WouldOverwriteSource(f, d.FilePath)) == true)
+                        || filesToFlatten?.Any(f => CleanedFileNamer.WouldOverwriteSource(f, d.FilePath)) == true
+                        // A file whose places were flattened already has
+                        // something to write, even with nothing ticked.
+                        || PlacesFlattenedIn(d.FilePath).Count > 0)
             .Select(d => d.FilePath)
             .ToArray();
     }
 
     /// <summary>
-    /// Remove the selected object groups from every affected file, and flatten
-    /// the chosen places into images. Each file runs the spec §15 sequence
-    /// independently: clean into a temp file, verify the temp, move to the final
-    /// name only on success, delete the temp on failure.
+    /// Remove the selected object groups from every affected file and write the
+    /// result. Each file runs the spec §15 sequence independently: clean into a
+    /// temp file, verify the temp, move to the final name only on success,
+    /// delete the temp on failure.
     /// <paramref name="resolveDestination"/> maps each source path to its output
     /// path (chosen by the UI beforehand).
+    ///
+    /// Flattening is not part of this any more. It happens when the user asks
+    /// for it, into a working copy this reads from, so what a save has left to
+    /// do is the removals — and, when there are none, a copy.
     /// </summary>
-    /// <param name="regionsToFlattenByFile">
-    /// Per source file, the places to bake into an image, each covering only the
-    /// objects the user ticked. The cleaner flattens before it removes, so both
-    /// can be asked for in one run — the order matters, because removing a group
-    /// first would take away the very instances a region is made of.
-    /// </param>
     public async Task<BatchSaveResult> RemoveAndSaveAsync(
         IReadOnlyCollection<string> selectedHashes,
         Func<string, string> resolveDestination,
-        IReadOnlyDictionary<string, IReadOnlyList<OverlapRegion>>? regionsToFlattenByFile = null,
         IProgress<AnalysisProgress>? reanalysisProgress = null,
         CancellationToken ct = default)
     {
-        var flattenByFile = regionsToFlattenByFile
-            ?? new Dictionary<string, IReadOnlyList<OverlapRegion>>();
-        if (selectedHashes.Count == 0 && flattenByFile.Count == 0)
+        if (selectedHashes.Count == 0 && !HasFlattenedPlaces)
         {
             throw new PdfCleanerException(PdfCleanerErrorKind.Unexpected, L10n.ErrorNoSelection);
         }
@@ -233,20 +439,19 @@ internal sealed class PdfCleaningWorkflow
                     x.group.GroupId, x.fileOccurrences!.Occurrences, x.group.Kind,
                     x.group.TextValue, x.group.Hash))
                 .ToList();
-            // Places to flatten in this file. Keyed by path, so the same
-            // path-comparison the rest of the workflow uses decides the match.
-            var documentRegions = flattenByFile
-                .FirstOrDefault(kv => CleanedFileNamer.WouldOverwriteSource(kv.Key, document.FilePath))
-                .Value ?? Array.Empty<OverlapRegion>();
-            if (documentSelections.Count == 0 && documentRegions.Count == 0) continue;
+            // Places flattened before the save are already in the working copy
+            // this run reads from, so they are not done again — but they are
+            // what is being written, and the count has to say so.
+            int flattenedAlready = PlacesFlattenedIn(document.FilePath).Count;
+            if (documentSelections.Count == 0 && flattenedAlready == 0) continue;
 
             var destinationPath = resolveDestination(document.FilePath);
             var saved = await CleanVerifyCommitAsync(
-                    document, destinationPath, documentSelections, documentRegions, selectedHashes, ct)
+                    document, destinationPath, documentSelections, selectedHashes, ct)
                 .ConfigureAwait(false);
             savedFiles.Add(saved);
             totalRemoved += saved.DrawCallsRemoved;
-            totalFlattened += saved.RegionsFlattened;
+            totalFlattened += flattenedAlready;
         }
 
         // The workspace now describes the files that were just written, not the
@@ -259,9 +464,14 @@ internal sealed class PdfCleaningWorkflow
         foreach (var saved in savedFiles)
         {
             ct.ThrowIfCancellationRequested();
-            int index = _documents.FindIndex(
-                d => CleanedFileNamer.WouldOverwriteSource(d.FilePath, saved.SourcePath));
+            int index = IndexOfDocument(saved.SourcePath);
             if (index < 0) continue;
+
+            // The file the user owns now holds what was flattened, so the
+            // working copy has done its job: it goes, and with it the record of
+            // what had been flattened but not written.
+            DiscardWorkingCopy(_documents[index].FilePath);
+            _flattenedPlaces.Remove(_documents[index].FilePath);
 
             _documents[index] = await AnalyzeForWorkspaceAsync(
                 saved.DestinationPath, reanalysisProgress, ct).ConfigureAwait(false);
@@ -289,7 +499,6 @@ internal sealed class PdfCleaningWorkflow
         PdfDocumentInfo document,
         string destinationPath,
         IReadOnlyList<ImageRemovalSelection> selections,
-        IReadOnlyList<OverlapRegion> regionsToFlatten,
         IReadOnlyCollection<string> selectedHashes,
         CancellationToken ct)
     {
@@ -299,33 +508,46 @@ internal sealed class PdfCleaningWorkflow
                 L10n.ErrorSameAsSource);
         }
 
+        // What is read is the working copy when there is one — the file that
+        // already holds the places flattened before the save. What is COMPARED
+        // against, above and in the verifier, is still the user's own path.
+        var sourcePath = ReadPathOf(document.FilePath);
+
         // Temp file in the destination directory so the final File.Move is
         // an atomic same-volume rename.
         var tempPath = destinationPath + ".part";
         try
         {
+            // Nothing left to do to the bytes: the places the user flattened are
+            // already in the working copy this reads from, and nothing is ticked
+            // for removal. So the save is a copy. The cleaner refuses a run with
+            // nothing in it, and rightly — being asked to change nothing is a
+            // caller's mistake everywhere else.
+            if (selections.Count == 0)
+            {
+                File.Copy(sourcePath, tempPath, overwrite: true);
+                File.Move(tempPath, destinationPath, overwrite: true);
+                _logger.LogInformation("saved: copied the working copy, nothing further to change");
+                return new SavedFile(document.FilePath, destinationPath, 0, 0);
+            }
+
             var result = await _cleaner
-                .CleanAsync(document.FilePath, tempPath, selections, regionsToFlatten, ct)
+                .CleanAsync(sourcePath, tempPath, selections, Array.Empty<OverlapRegion>(), ct)
                 .ConfigureAwait(false);
 
             // Logged before verification so a verification failure can be read
             // against what the cleaner believed it did: zero draw calls removed
             // means the selection never matched anything, a full count means it
-            // matched but the result did not survive the write. The flatten
-            // counts are here too, because a region asked for but not flattened
-            // (nothing rendered, or nothing found where it was detected) is
-            // otherwise invisible.
+            // matched but the result did not survive the write.
             // imagesKeptBack is normally zero. When it is not, the file holds an
             // image something other than a page points at — an annotation, a
             // pattern — so its object had to stay even though its pages no
             // longer draw it. That is the one case where removal cannot fully
             // deliver, and without this line it would be invisible.
             _logger.LogInformation(
-                "cleaned: selections={Selections} regionsAsked={RegionsAsked} " +
-                "regionsFlattened={RegionsFlattened} pagesModified={Pages} drawCallsRemoved={Removed} " +
-                "imagesKeptBack={KeptBack}",
-                selections.Count, regionsToFlatten.Count, result.RegionsFlattened,
-                result.PagesModified, result.DrawCallsRemoved,
+                "cleaned: selections={Selections} pagesModified={Pages} " +
+                "drawCallsRemoved={Removed} imagesKeptBack={KeptBack}",
+                selections.Count, result.PagesModified, result.DrawCallsRemoved,
                 result.ImagesKeptForOtherReferences);
 
             // The verifier resolves hashes against the XObjects a page names, so
@@ -340,7 +562,7 @@ internal sealed class PdfCleaningWorkflow
             var removedHashes = verifiableHashes.Where(selectedHashes.Contains).ToArray();
             var retainedHashes = verifiableHashes.Except(removedHashes, StringComparer.Ordinal).ToArray();
             var report = await _verifier.VerifyAsync(
-                document.FilePath, tempPath, removedHashes, retainedHashes, ct)
+                sourcePath, tempPath, removedHashes, retainedHashes, ct)
                 .ConfigureAwait(false);
 
             if (!report.IsOverallOk)

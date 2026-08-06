@@ -426,8 +426,10 @@ internal sealed partial class MainForm
     void UpdateSelectionState()
     {
         bool hasDocuments = _workflow.OpenDocuments.Count > 0;
-        // One save run does both, so the button follows either selection.
-        bool canSave = _selectedHashes.Count > 0 || _flattenPanel.CheckedObjectCount > 0;
+        // One save run does both, so the button follows either selection — and
+        // a place already flattened is work waiting to be written even when
+        // nothing at all is ticked.
+        bool canSave = _selectedHashes.Count > 0 || _workflow.HasFlattenedPlaces;
         // Select-all / clear act on the object list alone, so their enablement
         // describes the list and ignores whatever the tree has ticked.
         bool hasSelectable =

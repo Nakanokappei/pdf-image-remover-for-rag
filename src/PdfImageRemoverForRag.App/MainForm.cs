@@ -405,6 +405,8 @@ internal sealed partial class MainForm : Form
         _tileView.TileContextRequested += OnTileContextRequested;
 
         _flattenPanel.SelectionChanged += OnFlattenSelectionChanged;
+        _flattenPanel.FlattenRequested += OnFlattenRequested;
+        _flattenPanel.UndoFlattenRequested += OnUndoFlattenRequested;
         // A hand-made merge or split goes back to the workspace, and the panel
         // is rebuilt from it — the panel describes the documents, so it must
         // not be the only place a correction exists.

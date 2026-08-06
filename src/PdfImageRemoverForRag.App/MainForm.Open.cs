@@ -35,10 +35,12 @@ internal sealed partial class MainForm
     {
         if (_workflow.OpenDocuments.Count == 0) return true;
 
-        // Ticks on either tab are work worth offering to save: the flatten tree
-        // is cleared by the rebuild that follows an open, so it is lost just as
-        // surely as the object list's selection.
-        if (_selectedHashes.Count > 0 || _flattenPanel.CheckedObjectCount > 0)
+        // Work worth offering to save: ticks on either side, which the rebuild
+        // that follows an open clears, and — more than ticks — places already
+        // flattened, which live in a working copy that goes with the workspace.
+        if (_selectedHashes.Count > 0
+            || _flattenPanel.CheckedObjectCount > 0
+            || _workflow.HasFlattenedPlaces)
         {
             var choice = MessageBox.Show(this, L10n.ConfirmSaveBeforeOpen, L10n.ConfirmTitle,
                 MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);

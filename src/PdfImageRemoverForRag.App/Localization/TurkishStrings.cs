@@ -90,6 +90,13 @@ internal sealed class TurkishStrings : IStrings
     public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
         $"{fileCount} dosya kaydedildi — {drawCallsRemoved} çizim çağrısı kaldırıldı, {regionsFlattened} alan görüntüye dönüştürüldü, doğrulama başarılı";
 
+    public string StatusFlattening => "Birleştiriliyor…";
+
+    public string StatusFlattened(int places) =>
+        $"{places} yer birleştirildi — yazmak için kaydedin";
+
+    public string StatusFlattenUndone => "Birleştirme geri alındı";
+
     public string StatusSelection(int selectedCount) =>
         $"{selectedCount} nesne kaldırılmak üzere seçildi";
 
@@ -141,6 +148,9 @@ internal sealed class TurkishStrings : IStrings
     public string ContextMenuUsageLocations => "&Kullanım Konumlarını Göster…";
 
     public string FlattenPanelTitle => "Birleştir";
+    public string ColumnSelect => "Seçim";
+    public string FlattenApply => "Seçimi birleştir";
+    public string FlattenUndo => "Birleştirmeyi geri al";
     public string FlattenMerge => "Birleştir";
     public string FlattenSplit => "Ayır";
 

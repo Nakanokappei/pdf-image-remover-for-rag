@@ -165,6 +165,19 @@ internal interface IStrings
     /// </summary>
     string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened);
 
+    /// <summary>Shown while a flatten or its undo is rewriting the document.</summary>
+    string StatusFlattening { get; }
+
+    /// <summary>
+    /// What flattening just did. It has changed what the lists show but not any
+    /// file the user owns, so say both: how many places became pictures, and
+    /// that saving is what writes them out.
+    /// </summary>
+    string StatusFlattened(int places);
+
+    /// <summary>Said when a flatten has been taken back and its objects are listed again.</summary>
+    string StatusFlattenUndone { get; }
+
     /// <summary>
     /// How many rows of the object list are ticked for removal. Say "objects",
     /// not "images" — the list holds images, repeated text and shapes alike.
@@ -238,12 +251,23 @@ internal interface IStrings
     string FlattenPanelTitle { get; }
 
     /// <summary>
-    /// Buttons that correct a unit the detector got wrong: merge gathers the
-    /// ticked objects into one unit, split takes them out of the one they are
-    /// in. They act on what is ticked, not on whole units, so word them that
-    /// way — and keep them short, since three buttons share the panel's title
-    /// bar and the panel can be dragged narrow.
+    /// The word over the flatten panel's tick column. The tick marks what the
+    /// commands under it act on and nothing else — it reserves no operation, so
+    /// it says "selected" rather than naming one. Its opposite number over the
+    /// object list, <see cref="ColumnDelete"/>, DOES name one, because a tick
+    /// there is what a save removes.
     /// </summary>
+    string ColumnSelect { get; }
+
+    /// <summary>
+    /// Commands acting on the ticked objects, every one of them taking effect at
+    /// once: flatten replaces them with a picture of themselves, undo takes such
+    /// a picture back, merge gathers ticks into one unit, split takes them out of
+    /// the one they are in. Keep them short — five share one row and the panel
+    /// can be dragged narrow.
+    /// </summary>
+    string FlattenApply { get; }
+    string FlattenUndo { get; }
     string FlattenMerge { get; }
     string FlattenSplit { get; }
 

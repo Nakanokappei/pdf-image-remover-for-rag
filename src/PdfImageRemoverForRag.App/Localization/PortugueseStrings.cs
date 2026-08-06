@@ -84,6 +84,13 @@ internal sealed class PortugueseStrings : IStrings
     public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
         $"{fileCount} arquivo(s) salvo(s) — {drawCallsRemoved} chamada(s) de desenho removida(s), {regionsFlattened} região(ões) convertida(s) em imagem, verificação OK";
 
+    public string StatusFlattening => "Achatando…";
+
+    public string StatusFlattened(int places) =>
+        $"{places} local(is) achatado(s) — salve para gravá-los";
+
+    public string StatusFlattenUndone => "Achatamento desfeito";
+
     public string StatusSelection(int selectedCount) =>
         $"{selectedCount} objeto(s) selecionado(s) para remoção";
 
@@ -135,6 +142,9 @@ internal sealed class PortugueseStrings : IStrings
     public string ContextMenuUsageLocations => "Mostrar &locais de utilização…";
 
     public string FlattenPanelTitle => "Achatar";
+    public string ColumnSelect => "Seleção";
+    public string FlattenApply => "Achatar seleção";
+    public string FlattenUndo => "Desfazer achatamento";
     public string FlattenMerge => "Unir seleção";
     public string FlattenSplit => "Dividir seleção";
 

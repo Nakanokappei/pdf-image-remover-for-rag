@@ -86,6 +86,13 @@ internal sealed class FrenchStrings : IStrings
     public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
         $"{fileCount} fichier(s) enregistré(s) — {drawCallsRemoved} appel(s) de dessin supprimé(s), {regionsFlattened} zone(s) aplatie(s), vérification OK";
 
+    public string StatusFlattening => "Aplatissement…";
+
+    public string StatusFlattened(int places) =>
+        $"{places} zone(s) aplatie(s) — enregistrez pour les écrire";
+
+    public string StatusFlattenUndone => "Aplatissement annulé";
+
     public string StatusSelection(int selectedCount) =>
         $"{selectedCount} objet(s) sélectionné(s) pour suppression";
 
@@ -137,6 +144,9 @@ internal sealed class FrenchStrings : IStrings
     public string ContextMenuUsageLocations => "Afficher les &emplacements d'utilisation…";
 
     public string FlattenPanelTitle => "Aplatir";
+    public string ColumnSelect => "Sélection";
+    public string FlattenApply => "Aplatir la sélection";
+    public string FlattenUndo => "Annuler l'aplatissement";
     public string FlattenMerge => "Fusionner";
     public string FlattenSplit => "Séparer";
 

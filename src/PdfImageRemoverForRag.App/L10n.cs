@@ -101,8 +101,13 @@ internal static class L10n
     /// <summary>The same word without the glyph, for the spoken name.</summary>
     public static string ColumnDelete => S.ColumnDelete;
 
-    /// <summary>The flatten panel's title: what a save FLATTENS.</summary>
-    public static string FlattenPanelHeader => $"{CheckGlyph} {S.FlattenPanelTitle}";
+    /// <summary>
+    /// The flatten panel's tick column: what its commands act on. It used to
+    /// name the operation, as the object list's does, and that stopped being
+    /// true when flattening became a command of its own — a tick here now
+    /// reserves nothing.
+    /// </summary>
+    public static string FlattenPanelHeader => $"{CheckGlyph} {S.ColumnSelect}";
 
     /// <summary>Compression cell for non-image objects (they have none).</summary>
     public static string CompressionNotApplicable => "N/A";
@@ -198,6 +203,10 @@ internal static class L10n
     public static string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
         S.StatusSaved(fileCount, drawCallsRemoved, regionsFlattened);
 
+    public static string StatusFlattening => S.StatusFlattening;
+    public static string StatusFlattened(int places) => S.StatusFlattened(places);
+    public static string StatusFlattenUndone => S.StatusFlattenUndone;
+
     public static string StatusSelection(int selectedCount) => S.StatusSelection(selectedCount);
 
     // --- warnings ----------------------------------------------------------
@@ -230,6 +239,8 @@ internal static class L10n
     // --- the flatten panel --------------------------------------------------
 
     public static string FlattenPanelTitle => S.FlattenPanelTitle;
+    public static string FlattenApply => S.FlattenApply;
+    public static string FlattenUndo => S.FlattenUndo;
     public static string FlattenMerge => S.FlattenMerge;
     public static string FlattenSplit => S.FlattenSplit;
     public static string FlattenDescription => S.FlattenDescription;

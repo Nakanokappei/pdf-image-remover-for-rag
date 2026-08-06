@@ -54,7 +54,13 @@ internal sealed partial class MainForm
         // are not part of it any more, because flattening happens when it is
         // asked for. What a save writes from that side is what was already
         // flattened, which the workspace holds.
-        if (_isBusy || (_selectedHashes.Count == 0 && !_workflow.HasFlattenedPlaces)) return false;
+        if (_isBusy
+            || (_selectedHashes.Count == 0
+                && !_workflow.HasFlattenedPlaces
+                && !_workflow.HasHiddenPlacements))
+        {
+            return false;
+        }
 
         var affectedFiles = _workflow.GetAffectedFiles(_selectedHashes);
         if (affectedFiles.Count == 0) return false;

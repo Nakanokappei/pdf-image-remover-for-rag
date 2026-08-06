@@ -283,7 +283,7 @@ internal sealed class LayerListView : Panel
         if (visual.IsGroup)
         {
             DrawDisclosure(g, DisclosureRect(bounds), visual.IsExpanded, text);
-            DrawFolder(g, icon, text, visual.IsExpanded);
+            DrawGlyph(g, icon, visual.IsExpanded ? GlyphFolderOpen : GlyphFolder, text);
         }
         else
         {
@@ -336,110 +336,61 @@ internal sealed class LayerListView : Panel
         }
     }
 
-    /// <summary>
-    /// The eye every layers panel draws: an almond with a pupil when the layer
-    /// is drawn, an empty almond with a stroke through it when it is not, and a
-    /// half-filled one for a folder whose objects disagree.
-    ///
-    /// Drawn rather than shipped as an icon, for the same reason the disclosure
-    /// chevron is: it has to be crisp at 450 % as well as 100 %, and a bitmap
-    /// would have to exist at every size in between.
-    /// </summary>
-    void DrawEye(Graphics g, Rectangle box, LayerVisibility visibility, Color color)
+    // The Windows icon font's own glyphs, which is what Explorer and every
+    // Windows app draw. Hand-drawing them was tried first and did not read as an
+    // eye at 16 pixels — the shape is not the hard part, the hinting is.
+    const string GlyphShown = "";    // RedEye
+    const string GlyphHidden = "";   // Hide — the same eye, struck through
+    const string GlyphFolder = "";   // Folder
+    const string GlyphFolderOpen = "";
+
+    // One font per size, kept because a row's icons are drawn on every paint.
+    Font? _iconFont;
+    float _iconFontSize;
+
+    Font IconFont(float pixels)
     {
-        var saved = g.SmoothingMode;
-        g.SmoothingMode = SmoothingMode.AntiAlias;
+        if (_iconFont is not null && Math.Abs(_iconFontSize - pixels) < 0.5f) return _iconFont;
+        _iconFont?.Dispose();
+        _iconFont = ToolbarIcons.ResolveIconFont(pixels);
+        _iconFontSize = pixels;
+        return _iconFont;
+    }
+
+    /// <summary>
+    /// Draw an icon-font glyph centred in a box. Grayscale antialiasing rather
+    /// than ClearType, the same choice <see cref="ToolbarIcons"/> makes: colour
+    /// fringing on a glyph this small reads as a smudge.
+    /// </summary>
+    void DrawGlyph(Graphics g, Rectangle box, string glyph, Color color)
+    {
+        var savedText = g.TextRenderingHint;
+        g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
         try
         {
-            float centreY = box.Top + (box.Height / 2f);
-            float halfWidth = box.Width * 0.45f;
-            float halfHeight = box.Height * 0.28f;
-            float centreX = box.Left + (box.Width / 2f);
-
-            using var pen = new Pen(color, Math.Max(1f, box.Width / 12f))
-            {
-                StartCap = LineCap.Round,
-                EndCap = LineCap.Round,
-                LineJoin = LineJoin.Round,
-            };
             using var brush = new SolidBrush(color);
-
-            // The outline: two arcs meeting at the corners, drawn as a closed
-            // path so the shape is one stroke rather than two touching curves.
-            using var almond = new GraphicsPath();
-            almond.AddBezier(
-                centreX - halfWidth, centreY,
-                centreX - (halfWidth / 2), centreY - (halfHeight * 2),
-                centreX + (halfWidth / 2), centreY - (halfHeight * 2),
-                centreX + halfWidth, centreY);
-            almond.AddBezier(
-                centreX + halfWidth, centreY,
-                centreX + (halfWidth / 2), centreY + (halfHeight * 2),
-                centreX - (halfWidth / 2), centreY + (halfHeight * 2),
-                centreX - halfWidth, centreY);
-            g.DrawPath(pen, almond);
-
-            if (visibility != LayerVisibility.Hidden)
+            using var format = new StringFormat
             {
-                // The pupil, filled for a layer that is drawn and half the size
-                // for a folder that is only partly drawn.
-                float radius = box.Width * (visibility == LayerVisibility.Mixed ? 0.10f : 0.17f);
-                g.FillEllipse(brush,
-                    centreX - radius, centreY - radius, radius * 2, radius * 2);
-            }
-            else
-            {
-                // Struck through, corner to corner, which is how every editor
-                // says "not drawn" without relying on colour.
-                g.DrawLine(pen,
-                    box.Left + (box.Width * 0.1f), box.Bottom - (box.Height * 0.15f),
-                    box.Right - (box.Width * 0.1f), box.Top + (box.Height * 0.15f));
-            }
+                Alignment = StringAlignment.Center,
+                LineAlignment = StringAlignment.Center,
+            };
+            g.DrawString(glyph, IconFont(box.Height * 0.95f), brush, box, format);
         }
         finally
         {
-            g.SmoothingMode = saved;
+            g.TextRenderingHint = savedText;
         }
     }
 
     /// <summary>
-    /// A folder: the shape an image editor uses for a layer group, so the row
-    /// reads as "these belong together" before a word of it is read.
+    /// The eye: shown, struck through when hidden, and greyed when a folder's
+    /// layers disagree — which is a state the objects themselves never have.
     /// </summary>
-    void DrawFolder(Graphics g, Rectangle box, Color color, bool open)
+    void DrawEye(Graphics g, Rectangle box, LayerVisibility visibility, Color color)
     {
-        var saved = g.SmoothingMode;
-        g.SmoothingMode = SmoothingMode.AntiAlias;
-        try
-        {
-            using var pen = new Pen(color, Math.Max(1f, box.Width / 12f))
-            {
-                LineJoin = LineJoin.Round,
-            };
-            float tabHeight = box.Height * 0.22f;
-            var body = new RectangleF(
-                box.Left, box.Top + tabHeight, box.Width - 1, box.Height - tabHeight - 1);
-
-            // The tab across the top-left corner, then the body under it.
-            g.DrawLines(pen, new[]
-            {
-                new PointF(body.Left, body.Top),
-                new PointF(body.Left, box.Top),
-                new PointF(body.Left + (box.Width * 0.45f), box.Top),
-                new PointF(body.Left + (box.Width * 0.55f), body.Top),
-            });
-            g.DrawRectangle(pen, body.Left, body.Top, body.Width, body.Height);
-
-            // An open folder is filled, so an expanded unit and a closed one are
-            // told apart by the icon as well as by the chevron.
-            if (!open) return;
-            using var brush = new SolidBrush(Color.FromArgb(48, color));
-            g.FillRectangle(brush, body);
-        }
-        finally
-        {
-            g.SmoothingMode = saved;
-        }
+        DrawGlyph(g, box,
+            visibility == LayerVisibility.Hidden ? GlyphHidden : GlyphShown,
+            visibility == LayerVisibility.Mixed ? Color.FromArgb(128, color) : color);
     }
 
     static void DrawDisclosure(Graphics g, Rectangle box, bool expanded, Color color)
@@ -836,7 +787,11 @@ internal sealed class LayerListView : Panel
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing) _toolTip.Dispose();
+        if (disposing)
+        {
+            _toolTip.Dispose();
+            _iconFont?.Dispose();
+        }
         base.Dispose(disposing);
     }
 }

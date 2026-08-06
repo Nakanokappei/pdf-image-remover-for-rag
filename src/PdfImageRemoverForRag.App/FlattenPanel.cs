@@ -160,11 +160,19 @@ internal sealed class FlattenPanel : UserControl
 
     internal sealed class VisibilityChangeEventArgs : EventArgs
     {
-        public VisibilityChangeEventArgs(IReadOnlyList<PlacedObject> objects, bool hide)
+        public VisibilityChangeEventArgs(
+            string filePath, PageDimensions page, IReadOnlyList<PlacedObject> objects, bool hide)
         {
+            FilePath = filePath;
+            Page = page;
             Objects = objects;
             Hide = hide;
         }
+
+        public string FilePath { get; }
+
+        /// <summary>The page they are drawn on, size included — a region needs both.</summary>
+        public PageDimensions Page { get; }
 
         public IReadOnlyList<PlacedObject> Objects { get; }
 
@@ -186,10 +194,12 @@ internal sealed class FlattenPanel : UserControl
     public Func<PlacedObject, LayerThumbnail>? ThumbnailFor { get; set; }
 
     /// <summary>
-    /// Whether an object is currently hidden — which is to say, marked for
-    /// removal. Answered by the host, because that is where the mark lives.
+    /// Whether this drawing of this object, on this page of this file, is
+    /// hidden. Answered by the host, because that is where the mark lives — and
+    /// asked per PLACEMENT, because hiding a layer here hides the one layer, not
+    /// every other showing of the same object.
     /// </summary>
-    public Func<PlacedObject, bool>? IsHidden { get; set; }
+    public Func<string, int, PlacedObject, bool>? IsHidden { get; set; }
 
     /// <summary>
     /// Whether the object selected in the list is a picture some flatten drew,
@@ -551,12 +561,17 @@ internal sealed class FlattenPanel : UserControl
         {
             // The folder's eye answers for everything inside it, and has a third
             // answer when its objects disagree.
-            int hidden = unit.Region.Members.Count(Hidden);
+            int hidden = unit.Region.Members.Count(m => Hidden(unit, m));
             return new LayerVisual(
                 IsGroup: true,
                 Title: L10n.FlattenUnitLabel(
-                    unit.DocumentNumber, unit.Region.PageNumber, unit.NumberOnPage),
-                Subtitle: $"{Path.GetFileName(unit.FilePath)}  ({KindSummary(unit.Region)})",
+                        unit.DocumentNumber, unit.Region.PageNumber, unit.NumberOnPage)
+                    + $"  ({KindSummary(unit.Region)})",
+                // No subtitle: a folder is one line tall, and a second line
+                // inside it would be two half-height ones. The file it is in is
+                // in the tooltip, where a panel showing one file at a time can
+                // afford to keep it.
+                Subtitle: null,
                 Thumbnail: null,
                 TextContent: null,
                 IsThumbnailPending: false,
@@ -580,11 +595,12 @@ internal sealed class FlattenPanel : UserControl
             Thumbnail: thumbnail.Bitmap,
             TextContent: text,
             IsThumbnailPending: text is null && thumbnail.Bitmap is null && thumbnail.CanEverRender,
-            Visibility: Hidden(member) ? LayerVisibility.Hidden : LayerVisibility.Visible,
+            Visibility: Hidden(unit, member) ? LayerVisibility.Hidden : LayerVisibility.Visible,
             IsExpanded: false);
     }
 
-    bool Hidden(PlacedObject member) => IsHidden?.Invoke(member) == true;
+    bool Hidden(UnitEntry unit, PlacedObject member) =>
+        IsHidden?.Invoke(unit.FilePath, unit.Region.PageNumber, member) == true;
 
     string? ToolTipForRow(int index)
     {
@@ -643,10 +659,11 @@ internal sealed class FlattenPanel : UserControl
         // brings it all back. The alternative — inverting each object — makes a
         // single click do two opposite things at once.
         bool hide = row.Object is null
-            ? unit.Region.Members.Any(m => !Hidden(m))
-            : !Hidden(row.Object);
+            ? unit.Region.Members.Any(m => !Hidden(unit, m))
+            : !Hidden(unit, row.Object);
 
-        VisibilityChangeRequested?.Invoke(this, new VisibilityChangeEventArgs(objects, hide));
+        VisibilityChangeRequested?.Invoke(this, new VisibilityChangeEventArgs(
+            unit.FilePath, unit.Region.Page, objects, hide));
     }
 
     void OnExpandToggled(int index)

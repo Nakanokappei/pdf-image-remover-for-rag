@@ -72,10 +72,12 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
         string destinationPath,
         IReadOnlyList<ImageRemovalSelection> selections,
         IReadOnlyList<OverlapRegion>? regionsToFlatten = null,
+        IReadOnlyList<OverlapRegion>? regionsToClear = null,
         bool fitImagesToScreen = false,
         CancellationToken ct = default)
     {
         var regions = regionsToFlatten ?? Array.Empty<OverlapRegion>();
+        var cleared = regionsToClear ?? Array.Empty<OverlapRegion>();
 
         // Hard rule from the spec: never overwrite the source, even if the
         // App accidentally supplies the same path.
@@ -84,7 +86,7 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
             throw new PdfCleanerException(PdfCleanerErrorKind.DestinationNotWritable,
                 "元 PDF と同じパスへの保存はできません。別名を指定してください。");
         }
-        if (selections.Count == 0 && regions.Count == 0)
+        if (selections.Count == 0 && regions.Count == 0 && cleared.Count == 0)
         {
             throw new PdfCleanerException(PdfCleanerErrorKind.Unexpected,
                 "削除対象の画像が指定されていません。");
@@ -111,6 +113,9 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
         // also the only asynchronous part of the job, so it stays out here
         // rather than being waited on inside the synchronous rewrite.
         var flattenImages = await RenderRegionsAsync(sourcePath, regions, ct).ConfigureAwait(false);
+        // The places to empty need no rendering, so they join the same list with
+        // nothing to draw: one pass over the page handles both.
+        flattenImages.AddRange(cleared.Select(region => new FlattenImage(region, null)));
 
         // Fitting is asked for only when the file being written is the one the
         // user keeps, and it needs a resampler to do it with.
@@ -121,8 +126,13 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
             .ConfigureAwait(false);
     }
 
-    /// <summary>One region and the pixels that will replace it.</summary>
-    sealed record FlattenImage(OverlapRegion Region, byte[] Png);
+    /// <summary>
+    /// One region and the pixels that will replace it — or no pixels, which is
+    /// a region whose objects are simply taken out. Hiding a layer is that: the
+    /// objects go and nothing is drawn in their place, at ONE place on ONE page,
+    /// which is what tells it apart from removing the object everywhere.
+    /// </summary>
+    sealed record FlattenImage(OverlapRegion Region, byte[]? Png);
 
     /// <summary>
     /// Render every requested region, dropping the ones that cannot be rendered.
@@ -298,6 +308,10 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
                     // rendering would just lay a second copy over the original.
                     if (removedForRegion == 0) continue;
                     removed += removedForRegion;
+                    // A region with nothing to draw is a deletion and counts as
+                    // one; only a region that puts a picture back is subtracted
+                    // from the removal total.
+                    if (flatten.Png is null) continue;
                     flattenedOps += removedForRegion;
                     flattenedHere.Add(flatten);
                 }
@@ -479,6 +493,10 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
         using var gfx = XGraphics.FromPdfPage(page, XGraphicsPdfPageOptions.Append, XGraphicsUnit.Point);
         foreach (var flatten in flattened)
         {
+            // Only regions with pixels reach here; a place merely emptied has
+            // none, and is filtered out before the list is built.
+            if (flatten.Png is null) continue;
+
             var region = flatten.Region;
             var image = XImage.FromStream(new MemoryStream(flatten.Png));
             keepAlive.Add(image);

@@ -407,12 +407,13 @@ internal sealed partial class MainForm : Form
         _flattenPanel.SelectionChanged += OnFlattenSelectionChanged;
         _flattenPanel.FlattenRequested += OnFlattenRequested;
         _flattenPanel.UndoFlattenRequested += OnUndoFlattenRequested;
-        // A layer's eye and the object list's ☑ removal column are two views of
-        // one fact, so the panel asks and the workspace answers: hiding a layer
-        // ticks its object for removal, and the tick shows up on both sides.
-        _flattenPanel.IsHidden = placed =>
-            _workflow.ImageGroups.FirstOrDefault(g => g.Matches(placed)) is { } group
-            && _selectedHashes.Contains(group.Hash);
+        // A layer is not drawn when this one placement of it is hidden, or when
+        // the object it belongs to is ticked for removal everywhere. Two marks
+        // with two scopes, and the eye shows the result of both.
+        _flattenPanel.IsHidden = (filePath, pageNumber, placed) =>
+            _workflow.IsPlacementHidden(filePath, pageNumber, placed)
+            || (_workflow.ImageGroups.FirstOrDefault(g => g.Matches(placed)) is { } group
+                && _selectedHashes.Contains(group.Hash));
         _flattenPanel.VisibilityChangeRequested += OnLayerVisibilityChangeRequested;
         // A hand-made merge or split goes back to the workspace, and the panel
         // is rebuilt from it — the panel describes the documents, so it must

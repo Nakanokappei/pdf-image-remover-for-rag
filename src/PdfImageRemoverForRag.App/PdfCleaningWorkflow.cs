@@ -55,6 +55,14 @@ internal sealed class PdfCleaningWorkflow
     readonly Dictionary<string, string> _workingCopies =
         new(StringComparer.OrdinalIgnoreCase);
 
+    // Layers the user has hidden, as one region apiece: the object, where it is
+    // drawn, on which page of which file. A hidden layer is NOT the same as an
+    // object ticked for removal — that one goes from everywhere it appears,
+    // while this is one placement of it and the rest stay. Kept per file for
+    // the same reason the flattened places are: the save reads it back out.
+    readonly Dictionary<string, List<OverlapRegion>> _hiddenPlacements =
+        new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Currently open documents (metadata only, thumbnails stripped).</summary>
     public IReadOnlyList<PdfDocumentInfo> OpenDocuments => _documents;
 
@@ -144,6 +152,7 @@ internal sealed class PdfCleaningWorkflow
         // they are deleted here rather than left for the temp folder to collect.
         foreach (var filePath in _workingCopies.Keys.ToArray()) DiscardWorkingCopy(filePath);
         _flattenedPlaces.Clear();
+        _hiddenPlacements.Clear();
         _documents.Clear();
         ImageGroups = Array.Empty<CrossFileImageGroup>();
     }
@@ -166,6 +175,52 @@ internal sealed class PdfCleaningWorkflow
         if (index < 0) return;
         _documents[index] = _documents[index] with { OverlapRegions = regions };
     }
+
+    // =======================================================================
+    // Hidden layers
+    // =======================================================================
+
+    /// <summary>
+    /// Whether this drawing of this object, here, is hidden. One placement: the
+    /// same image on the next page is a different one and answers for itself.
+    /// </summary>
+    public bool IsPlacementHidden(string filePath, int pageNumber, PlacedObject placed) =>
+        _hiddenPlacements.TryGetValue(filePath, out var hidden)
+        && hidden.Any(r => r.PageNumber == pageNumber && r.Members.Contains(placed));
+
+    /// <summary>
+    /// Hide or show one placement. Stored as the region covering it, because
+    /// that is what a save needs: the objects inside a rectangle on a page, out,
+    /// with nothing drawn in their place.
+    /// </summary>
+    public void SetPlacementHidden(
+        string filePath, int pageNumber, PageDimensions page, PlacedObject placed, bool hide)
+    {
+        if (!_hiddenPlacements.TryGetValue(filePath, out var hidden))
+        {
+            hidden = new List<OverlapRegion>();
+            _hiddenPlacements[filePath] = hidden;
+        }
+
+        int found = hidden.FindIndex(
+            r => r.PageNumber == pageNumber && r.Members.Contains(placed));
+        if (hide)
+        {
+            if (found < 0) hidden.Add(OverlapDetector.RegionCovering(page, new[] { placed }));
+        }
+        else if (found >= 0)
+        {
+            hidden.RemoveAt(found);
+        }
+    }
+
+    /// <summary>True when a save has hidden layers to write out.</summary>
+    public bool HasHiddenPlacements => _hiddenPlacements.Values.Any(list => list.Count > 0);
+
+    IReadOnlyList<OverlapRegion> HiddenIn(string filePath) =>
+        _hiddenPlacements.TryGetValue(filePath, out var hidden)
+            ? hidden
+            : Array.Empty<OverlapRegion>();
 
     // =======================================================================
     // Flattening, before the save
@@ -325,7 +380,7 @@ internal sealed class PdfCleaningWorkflow
             // encoding them again on the next rebuild.
             var result = await _cleaner.CleanAsync(
                     document.FilePath, nextCopy, Array.Empty<ImageRemovalSelection>(), places,
-                    fitImagesToScreen: false, ct)
+                    regionsToClear: null, fitImagesToScreen: false, ct)
                 .ConfigureAwait(false);
             _logger.LogInformation(
                 "flattened: placesAsked={Asked} placesFlattened={Flattened} pagesModified={Pages}",
@@ -381,9 +436,11 @@ internal sealed class PdfCleaningWorkflow
         return _documents
             .Where(d => d.ImageGroups.Any(g => selectedHashes.Contains(g.Hash))
                         || filesToFlatten?.Any(f => CleanedFileNamer.WouldOverwriteSource(f, d.FilePath)) == true
-                        // A file whose places were flattened already has
-                        // something to write, even with nothing ticked.
-                        || PlacesFlattenedIn(d.FilePath).Count > 0)
+                        // A file whose places were flattened, or whose layers
+                        // were hidden, already has something to write — even
+                        // with nothing ticked.
+                        || PlacesFlattenedIn(d.FilePath).Count > 0
+                        || HiddenIn(d.FilePath).Count > 0)
             .Select(d => d.FilePath)
             .ToArray();
     }
@@ -406,7 +463,7 @@ internal sealed class PdfCleaningWorkflow
         IProgress<AnalysisProgress>? reanalysisProgress = null,
         CancellationToken ct = default)
     {
-        if (selectedHashes.Count == 0 && !HasFlattenedPlaces)
+        if (selectedHashes.Count == 0 && !HasFlattenedPlaces && !HasHiddenPlacements)
         {
             throw new PdfCleanerException(PdfCleanerErrorKind.Unexpected, L10n.ErrorNoSelection);
         }
@@ -447,11 +504,15 @@ internal sealed class PdfCleaningWorkflow
             // this run reads from, so they are not done again — but they are
             // what is being written, and the count has to say so.
             int flattenedAlready = PlacesFlattenedIn(document.FilePath).Count;
-            if (documentSelections.Count == 0 && flattenedAlready == 0) continue;
+            var hidden = HiddenIn(document.FilePath);
+            if (documentSelections.Count == 0 && flattenedAlready == 0 && hidden.Count == 0)
+            {
+                continue;
+            }
 
             var destinationPath = resolveDestination(document.FilePath);
             var saved = await CleanVerifyCommitAsync(
-                    document, destinationPath, documentSelections, selectedHashes, ct)
+                    document, destinationPath, documentSelections, hidden, selectedHashes, ct)
                 .ConfigureAwait(false);
             savedFiles.Add(saved);
             totalRemoved += saved.DrawCallsRemoved;
@@ -476,6 +537,7 @@ internal sealed class PdfCleaningWorkflow
             // what had been flattened but not written.
             DiscardWorkingCopy(_documents[index].FilePath);
             _flattenedPlaces.Remove(_documents[index].FilePath);
+            _hiddenPlacements.Remove(_documents[index].FilePath);
 
             _documents[index] = await AnalyzeForWorkspaceAsync(
                 saved.DestinationPath, reanalysisProgress, ct).ConfigureAwait(false);
@@ -503,6 +565,7 @@ internal sealed class PdfCleaningWorkflow
         PdfDocumentInfo document,
         string destinationPath,
         IReadOnlyList<ImageRemovalSelection> selections,
+        IReadOnlyList<OverlapRegion> hiddenPlacements,
         IReadOnlyCollection<string> selectedHashes,
         CancellationToken ct)
     {
@@ -527,7 +590,7 @@ internal sealed class PdfCleaningWorkflow
             // for removal. So the save is a copy. The cleaner refuses a run with
             // nothing in it, and rightly — being asked to change nothing is a
             // caller's mistake everywhere else.
-            if (selections.Count == 0)
+            if (selections.Count == 0 && hiddenPlacements.Count == 0)
             {
                 File.Copy(sourcePath, tempPath, overwrite: true);
                 File.Move(tempPath, destinationPath, overwrite: true);
@@ -538,7 +601,8 @@ internal sealed class PdfCleaningWorkflow
             // This is the file the user keeps, so it is the one whose images are
             // redrawn at the size they will be looked at.
             var result = await _cleaner
-                .CleanAsync(sourcePath, tempPath, selections, Array.Empty<OverlapRegion>(),
+                .CleanAsync(sourcePath, tempPath, selections,
+                    regionsToFlatten: null, regionsToClear: hiddenPlacements,
                     fitImagesToScreen: true, ct)
                 .ConfigureAwait(false);
 

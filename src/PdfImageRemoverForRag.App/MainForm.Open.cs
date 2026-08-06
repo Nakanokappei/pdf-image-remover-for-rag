@@ -39,7 +39,9 @@ internal sealed partial class MainForm
         // than that — places already flattened, which live in a working copy
         // that goes with the workspace. The layers panel's selection is not
         // work; hiding a layer IS, and that is one of the marks counted here.
-        if (_selectedHashes.Count > 0 || _workflow.HasFlattenedPlaces)
+        if (_selectedHashes.Count > 0
+            || _workflow.HasFlattenedPlaces
+            || _workflow.HasHiddenPlacements)
         {
             var choice = MessageBox.Show(this, L10n.ConfirmSaveBeforeOpen, L10n.ConfirmTitle,
                 MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);

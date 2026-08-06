@@ -433,7 +433,9 @@ internal sealed partial class MainForm
         // One save run does both, so the button follows either selection — and
         // a place already flattened is work waiting to be written even when
         // nothing at all is ticked.
-        bool canSave = _selectedHashes.Count > 0 || _workflow.HasFlattenedPlaces;
+        bool canSave = _selectedHashes.Count > 0
+                       || _workflow.HasFlattenedPlaces
+                       || _workflow.HasHiddenPlacements;
         // Select-all / clear act on the object list alone, so their enablement
         // describes the list and ignores whatever the tree has ticked.
         bool hasSelectable =

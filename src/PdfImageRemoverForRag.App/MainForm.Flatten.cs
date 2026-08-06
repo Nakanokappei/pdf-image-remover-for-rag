@@ -35,30 +35,30 @@ internal sealed partial class MainForm
     }
 
     /// <summary>
-    /// Hide or show layers, which is the same fact as ticking their objects for
-    /// removal — so it goes through the one selection the workspace keeps, and
-    /// both sides of the window are put back in step with it.
+    /// Hide or show layers. A hidden layer is one PLACEMENT: this drawing of
+    /// this object, on this page. The object list's tick is the other scope —
+    /// the object gone from everywhere it appears — and the two stay separate,
+    /// because hiding a caption on page 4 must not take the same caption off the
+    /// other thirty pages.
     ///
-    /// An object identifies a GROUP: the same logo drawn in six places is one
-    /// object with six placements, and hiding it hides all six. That is what the
-    /// object list has always meant by a tick, and two granularities for one
-    /// mark would be worse than this.
+    /// Showing one whose object is ticked is the one case where they meet: the
+    /// tick is what is hiding it, so the tick goes. Everything of that object
+    /// comes back, which is what "show it again" can honestly mean here.
     /// </summary>
     void OnLayerVisibilityChangeRequested(
         object? sender, FlattenPanel.VisibilityChangeEventArgs e)
     {
-        bool changed = false;
         foreach (var placed in e.Objects)
         {
-            var group = _workflow.ImageGroups.FirstOrDefault(g => g.Matches(placed));
-            // Only what a save could actually take out: an object the analysis
-            // flagged as unsafe to remove has no tick on the other side either.
-            if (group is null || !group.IsSafelyRemovable) continue;
+            _workflow.SetPlacementHidden(
+                e.FilePath, e.Page.PageNumber, e.Page, placed, e.Hide);
 
-            SetSelected(group.Hash, e.Hide);
-            changed = true;
+            if (e.Hide) continue;
+            if (_workflow.ImageGroups.FirstOrDefault(g => g.Matches(placed)) is { } group)
+            {
+                SetSelected(group.Hash, false);
+            }
         }
-        if (!changed) return;
 
         SyncAllViewCheckStates();
         _flattenPanel.RefreshVisibility();

@@ -1,7 +1,6 @@
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using PdfImageRemoverForRag.Core.Abstractions;
-using PdfImageRemoverForRag.Core.Imaging;
 using PdfImageRemoverForRag.Core.Models;
 
 namespace PdfImageRemoverForRag.App;
@@ -14,7 +13,7 @@ namespace PdfImageRemoverForRag.App;
 /// </summary>
 internal sealed class WindowsImageResampler : IImageResampler
 {
-    public StoredImage? Resize(StoredImage image, int width, int height, int maximumJpegQuality)
+    public StoredImage? Resize(StoredImage image, int width, int height, int jpegQuality)
     {
         if (width < 1 || height < 1) return null;
 
@@ -28,11 +27,7 @@ internal sealed class WindowsImageResampler : IImageResampler
 
             if (image.Encoding == StoredImageEncoding.Jpeg)
             {
-                // Never above the picture's own quality: encoding a photo saved
-                // at 60 as 85 makes the file bigger and puts nothing back.
-                int quality = Math.Min(
-                    maximumJpegQuality, JpegQuality.Estimate(image.Data) ?? maximumJpegQuality);
-                var encoded = EncodeJpeg(resized, quality);
+                var encoded = EncodeJpeg(resized, jpegQuality);
                 return encoded is null
                     ? null
                     : image with { Width = width, Height = height, Data = encoded, SoftMask = mask };

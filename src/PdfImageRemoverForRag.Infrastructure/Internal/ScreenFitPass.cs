@@ -37,7 +37,7 @@ internal static class ScreenFitPass
         IImageResampler resampler,
         int maximumWidth,
         int maximumHeight,
-        int maximumJpegQuality,
+        int jpegQuality,
         CancellationToken ct)
     {
         var resized = new List<string>();
@@ -55,7 +55,7 @@ internal static class ScreenFitPass
                 if (!visited.Add(entry.Dictionary.Internals.ObjectID.ToString())) continue;
 
                 var hash = ImageXObjectCollector.ComputeStreamHash(entry.Dictionary);
-                if (Fit(entry.Dictionary, resampler, maximumWidth, maximumHeight, maximumJpegQuality))
+                if (Fit(entry.Dictionary, resampler, maximumWidth, maximumHeight, jpegQuality))
                 {
                     resized.Add(hash);
                 }
@@ -71,7 +71,7 @@ internal static class ScreenFitPass
     /// </summary>
     static bool Fit(
         PdfDictionary image, IImageResampler resampler,
-        int maximumWidth, int maximumHeight, int maximumJpegQuality)
+        int maximumWidth, int maximumHeight, int jpegQuality)
     {
         int width = image.Elements.GetInteger("/Width");
         int height = image.Elements.GetInteger("/Height");
@@ -86,7 +86,7 @@ internal static class ScreenFitPass
 
         int fittedWidth = Math.Max(1, (int)Math.Round(width * scale));
         int fittedHeight = Math.Max(1, (int)Math.Round(height * scale));
-        var fitted = resampler.Resize(stored, fittedWidth, fittedHeight, maximumJpegQuality);
+        var fitted = resampler.Resize(stored, fittedWidth, fittedHeight, jpegQuality);
         if (fitted is null) return false;
 
         // Compared as they will be STORED, not as they were handed back: raw

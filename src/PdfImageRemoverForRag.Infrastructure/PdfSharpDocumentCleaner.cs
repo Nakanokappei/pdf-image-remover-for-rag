@@ -38,7 +38,7 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
     const int FlattenDpi = 200;
 
     /// <summary>
-    /// The screen the output is for, and the most a JPEG may be encoded at.
+    /// The screen the output is for, and the quality a JPEG is written at.
     /// Both come from what the file is for: it goes to a RAG pipeline whose
     /// reader displays it on an ordinary screen, and whose upload limit a manual
     /// full of screenshots reaches easily.

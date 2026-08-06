@@ -31,7 +31,7 @@ public class ScreenFitTests : IClassFixture<SamplePdfFixture>
     {
         public List<(int Width, int Height)> Asked { get; } = new();
 
-        public StoredImage? Resize(StoredImage image, int width, int height, int maximumJpegQuality)
+        public StoredImage? Resize(StoredImage image, int width, int height, int jpegQuality)
         {
             Asked.Add((width, height));
             return image with
@@ -52,7 +52,7 @@ public class ScreenFitTests : IClassFixture<SamplePdfFixture>
     /// </summary>
     sealed class NoiseResampler : IImageResampler
     {
-        public StoredImage? Resize(StoredImage image, int width, int height, int maximumJpegQuality)
+        public StoredImage? Resize(StoredImage image, int width, int height, int jpegQuality)
         {
             var noise = new byte[width * height * image.Components];
             new Random(1).NextBytes(noise);

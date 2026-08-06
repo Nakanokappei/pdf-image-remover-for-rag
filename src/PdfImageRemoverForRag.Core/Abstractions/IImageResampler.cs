@@ -16,10 +16,10 @@ public interface IImageResampler
     /// pixels, or null when its bytes cannot be decoded — a caller that gets
     /// null must leave the image as it found it.
     /// </summary>
-    /// <param name="maximumJpegQuality">
-    /// The most a JPEG may be encoded at. The image's own quality is used when
-    /// it is lower: re-encoding a photo saved at 60 as 85 makes the file bigger
-    /// and puts none of the detail back.
+    /// <param name="jpegQuality">
+    /// What a JPEG is encoded at, whatever it was encoded at before. A picture
+    /// on its way into a RAG pipeline is there to be read on a screen, and one
+    /// quality for all of them is one thing fewer to reason about.
     /// </param>
-    StoredImage? Resize(StoredImage image, int width, int height, int maximumJpegQuality);
+    StoredImage? Resize(StoredImage image, int width, int height, int jpegQuality);
 }

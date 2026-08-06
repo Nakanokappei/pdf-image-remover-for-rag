@@ -733,20 +733,25 @@ internal sealed class FlattenPanel : UserControl
     }
 
     /// <summary>
-    /// The places to flatten, per source file — each covering only the objects
-    /// that are selected. A unit with nothing selected is not in the result.
+    /// The places to combine, per source file — each covering the selected
+    /// layers of one unit that are actually SHOWN. A hidden layer is one the
+    /// save is going to take out, so baking it into the picture would put it
+    /// back as pixels; it is left out, and the save removes it as asked.
     /// </summary>
     public IReadOnlyDictionary<string, IReadOnlyList<OverlapRegion>> SelectedRegionsByFile()
     {
         var byFile = new Dictionary<string, List<OverlapRegion>>(StringComparer.OrdinalIgnoreCase);
         foreach (var (unit, members) in SelectedByUnit())
         {
+            var shown = members.Where(m => !Hidden(unit, m)).ToArray();
+            if (shown.Length == 0) continue;
+
             if (!byFile.TryGetValue(unit.FilePath, out var regions))
             {
                 regions = new List<OverlapRegion>();
                 byFile[unit.FilePath] = regions;
             }
-            regions.Add(OverlapDetector.RegionCovering(unit.Region.Page, members.ToArray()));
+            regions.Add(OverlapDetector.RegionCovering(unit.Region.Page, shown));
         }
         return byFile.ToDictionary(
             kv => kv.Key,
@@ -876,9 +881,10 @@ internal sealed class FlattenPanel : UserControl
     void RefreshCommandState()
     {
         var selected = SelectedByUnit();
-        // Anything selected can be flattened, whatever units it is spread over —
-        // each unit's selected objects become one picture.
-        _flattenSelection.Enabled = selected.Count > 0;
+        // Anything selected and SHOWN can be combined, whatever units it is
+        // spread over — each unit's shown layers become one picture. With every
+        // selected layer hidden there is nothing to draw.
+        _flattenSelection.Enabled = selected.Any(x => x.Members.Any(m => !Hidden(x.Unit, m)));
         _clearSelection.Enabled = selected.Count > 0;
         _undoFlatten.Enabled = CanUndoFlatten;
 

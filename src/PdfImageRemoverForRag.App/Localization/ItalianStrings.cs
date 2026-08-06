@@ -142,7 +142,7 @@ internal sealed class ItalianStrings : IStrings
 
     public string FlattenPanelTitle => "Livelli";
     public string FlattenMenu => "Comandi livello";
-    public string FlattenApply => "Unisci selezione";
+    public string FlattenApply => "Unisci livelli visibili";
     public string FlattenUndo => "Annulla unione";
     public string FlattenMerge => "Unisci";
     public string FlattenSplit => "Dividi";

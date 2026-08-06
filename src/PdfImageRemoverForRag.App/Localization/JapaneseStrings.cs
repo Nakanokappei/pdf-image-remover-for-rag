@@ -135,7 +135,7 @@ internal sealed class JapaneseStrings : IStrings
 
     public string FlattenPanelTitle => "レイヤー";
     public string FlattenMenu => "レイヤー操作";
-    public string FlattenApply => "選択を統合";
+    public string FlattenApply => "表示レイヤーを結合";
     public string FlattenUndo => "統合を解除";
     public string FlattenMerge => "選択を合流";
     public string FlattenSplit => "選択を分割";

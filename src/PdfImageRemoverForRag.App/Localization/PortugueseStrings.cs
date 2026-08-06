@@ -143,7 +143,7 @@ internal sealed class PortugueseStrings : IStrings
 
     public string FlattenPanelTitle => "Camadas";
     public string FlattenMenu => "Comandos de camada";
-    public string FlattenApply => "Achatar seleção";
+    public string FlattenApply => "Mesclar camadas visíveis";
     public string FlattenUndo => "Desfazer achatamento";
     public string FlattenMerge => "Unir seleção";
     public string FlattenSplit => "Dividir seleção";

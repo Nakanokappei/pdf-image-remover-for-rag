@@ -145,7 +145,7 @@ internal sealed class FrenchStrings : IStrings
 
     public string FlattenPanelTitle => "Calques";
     public string FlattenMenu => "Commandes de calque";
-    public string FlattenApply => "Aplatir la sélection";
+    public string FlattenApply => "Fusionner les calques visibles";
     public string FlattenUndo => "Annuler l'aplatissement";
     public string FlattenMerge => "Fusionner";
     public string FlattenSplit => "Séparer";

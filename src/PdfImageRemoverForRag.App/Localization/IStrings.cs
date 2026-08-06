@@ -259,9 +259,14 @@ internal interface IStrings
 
     /// <summary>
     /// Commands acting on the selected layers, every one of them taking effect
-    /// at once: flatten replaces them with a picture of themselves, undo takes
-    /// such a picture back, merge gathers them into one unit, split takes them
-    /// out of the one they are in.
+    /// at once: merge replaces them with a picture of themselves, undo takes
+    /// such a picture back, and the two below gather layers into one unit or
+    /// take them out of the one they are in.
+    ///
+    /// The first says VISIBLE because that is what it combines — a hidden layer
+    /// is one the save is going to take out, and baking it into the picture
+    /// would put it back as pixels. Use the wording that language's image
+    /// editors use for Photoshop's "Merge Visible".
     /// </summary>
     string FlattenApply { get; }
     string FlattenUndo { get; }

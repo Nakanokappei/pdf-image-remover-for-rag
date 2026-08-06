@@ -145,7 +145,7 @@ internal sealed class VietnameseStrings : IStrings
 
     public string FlattenPanelTitle => "Lớp";
     public string FlattenMenu => "Lệnh lớp";
-    public string FlattenApply => "Gộp mục đã chọn";
+    public string FlattenApply => "Gộp các lớp hiển thị";
     public string FlattenUndo => "Hoàn tác gộp";
     public string FlattenMerge => "Gộp lựa chọn";
     public string FlattenSplit => "Tách lựa chọn";

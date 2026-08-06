@@ -143,7 +143,7 @@ internal sealed class GermanStrings : IStrings
 
     public string FlattenPanelTitle => "Ebenen";
     public string FlattenMenu => "Ebenenbefehle";
-    public string FlattenApply => "Auswahl zusammenfügen";
+    public string FlattenApply => "Sichtbare Ebenen zusammenfügen";
     public string FlattenUndo => "Zusammenfügen aufheben";
     public string FlattenMerge => "Zusammenführen";
     public string FlattenSplit => "Trennen";

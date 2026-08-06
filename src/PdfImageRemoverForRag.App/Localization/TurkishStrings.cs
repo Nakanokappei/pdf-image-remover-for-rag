@@ -149,7 +149,7 @@ internal sealed class TurkishStrings : IStrings
 
     public string FlattenPanelTitle => "Katmanlar";
     public string FlattenMenu => "Katman komutları";
-    public string FlattenApply => "Seçimi birleştir";
+    public string FlattenApply => "Görünür katmanları birleştir";
     public string FlattenUndo => "Birleştirmeyi geri al";
     public string FlattenMerge => "Birleştir";
     public string FlattenSplit => "Ayır";

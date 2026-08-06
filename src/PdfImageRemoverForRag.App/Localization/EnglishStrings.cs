@@ -139,7 +139,7 @@ internal sealed class EnglishStrings : IStrings
 
     public string FlattenPanelTitle => "Layers";
     public string FlattenMenu => "Layer commands";
-    public string FlattenApply => "Flatten selected";
+    public string FlattenApply => "Merge visible layers";
     public string FlattenUndo => "Undo flatten";
     public string FlattenMerge => "Merge selected";
     public string FlattenSplit => "Split selected";

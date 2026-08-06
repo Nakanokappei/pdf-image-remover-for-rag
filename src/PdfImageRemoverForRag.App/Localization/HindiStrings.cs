@@ -141,7 +141,7 @@ internal sealed class HindiStrings : IStrings
 
     public string FlattenPanelTitle => "लेयर";
     public string FlattenMenu => "लेयर कमांड";
-    public string FlattenApply => "चयनित मिलाएँ";
+    public string FlattenApply => "दृश्य लेयर मिलाएँ";
     public string FlattenUndo => "मिलाना पूर्ववत करें";
     public string FlattenMerge => "चयन मिलाएँ";
     public string FlattenSplit => "चयन अलग करें";

@@ -150,7 +150,7 @@ internal sealed class RussianStrings : IStrings
 
     public string FlattenPanelTitle => "Слои";
     public string FlattenMenu => "Команды слоёв";
-    public string FlattenApply => "Объединить выбранное";
+    public string FlattenApply => "Объединить видимые слои";
     public string FlattenUndo => "Отменить объединение";
     public string FlattenMerge => "Объединить";
     public string FlattenSplit => "Разделить";

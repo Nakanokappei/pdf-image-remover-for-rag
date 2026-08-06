@@ -146,7 +146,7 @@ internal sealed class SpanishStrings : IStrings
 
     public string FlattenPanelTitle => "Capas";
     public string FlattenMenu => "Comandos de capa";
-    public string FlattenApply => "Acoplar selección";
+    public string FlattenApply => "Combinar capas visibles";
     public string FlattenUndo => "Deshacer acoplado";
     public string FlattenMerge => "Unir selección";
     public string FlattenSplit => "Dividir selección";

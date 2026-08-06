@@ -136,7 +136,7 @@ internal sealed class KoreanStrings : IStrings
 
     public string FlattenPanelTitle => "레이어";
     public string FlattenMenu => "레이어 명령";
-    public string FlattenApply => "선택 병합";
+    public string FlattenApply => "보이는 레이어 병합";
     public string FlattenUndo => "병합 취소";
     public string FlattenMerge => "선택 합치기";
     public string FlattenSplit => "선택 나누기";

@@ -674,8 +674,15 @@ internal sealed class FlattenPanel : UserControl
         RebuildRows(resetScroll: false);
     }
 
-    /// <summary>Repaint the rows: what is hidden has changed under them.</summary>
-    public void RefreshVisibility() => _list.Invalidate();
+    /// <summary>
+    /// Repaint: what is hidden has changed under the rows, and under the page
+    /// preview, where it is what the greying answers.
+    /// </summary>
+    public void RefreshVisibility()
+    {
+        _list.Invalidate();
+        ShowPreviewForSelection();
+    }
 
     // =======================================================================
     // Selection
@@ -941,7 +948,9 @@ internal sealed class FlattenPanel : UserControl
 
         var (unit, members) = selected[0];
         _preview.Show(
-            unit.FilePath, unit.Region.PageNumber, members.Select(RectOf).ToArray());
+            unit.FilePath, unit.Region.PageNumber,
+            members.Select(RectOf).ToArray(),
+            HiddenOn(unit.FilePath, unit.Region.PageNumber));
     }
 
     void ShowPreviewFor(Row row)
@@ -949,7 +958,31 @@ internal sealed class FlattenPanel : UserControl
         var unit = _units[row.UnitIndex];
         var shown = row.Object is null ? unit.Region.Members : new[] { row.Object };
         _preview.Show(
-            unit.FilePath, unit.Region.PageNumber, shown.Select(RectOf).ToArray());
+            unit.FilePath, unit.Region.PageNumber,
+            shown.Select(RectOf).ToArray(),
+            HiddenOn(unit.FilePath, unit.Region.PageNumber));
+    }
+
+    /// <summary>
+    /// Every hidden layer on one page, wherever in the file's units it sits —
+    /// not only the units on screen. The preview shows the PAGE, and a layer
+    /// that is going to be taken out of it is going to be taken out of it
+    /// whether or not the panel happens to be listing its unit.
+    /// </summary>
+    IReadOnlyList<RectangleF> HiddenOn(string filePath, int pageNumber)
+    {
+        var boxes = new List<RectangleF>();
+        foreach (var unit in _units)
+        {
+            if (!string.Equals(unit.FilePath, filePath, StringComparison.OrdinalIgnoreCase)) continue;
+            if (unit.Region.PageNumber != pageNumber) continue;
+
+            foreach (var member in unit.Region.Members)
+            {
+                if (Hidden(unit, member)) boxes.Add(RectOf(member));
+            }
+        }
+        return boxes;
     }
 
     static RectangleF RectOf(PlacedObject o) =>
@@ -973,7 +1006,10 @@ internal sealed class FlattenPanel : UserControl
 
         readonly PdfPageRenderer _renderer = new();
         RenderedPage? _page;
+        // What is selected, outlined; and what is hidden, greyed out. Two
+        // questions, two marks — one set drawn as both was read as neither.
         IReadOnlyList<RectangleF> _boxesInPoints = Array.Empty<RectangleF>();
+        IReadOnlyList<RectangleF> _hiddenInPoints = Array.Empty<RectangleF>();
         string? _filePath;
         int _pageNumber;
         int _renderedWidth;
@@ -992,9 +1028,13 @@ internal sealed class FlattenPanel : UserControl
 
         int Dip(int logical) => LogicalToDeviceUnits(logical);
 
-        public void Show(string filePath, int pageNumber, IReadOnlyList<RectangleF> boxesInPoints)
+        public void Show(
+            string filePath, int pageNumber,
+            IReadOnlyList<RectangleF> selectedInPoints,
+            IReadOnlyList<RectangleF> hiddenInPoints)
         {
-            _boxesInPoints = boxesInPoints;
+            _boxesInPoints = selectedInPoints;
+            _hiddenInPoints = hiddenInPoints;
             // Same page, different boxes (a different row on the same page):
             // repaint, do not render again.
             if (_filePath == filePath && _pageNumber == pageNumber && _page is not null)
@@ -1014,6 +1054,7 @@ internal sealed class FlattenPanel : UserControl
             _page?.Bitmap.Dispose();
             _page = null;
             _boxesInPoints = Array.Empty<RectangleF>();
+            _hiddenInPoints = Array.Empty<RectangleF>();
             Invalidate();
         }
 
@@ -1068,8 +1109,11 @@ internal sealed class FlattenPanel : UserControl
             var boxes = PageHighlightPainter.MapToDisplay(
                 display, _page.PageWidthPoints, _page.PageHeightPoints, _page.RotationDegrees,
                 _boxesInPoints, Dip(4));
+            var hidden = PageHighlightPainter.MapToDisplay(
+                display, _page.PageWidthPoints, _page.PageHeightPoints, _page.RotationDegrees,
+                _hiddenInPoints, Dip(4));
             e.Graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-            PageHighlightPainter.DrawPage(e.Graphics, _page.Bitmap, display, boxes);
+            PageHighlightPainter.DrawPageWithDimmedPlaces(e.Graphics, _page.Bitmap, display, hidden);
             using (var frame = new Pen(SystemColors.ControlDark))
             {
                 e.Graphics.DrawRectangle(frame, display.X, display.Y, display.Width - 1, display.Height - 1);

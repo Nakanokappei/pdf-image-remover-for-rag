@@ -75,6 +75,40 @@ internal static class PageHighlightPainter
     }
 
     /// <summary>
+    /// Draw the page in full colour and grey out the given places — the inverse
+    /// of <see cref="DrawPage"/>, and the layers panel's question rather than the
+    /// usage window's. There, dimming answers "everything except this"; here it
+    /// answers "this is not going to be there", because a hidden layer is one the
+    /// save takes out. Which places are SELECTED is a different question, and
+    /// the outlines answer it separately.
+    /// </summary>
+    public static void DrawPageWithDimmedPlaces(
+        Graphics g, Bitmap page, Rectangle destination, IReadOnlyList<RectangleF> boxes)
+    {
+        g.DrawImage(page, destination);
+        if (boxes.Count == 0) return;
+
+        // Each place repainted from the same bitmap through the dimming matrix,
+        // mapping the displayed rectangle back to source pixels.
+        double toSourceX = (double)page.Width / destination.Width;
+        double toSourceY = (double)page.Height / destination.Height;
+        foreach (var box in boxes)
+        {
+            var source = new Rectangle(
+                (int)Math.Floor((box.X - destination.X) * toSourceX),
+                (int)Math.Floor((box.Y - destination.Y) * toSourceY),
+                (int)Math.Ceiling(box.Width * toSourceX),
+                (int)Math.Ceiling(box.Height * toSourceY));
+            source.Intersect(new Rectangle(0, 0, page.Width, page.Height));
+            if (source.Width < 1 || source.Height < 1) continue;
+
+            g.DrawImage(page, Rectangle.Round(box),
+                source.X, source.Y, source.Width, source.Height,
+                GraphicsUnit.Pixel, DimAttributes);
+        }
+    }
+
+    /// <summary>
     /// Outline each place in light blue (the theme's Highlight under high
     /// contrast). No translucent fill: the area inside the outline is the one
     /// part still in full colour, and a wash over it would undo that.

@@ -80,9 +80,11 @@ internal sealed partial class MainForm
         SetBusy(true, L10n.StatusFlattening);
         try
         {
-            int flattened = await _workflow.FlattenAsync(places,
+            var flattened = await _workflow.FlattenAsync(places,
                 new Progress<AnalysisProgress>(report => SetStatus(_openProgress.Describe(report))));
-            RebuildAfterWorkspaceChanged(L10n.StatusFlattened(flattened), keepSelection: true);
+            RebuildAfterWorkspaceChanged(
+                L10n.StatusFlattened(flattened.Count), keepSelection: true);
+            ShowPictureDrawnBy(flattened);
         }
         catch (Exception ex)
         {
@@ -124,6 +126,40 @@ internal sealed partial class MainForm
         finally
         {
             SetBusy(false);
+        }
+    }
+
+    /// <summary>
+    /// Put the cursor on the picture a merge just drew.
+    ///
+    /// Without this the result is invisible on a real document: the rows the
+    /// merge acted on stay in the list, because the list counts an object over
+    /// the WHOLE file and those objects are still drawn on other pages — only
+    /// their count drops by one. Rebuilding also sends the cursor to the top of
+    /// six hundred rows. So the one thing that IS new gets pointed at.
+    /// </summary>
+    void ShowPictureDrawnBy(IReadOnlyList<(string FilePath, OverlapRegion Place)> flattened)
+    {
+        if (flattened.Count == 0) return;
+
+        var (filePath, place) = flattened[^1];
+        var picture = _workflow.PictureDrawnFor(filePath, place);
+        if (picture is null) return;
+
+        if (_isTileView)
+        {
+            _tileView.FocusGroup(picture);
+            return;
+        }
+        foreach (DataGridViewRow row in _imageListGrid.Rows)
+        {
+            if (!ReferenceEquals(row.Tag, picture)) continue;
+
+            row.Selected = true;
+            var cell = row.Cells[_objectIdColumn.Index];
+            if (cell.Visible) _imageListGrid.CurrentCell = cell;
+            _imageListGrid.FirstDisplayedScrollingRowIndex = row.Index;
+            return;
         }
     }
 

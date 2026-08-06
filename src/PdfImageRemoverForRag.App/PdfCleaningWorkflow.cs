@@ -314,26 +314,60 @@ internal sealed class PdfCleaningWorkflow
     /// and flattening reserving itself for the save was the odd one out — a tick
     /// that did nothing visible until a file was written.
     ///
-    /// Returns how many places were flattened.
+    /// Returns the places it flattened, each with the file it is in — the
+    /// caller points the user at the pictures they became, which is how the
+    /// result of pressing the command is seen at all in a list of hundreds.
     /// </summary>
-    public async Task<int> FlattenAsync(
+    public async Task<IReadOnlyList<(string FilePath, OverlapRegion Place)>> FlattenAsync(
         IReadOnlyDictionary<string, IReadOnlyList<OverlapRegion>> placesByFile,
         IProgress<AnalysisProgress>? progress = null,
         CancellationToken ct = default)
     {
-        int flattened = 0;
+        var flattened = new List<(string, OverlapRegion)>();
         foreach (var (filePath, places) in placesByFile)
         {
             ct.ThrowIfCancellationRequested();
             int index = IndexOfDocument(filePath);
             if (index < 0 || places.Count == 0) continue;
 
-            var applied = PlacesFlattenedIn(_documents[index].FilePath);
-            foreach (var place in places) AbsorbAndAdd(applied, place);
+            var document = _documents[index].FilePath;
+            var applied = PlacesFlattenedIn(document);
+            foreach (var place in places)
+            {
+                AbsorbAndAdd(applied, place);
+                // The place as APPLIED, which may have swallowed an earlier one
+                // and so covers more than the caller asked for. That is the
+                // rectangle the picture ends up at.
+                flattened.Add((document, applied[^1]));
+            }
             await RebuildWorkingCopyAsync(index, progress, ct).ConfigureAwait(false);
-            flattened += places.Count;
         }
         return flattened;
+    }
+
+    /// <summary>
+    /// The picture a flatten drew, as the object list now holds it. Found by
+    /// geometry, the same way <see cref="FlattenBehind"/> works in reverse.
+    /// </summary>
+    public CrossFileImageGroup? PictureDrawnFor(string filePath, OverlapRegion place)
+    {
+        foreach (var group in ImageGroups.Where(g => g.Kind == RemovableKind.Image))
+        {
+            foreach (var file in group.FileOccurrences)
+            {
+                if (!CleanedFileNamer.WouldOverwriteSource(file.FilePath, filePath)) continue;
+                foreach (var occurrence in file.Occurrences)
+                {
+                    if (occurrence.PageNumber == place.PageNumber
+                        && IsPictureAt(occurrence.X, occurrence.Y,
+                            occurrence.Width, occurrence.Height, place))
+                    {
+                        return group;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     /// <summary>

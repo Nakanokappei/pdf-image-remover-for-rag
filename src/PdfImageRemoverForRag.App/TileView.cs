@@ -359,6 +359,18 @@ internal sealed class TileView : Panel
     }
 
     /// <summary>
+    /// Put the cursor on a particular group, if it is here. Answers whether it
+    /// was found, so a caller pointing at something new can tell.
+    /// </summary>
+    public bool FocusGroup(CrossFileImageGroup group)
+    {
+        int index = _items.ToList().FindIndex(item => ReferenceEquals(item, group));
+        if (index < 0) return false;
+        SetFocusedTile(index);
+        return true;
+    }
+
+    /// <summary>
     /// The group the tile cursor is on, or null before it has landed anywhere.
     /// This view's equivalent of the grid's current row — what the flatten
     /// panel describes while the tiles are showing.

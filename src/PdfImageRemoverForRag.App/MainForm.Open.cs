@@ -35,12 +35,11 @@ internal sealed partial class MainForm
     {
         if (_workflow.OpenDocuments.Count == 0) return true;
 
-        // Work worth offering to save: ticks on either side, which the rebuild
-        // that follows an open clears, and — more than ticks — places already
-        // flattened, which live in a working copy that goes with the workspace.
-        if (_selectedHashes.Count > 0
-            || _flattenPanel.CheckedObjectCount > 0
-            || _workflow.HasFlattenedPlaces)
+        // Work worth offering to save: what is marked for removal, and — more
+        // than that — places already flattened, which live in a working copy
+        // that goes with the workspace. The layers panel's selection is not
+        // work; hiding a layer IS, and that is one of the marks counted here.
+        if (_selectedHashes.Count > 0 || _workflow.HasFlattenedPlaces)
         {
             var choice = MessageBox.Show(this, L10n.ConfirmSaveBeforeOpen, L10n.ConfirmTitle,
                 MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);

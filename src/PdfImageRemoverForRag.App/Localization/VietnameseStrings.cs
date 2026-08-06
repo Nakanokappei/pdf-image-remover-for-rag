@@ -143,8 +143,8 @@ internal sealed class VietnameseStrings : IStrings
     public string AboutLicenseLink => "Thông tin giấy phép";
     public string ContextMenuUsageLocations => "Hiển thị &Vị trí Sử dụng…";
 
-    public string FlattenPanelTitle => "Gộp";
-    public string ColumnSelect => "Chọn";
+    public string FlattenPanelTitle => "Lớp";
+    public string FlattenMenu => "Lệnh lớp";
     public string FlattenApply => "Gộp mục đã chọn";
     public string FlattenUndo => "Hoàn tác gộp";
     public string FlattenMerge => "Gộp lựa chọn";
@@ -154,13 +154,12 @@ internal sealed class VietnameseStrings : IStrings
         "Gộp các đối tượng chồng lên nhau thành một ảnh duy nhất. Trang vẫn trông như cũ, "
         + "nhưng văn bản bên trong không còn là văn bản nữa.";
 
-    public string FlattenUnitLabel(int document, int page, int number) =>
-        $"Nhóm {document}-{page}-{number}";
     public string FlattenObjectNotOverlapping => "Đối tượng này không chồng lên bất kỳ đối tượng nào.";
     public string FlattenNoOverlaps => "Không tìm thấy đối tượng nào chồng lên nhau.";
     public string FlattenWholePageWarning =>
         "Các đối tượng đã chọn phủ gần hết trang. Khi gộp lại, trang này sẽ thành một ảnh duy nhất và không còn chữ nào là văn bản.";
-    public string StatusFlattenSelection(int objectCount) => $"{objectCount} đối tượng sẽ được gộp";
+    public string StatusFlattenSelection(int objectCount) =>
+        $"Đã chọn {objectCount} lớp";
     public string AccessibleFlattenPreview => "Xem trước";
 
     public string ErrorSameAsSource =>

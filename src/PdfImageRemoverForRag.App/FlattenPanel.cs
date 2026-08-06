@@ -20,9 +20,9 @@ internal readonly record struct LayerThumbnail(
     bool CanEverRender);
 
 /// <summary>
-/// The 統合 (Flatten) panel, docked to the right of the object list: the units
-/// the object selected on the left takes part in, laid out like an image
-/// editor's layers panel, with a preview of the page underneath.
+/// The Layers panel, docked to the right of the object list: the flatten units
+/// the object selected on the left takes part in, laid out the way an image
+/// editor lays out layers, with a preview of the page underneath.
 ///
 /// It answers one question — "where does this object overlap something, and
 /// what would be baked with it" — about whatever the list has selected. That is
@@ -30,13 +30,17 @@ internal readonly record struct LayerThumbnail(
 /// overview, and duplicating it beside itself gave the user two lists to read
 /// and no reason to prefer either.
 ///
-/// A unit is a layer group and its objects are the layers inside it, each with
-/// a thumbnail, a name and a checkbox. Ticking the group takes everything in
-/// it; ticking objects takes only those.
+/// A unit is a folder and its objects are the layers inside it. Each row has an
+/// eye that says whether it is drawn, and hiding a layer means what it means in
+/// an image editor: it does not appear in what gets written, which here is the
+/// same thing as ticking it for removal on the other side of the window.
+/// Selection is separate from all that — a row is selected by clicking it, and
+/// the commands act on what is selected.
 ///
-/// **Ticks live here, not in the rows.** The list is a filtered view — moving
-/// the selection on the left changes which units are shown — so anything held
-/// per row would be lost the moment the user looked at another object.
+/// **Nothing is held per row.** The list is a filtered view — moving the
+/// selection on the left changes which units are shown — so state kept against
+/// a row index would be lost the moment the user looked at another object. What
+/// is hidden lives in the workspace, and the panel asks.
 /// </summary>
 internal sealed class FlattenPanel : UserControl
 {
@@ -50,7 +54,7 @@ internal sealed class FlattenPanel : UserControl
     /// <summary>
     /// A line in the list: a unit header, or one of its objects. Kept as
     /// indices into <see cref="_units"/> so the rows stay cheap to rebuild on
-    /// every expand and every tick.
+    /// every expand.
     /// </summary>
     readonly record struct Row(int UnitIndex, PlacedObject? Object);
 
@@ -58,61 +62,42 @@ internal sealed class FlattenPanel : UserControl
     readonly List<UnitEntry> _units = new();
     readonly List<Row> _rows = new();
 
-    // What is ticked, by unit. Reference-keyed: the regions come from the
-    // analysis of the open files and live as long as the workspace does, while
-    // two different places on a page can hold equal-valued members.
-    readonly Dictionary<OverlapRegion, HashSet<PlacedObject>> _checked =
-        new((IEqualityComparer<OverlapRegion>)ReferenceEqualityComparer.Instance);
-
     CrossFileImageGroup? _selectedGroup;
     bool _anyDocuments;
 
     readonly LayerListView _list;
-    // Title and a clear button share a bar, so the command sits with the thing
-    // it acts on. The toolbar's Clear Selection deliberately does not reach in
-    // here — one button that emptied both sides would make an irreversible
-    // operation's target unpredictable — which left ticks made across a dozen
-    // different objects with no way back but saving.
+    // Title and a menu share a bar. The commands are in the menu rather than on
+    // a row of their own: five buttons cannot share a line with a heading at any
+    // width, and this panel is the one the user drags narrow.
     readonly Panel _titleBar = new() { Dock = DockStyle.Top };
     readonly Label _title = new()
     {
         Dock = DockStyle.Fill,
         AutoSize = false,
-        // The glyph pairs it with the object list's ☑ column across the
-        // window: one side's ticks remove, this side's flatten.
         Text = L10n.FlattenPanelHeader,
         TextAlign = ContentAlignment.MiddleLeft,
         UseMnemonic = false,
     };
-    // The commands, all acting on what is TICKED and all taking effect at once:
-    // flatten replaces the ticked objects with a picture of themselves, undo
-    // takes one of those pictures back, merge gathers ticks into one unit and
-    // split takes them out of the one they are in. A tick reserves nothing —
-    // that was the confusing part, with two of these acting immediately and
-    // flattening waiting for a save that had not been asked for yet.
-    //
-    // A row of their own rather than the title bar: five commands cannot share
-    // one line with a heading at any width, and a toolbar puts what does not fit
-    // in its overflow instead of clipping it.
-    readonly ToolStrip _commands = new()
+    readonly Button _menuButton = new()
     {
-        Dock = DockStyle.Top,
-        GripStyle = ToolStripGripStyle.Hidden,
-        RenderMode = ToolStripRenderMode.System,
-        LayoutStyle = ToolStripLayoutStyle.HorizontalStackWithOverflow,
+        Dock = DockStyle.Right,
+        Text = L10n.MenuGlyph,
+        FlatStyle = FlatStyle.System,
+        AutoSize = false,
+        UseMnemonic = false,
     };
-    readonly ToolStripButton _flattenSelection = NewCommand(L10n.FlattenApply);
-    readonly ToolStripButton _undoFlatten = NewCommand(L10n.FlattenUndo);
-    readonly ToolStripButton _mergeSelection = NewCommand(L10n.FlattenMerge);
-    readonly ToolStripButton _splitSelection = NewCommand(L10n.FlattenSplit);
-    readonly ToolStripButton _clearChecks = NewCommand(L10n.ToolClearSelection);
+    readonly ContextMenuStrip _menu = new();
 
-    static ToolStripButton NewCommand(string caption) => new(caption)
-    {
-        DisplayStyle = ToolStripItemDisplayStyle.Text,
-        Enabled = false,
-        AutoToolTip = false,
-    };
+    // The commands, every one of them acting on the SELECTED rows and every one
+    // taking effect at once: flatten replaces them with a picture of themselves,
+    // undo takes such a picture back, merge gathers them into one unit and split
+    // takes them out of the one they are in.
+    readonly ToolStripMenuItem _flattenSelection = new(L10n.FlattenApply);
+    readonly ToolStripMenuItem _undoFlatten = new(L10n.FlattenUndo);
+    readonly ToolStripMenuItem _mergeSelection = new(L10n.FlattenMerge);
+    readonly ToolStripMenuItem _splitSelection = new(L10n.FlattenSplit);
+    readonly ToolStripMenuItem _clearSelection = new(L10n.ToolClearSelection);
+
     readonly Label _description = new()
     {
         Dock = DockStyle.Top,
@@ -152,11 +137,11 @@ internal sealed class FlattenPanel : UserControl
     };
     readonly PreviewPane _preview = new() { Dock = DockStyle.Fill };
 
-    /// <summary>Raised whenever the set of ticked objects changes.</summary>
+    /// <summary>Raised whenever the set of selected rows changes.</summary>
     public event EventHandler? SelectionChanged;
 
     /// <summary>
-    /// Raised when the user asks for the ticked objects to be flattened now.
+    /// Raised when the user asks for the selected objects to be flattened now.
     /// The panel does not do it: flattening writes a file, and the workspace is
     /// what owns files.
     /// </summary>
@@ -166,14 +151,25 @@ internal sealed class FlattenPanel : UserControl
     public event EventHandler? UndoFlattenRequested;
 
     /// <summary>
-    /// Whether the object selected in the list is a picture some flatten drew,
-    /// which is the only thing the undo command can act on. Decided by the host
-    /// — it is the workspace that knows what has been flattened.
+    /// Raised when an eye is clicked. Whether a layer is drawn is the same fact
+    /// as whether a save keeps it, and that fact lives in the workspace beside
+    /// the object list's own ticks — so the panel asks for the change rather
+    /// than making it.
     /// </summary>
-    public bool CanUndoFlatten
+    public event EventHandler<VisibilityChangeEventArgs>? VisibilityChangeRequested;
+
+    internal sealed class VisibilityChangeEventArgs : EventArgs
     {
-        get => _undoFlatten.Enabled;
-        set => _undoFlatten.Enabled = value;
+        public VisibilityChangeEventArgs(IReadOnlyList<PlacedObject> objects, bool hide)
+        {
+            Objects = objects;
+            Hide = hide;
+        }
+
+        public IReadOnlyList<PlacedObject> Objects { get; }
+
+        /// <summary>True to stop drawing them, false to draw them again.</summary>
+        public bool Hide { get; }
     }
 
     /// <summary>
@@ -188,6 +184,19 @@ internal sealed class FlattenPanel : UserControl
     /// bitmap decided under different rules.
     /// </summary>
     public Func<PlacedObject, LayerThumbnail>? ThumbnailFor { get; set; }
+
+    /// <summary>
+    /// Whether an object is currently hidden — which is to say, marked for
+    /// removal. Answered by the host, because that is where the mark lives.
+    /// </summary>
+    public Func<PlacedObject, bool>? IsHidden { get; set; }
+
+    /// <summary>
+    /// Whether the object selected in the list is a picture some flatten drew,
+    /// which is the only thing the undo command can act on. Decided by the host
+    /// — it is the workspace that knows what has been flattened.
+    /// </summary>
+    public bool CanUndoFlatten { get; set; }
 
     /// <summary>
     /// Height of the preview under the list, in LOGICAL pixels: set by the host
@@ -209,42 +218,42 @@ internal sealed class FlattenPanel : UserControl
 
     public FlattenPanel()
     {
-        _list = new LayerListView(VisualForRow)
+        _list = new LayerListView(VisualForRow, IsGroupRow)
         {
             Dock = DockStyle.Fill,
             Visible = false,
         };
         _list.AccessibleName = L10n.FlattenPanelTitle;
         _list.AccessibleDescription = L10n.FlattenDescription;
-        _list.CheckToggled += OnCheckToggled;
+        _list.VisibilityToggled += OnVisibilityToggled;
         _list.ExpandToggled += OnExpandToggled;
-        _list.RowSelected += OnRowSelected;
+        _list.SelectionChanged += OnRowSelectionChanged;
         _list.ToolTipFor = ToolTipForRow;
         _list.ViewportChanged += (_, e) => ViewportChanged?.Invoke(this, e);
 
         _preview.AccessibleName = L10n.AccessibleFlattenPreview;
         _wholePageWarning.ForeColor = MainForm.WarningTextColour;
         _title.Font = new Font(Font, FontStyle.Bold);
-        // The panel's name goes on every command, so a screen reader reading one
-        // out of context still says which side of the window it belongs to.
-        foreach (var command in new[]
-                 { _flattenSelection, _undoFlatten, _mergeSelection, _splitSelection, _clearChecks })
+
+        _menuButton.AccessibleName = $"{L10n.FlattenMenu} ({L10n.FlattenPanelTitle})";
+        _menuButton.Click += (_, _) => _menu.Show(_menuButton, new Point(0, _menuButton.Height));
+        _menu.Items.AddRange(new ToolStripItem[]
         {
-            command.AccessibleName = $"{command.Text} ({L10n.FlattenPanelTitle})";
-        }
+            _flattenSelection, _undoFlatten, new ToolStripSeparator(),
+            _mergeSelection, _splitSelection, new ToolStripSeparator(),
+            _clearSelection,
+        });
+        // Decided as the menu opens rather than kept in step with every click:
+        // there is one moment when it matters, and this way it cannot be stale.
+        _menu.Opening += (_, _) => RefreshCommandState();
         _flattenSelection.Click += (_, _) => FlattenRequested?.Invoke(this, EventArgs.Empty);
         _undoFlatten.Click += (_, _) => UndoFlattenRequested?.Invoke(this, EventArgs.Empty);
         _mergeSelection.Click += (_, _) => EditUnits(merge: true);
         _splitSelection.Click += (_, _) => EditUnits(merge: false);
-        _clearChecks.Click += (_, _) => ClearChecks();
+        _clearSelection.Click += (_, _) => ClearSelection();
 
         _titleBar.Controls.Add(_title);
-        _commands.Items.AddRange(new ToolStripItem[]
-        {
-            _flattenSelection, _undoFlatten, new ToolStripSeparator(),
-            _mergeSelection, _splitSelection, new ToolStripSeparator(),
-            _clearChecks,
-        });
+        _titleBar.Controls.Add(_menuButton);
 
         var listSide = new Panel { Dock = DockStyle.Fill };
         listSide.Controls.Add(_list);
@@ -259,7 +268,6 @@ internal sealed class FlattenPanel : UserControl
         Controls.Add(_split);
         Controls.Add(_wholePageWarning);
         Controls.Add(_description);
-        Controls.Add(_commands);
         Controls.Add(_titleBar);
     }
 
@@ -298,11 +306,10 @@ internal sealed class FlattenPanel : UserControl
     void ApplyDpiDependentLayout()
     {
         _title.Padding = new Padding(Dip(8), 0, Dip(8), 0);
-        // The heading sits on its own line now, so the bar only has to be as
-        // tall as one line of bold text. The command row below sizes itself.
-        _titleBar.Height = Dip(26);
-        _titleBar.Padding = new Padding(0, Dip(3), Dip(8), 0);
-        _commands.Padding = new Padding(Dip(4), 0, Dip(4), Dip(2));
+        // Square, so the glyph sits in the middle of it rather than in a slab.
+        _menuButton.Width = Dip(30);
+        _titleBar.Height = Dip(30);
+        _titleBar.Padding = new Padding(0, Dip(3), Dip(6), Dip(3));
         _description.Padding = new Padding(Dip(8), 0, Dip(8), Dip(6));
         FitDescriptionHeight();
         _split.SplitterWidth = Math.Max(4, Dip(4));
@@ -351,20 +358,16 @@ internal sealed class FlattenPanel : UserControl
             TextFormatFlags.WordBreak).Height + Dip(8);
 
     /// <summary>
-    /// Show the warning when what is ticked would cover essentially the whole
-    /// page — on any page, since one such unit is enough to lose a page of text.
-    ///
-    /// It reads the TICKED objects, not the units as detected: the area that
-    /// becomes a picture is the bounding box of what the user chose, and a
-    /// region can be whole-page as found yet a corner of it once narrowed down.
+    /// Warn when what is selected would turn a whole page into one picture. The
+    /// region as DETECTED is not the test: what becomes a picture is the
+    /// bounding box of what the user chose, and a region can be whole-page as
+    /// found yet a corner of it once narrowed down.
     /// </summary>
     void RefreshWholePageWarning()
     {
         bool covers = false;
-        foreach (var unit in _units)
+        foreach (var (unit, members) in SelectedByUnit())
         {
-            if (!_checked.TryGetValue(unit.Region, out var ticked) || ticked.Count == 0) continue;
-            var members = unit.Region.Members.Where(ticked.Contains).ToArray();
             if (OverlapDetector.CoversWholePage(
                     OverlapDetector.RegionCovering(unit.Region.Page, members)))
             {
@@ -388,14 +391,13 @@ internal sealed class FlattenPanel : UserControl
     // =======================================================================
 
     /// <summary>
-    /// Take the units out of a freshly analyzed workspace. Ticks do not survive:
-    /// the regions they referred to are gone, and carrying them over to a
-    /// different set would flatten something nobody chose.
+    /// Take the units out of a freshly analyzed workspace. The selection does
+    /// not survive: the regions it referred to are gone, and carrying it over to
+    /// a different set would flatten something nobody chose.
     /// </summary>
     public void SetDocuments(IReadOnlyList<PdfDocumentInfo> documents)
     {
         _units.Clear();
-        _checked.Clear();
         _selectedGroup = null;
         _anyDocuments = documents.Count > 0;
 
@@ -418,19 +420,6 @@ internal sealed class FlattenPanel : UserControl
             }
         }
 
-        // A merge or a split has just rearranged the units; the objects that
-        // were ticked are the same objects, so the ticks go back on.
-        if (_pendingChecks is { Count: > 0 } restore)
-        {
-            foreach (var unit in _units)
-            {
-                var here = unit.Region.Members.Where(restore.Contains).ToArray();
-                if (here.Length > 0) _checked[unit.Region] = new HashSet<PlacedObject>(here);
-            }
-        }
-        _pendingChecks = null;
-        FocusPinnedUnit();
-
         // Files can be open with nothing in them to flatten. Say why, or the
         // panel staying empty on every selection reads as it being broken.
         _description.Text = _anyDocuments && _units.Count == 0
@@ -442,8 +431,10 @@ internal sealed class FlattenPanel : UserControl
         // under a selection that may compare equal to the new one, and that is
         // exactly the case ShowFor's guard is there to skip.
         _selectedGroup = null;
+        ResetExpansion();
         RebuildRows(resetScroll: true);
         _preview.Clear();
+        FocusPinnedUnit();
         RaiseSelectionChanged();
     }
 
@@ -463,6 +454,7 @@ internal sealed class FlattenPanel : UserControl
         _selectedGroup = group;
         // Looking at another object ends the edit that was being shown.
         _pinnedUnits = Array.Empty<OverlapRegion>();
+        ResetExpansion();
         RebuildRows(resetScroll: true);
 
         // Point the preview at the first unit so selecting on the left already
@@ -477,14 +469,38 @@ internal sealed class FlattenPanel : UserControl
         }
     }
 
-    void RebuildRows(bool resetScroll)
+    /// <summary>
+    /// Open the first folder and close the rest, every time the panel comes to
+    /// describe something else. A layers panel that opens everything buries the
+    /// second unit under the first one's objects; one that opens nothing makes
+    /// the user click before there is anything to see.
+    /// </summary>
+    void ResetExpansion()
     {
-        _rows.Clear();
+        bool first = true;
+        foreach (int index in ListedUnitIndices())
+        {
+            _units[index].Expanded = first;
+            first = false;
+        }
+    }
+
+    /// <summary>The units the panel lists, in workspace order.</summary>
+    IEnumerable<int> ListedUnitIndices()
+    {
         for (int i = 0; i < _units.Count; i++)
         {
             bool pinned = _pinnedUnits.Any(r => ReferenceEquals(r, _units[i].Region));
             if (!pinned && (_selectedGroup is null || !UnitContains(_units[i], _selectedGroup))) continue;
+            yield return i;
+        }
+    }
 
+    void RebuildRows(bool resetScroll)
+    {
+        _rows.Clear();
+        foreach (int i in ListedUnitIndices())
+        {
             _rows.Add(new Row(i, null));
             if (!_units[i].Expanded) continue;
             foreach (var member in _units[i].Region.Members) _rows.Add(new Row(i, member));
@@ -522,6 +538,9 @@ internal sealed class FlattenPanel : UserControl
     // Rows
     // =======================================================================
 
+    bool IsGroupRow(int index) =>
+        index >= 0 && index < _rows.Count && _rows[index].Object is null;
+
     LayerVisual VisualForRow(int index)
     {
         if (index < 0 || index >= _rows.Count) return default;
@@ -530,21 +549,20 @@ internal sealed class FlattenPanel : UserControl
 
         if (row.Object is null)
         {
-            // The unit's box answers "is all of this being flattened", so a
-            // part-ticked unit gets the mixed state rather than being rounded
-            // to one of the other two.
-            int ticked = _checked.GetValueOrDefault(unit.Region)?.Count ?? 0;
+            // The folder's eye answers for everything inside it, and has a third
+            // answer when its objects disagree.
+            int hidden = unit.Region.Members.Count(Hidden);
             return new LayerVisual(
                 IsGroup: true,
-                Title: $"{L10n.FlattenUnitLabel(unit.DocumentNumber, unit.Region.PageNumber, unit.NumberOnPage)} "
-                    + $"({KindSummary(unit.Region)})",
-                Subtitle: $"{Path.GetFileName(unit.FilePath)}  {L10n.UsagePageLabel(unit.Region.PageNumber)}",
+                Title: L10n.FlattenUnitLabel(
+                    unit.DocumentNumber, unit.Region.PageNumber, unit.NumberOnPage),
+                Subtitle: $"{Path.GetFileName(unit.FilePath)}  ({KindSummary(unit.Region)})",
                 Thumbnail: null,
                 TextContent: null,
                 IsThumbnailPending: false,
-                Check: ticked == 0 ? CheckState.Unchecked
-                     : ticked == unit.Region.Members.Count ? CheckState.Checked
-                     : CheckState.Indeterminate,
+                Visibility: hidden == 0 ? LayerVisibility.Visible
+                    : hidden == unit.Region.Members.Count ? LayerVisibility.Hidden
+                    : LayerVisibility.Mixed,
                 IsExpanded: unit.Expanded);
         }
 
@@ -562,11 +580,11 @@ internal sealed class FlattenPanel : UserControl
             Thumbnail: thumbnail.Bitmap,
             TextContent: text,
             IsThumbnailPending: text is null && thumbnail.Bitmap is null && thumbnail.CanEverRender,
-            Check: _checked.GetValueOrDefault(unit.Region)?.Contains(member) == true
-                ? CheckState.Checked
-                : CheckState.Unchecked,
+            Visibility: Hidden(member) ? LayerVisibility.Hidden : LayerVisibility.Visible,
             IsExpanded: false);
     }
+
+    bool Hidden(PlacedObject member) => IsHidden?.Invoke(member) == true;
 
     string? ToolTipForRow(int index)
     {
@@ -583,8 +601,6 @@ internal sealed class FlattenPanel : UserControl
         .OrderBy(k => k)
         .Select(KindLabel));
 
-    // One kind-to-label function for the whole App: the panel used to keep its
-    // own copy, which listed three kinds and called anything else an image.
     static string KindLabel(RemovableKind kind) => ImageListRow.TypeLabel(kind);
 
     /// <summary>
@@ -607,37 +623,30 @@ internal sealed class FlattenPanel : UserControl
     }
 
     // =======================================================================
-    // Ticking
+    // The eye
     // =======================================================================
 
-    void OnCheckToggled(int index)
+    /// <summary>
+    /// Hide or show what the row stands for. A folder takes everything inside
+    /// it: its eye reads as one switch, so it has to act as one.
+    /// </summary>
+    void OnVisibilityToggled(int index)
     {
         if (index < 0 || index >= _rows.Count) return;
         var row = _rows[index];
         var unit = _units[row.UnitIndex];
-        var ticked = _checked.TryGetValue(unit.Region, out var found)
-            ? found
-            : _checked[unit.Region] = new HashSet<PlacedObject>();
 
-        if (row.Object is null)
-        {
-            // A unit is a bulk switch for its objects.
-            bool takeAll = ticked.Count != unit.Region.Members.Count;
-            ticked.Clear();
-            if (takeAll) foreach (var m in unit.Region.Members) ticked.Add(m);
-        }
-        else if (!ticked.Remove(row.Object))
-        {
-            ticked.Add(row.Object);
-        }
+        var objects = row.Object is null
+            ? unit.Region.Members
+            : new[] { row.Object };
+        // A folder that is partly hidden goes fully hidden first: one more press
+        // brings it all back. The alternative — inverting each object — makes a
+        // single click do two opposite things at once.
+        bool hide = row.Object is null
+            ? unit.Region.Members.Any(m => !Hidden(m))
+            : !Hidden(row.Object);
 
-        if (ticked.Count == 0) _checked.Remove(unit.Region);
-        // A tick changes how rows look, never which rows exist — the check
-        // state is read while painting. Rebuilding would re-filter every unit
-        // in the workspace and re-trigger a thumbnail load for no reason.
-        _list.Invalidate();
-        ShowPreviewFor(row);
-        RaiseSelectionChanged();
+        VisibilityChangeRequested?.Invoke(this, new VisibilityChangeEventArgs(objects, hide));
     }
 
     void OnExpandToggled(int index)
@@ -648,83 +657,150 @@ internal sealed class FlattenPanel : UserControl
         RebuildRows(resetScroll: false);
     }
 
-    void OnRowSelected(int index)
+    /// <summary>Repaint the rows: what is hidden has changed under them.</summary>
+    public void RefreshVisibility() => _list.Invalidate();
+
+    // =======================================================================
+    // Selection
+    // =======================================================================
+
+    void OnRowSelectionChanged(object? sender, EventArgs e)
     {
-        if (index < 0 || index >= _rows.Count) return;
-        ShowPreviewFor(_rows[index]);
-    }
-
-    void ShowPreviewFor(Row row)
-    {
-        var unit = _units[row.UnitIndex];
-
-        // The outline answers "what would become an image", so it follows the
-        // TICKS, not the cursor. It used to follow whichever row had focus, and
-        // since clicking a checkbox also moves focus, ticking a unit, unticking
-        // one of its objects and ticking it back left the outline showing that
-        // one object — the ticks were back to all, the picture was not.
-        //
-        // The focused row still decides it while the unit has nothing ticked:
-        // there the question really is "where is this one?".
-        var ticked = _checked.GetValueOrDefault(unit.Region);
-        var shown = ticked is { Count: > 0 }
-            ? unit.Region.Members.Where(ticked.Contains)     // members' order, not click order
-            : row.Object is null
-                ? unit.Region.Members
-                : new[] { row.Object };
-        _preview.Show(
-            unit.FilePath, unit.Region.PageNumber, shown.Select(RectOf).ToArray());
-    }
-
-    static RectangleF RectOf(PlacedObject o) =>
-        new((float)o.X, (float)o.Y, (float)o.Width, (float)o.Height);
-
-    /// <summary>
-    /// Put the cursor on the unit a merge or a split has just made, so the
-    /// result is what the user is looking at rather than something they have to
-    /// find. Silent when there is none.
-    /// </summary>
-    void FocusPinnedUnit()
-    {
-        if (_pinnedUnits.Count == 0) return;
-
-        RebuildRows(resetScroll: false);
-        for (int i = 0; i < _rows.Count; i++)
-        {
-            if (_rows[i].Object is not null) continue;
-            if (!_pinnedUnits.Any(r => ReferenceEquals(r, _units[_rows[i].UnitIndex].Region))) continue;
-
-            _list.SetFocusedRow(i);
-            ShowPreviewFor(_rows[i]);
-            return;
-        }
-    }
-
-    /// <summary>
-    /// Repaint the rows: their thumbnails come from the same cache the object
-    /// list uses, and the host fills that in the background.
-    /// </summary>
-    public void RefreshThumbnails() => _list.Invalidate();
-
-    /// <summary>Clear every tick. Called after a save.</summary>
-    public void ClearChecks()
-    {
-        if (_checked.Count == 0) return;
-        _checked.Clear();
-        _list.Invalidate();
-        // The outline was showing what was ticked, and nothing is now.
-        int focused = _list.FocusedRow;
-        if (focused >= 0 && focused < _rows.Count) ShowPreviewFor(_rows[focused]);
+        ShowPreviewForSelection();
         RaiseSelectionChanged();
     }
 
-    /// <summary>How many individual objects are ticked, across every unit.</summary>
-    public int CheckedObjectCount => _checked.Values.Sum(set => set.Count);
+    /// <summary>Drop the selection. The panel's own command, not the toolbar's.</summary>
+    public void ClearSelection() => _list.ClearSelection();
+
+    /// <summary>How many objects the selection covers, for the status line.</summary>
+    public int SelectedObjectCount => SelectedByUnit().Sum(x => x.Members.Count);
 
     /// <summary>
-    /// Raised when the user has merged or split units by hand, with the file
-    /// whose units changed and the list that replaces them. The panel does not
-    /// own the workspace — it describes one — so the change is handed back to
+    /// The selected objects, gathered by the unit they sit in. A selected folder
+    /// stands for everything inside it, which is what makes "select the folder,
+    /// press Flatten" mean what it looks like.
+    /// </summary>
+    IReadOnlyList<(UnitEntry Unit, IReadOnlyList<PlacedObject> Members)> SelectedByUnit()
+    {
+        var byUnit = new List<(UnitEntry Unit, List<PlacedObject> Members)>();
+        foreach (int index in _list.SelectedRows)
+        {
+            if (index >= _rows.Count) continue;
+            var row = _rows[index];
+            var unit = _units[row.UnitIndex];
+
+            var slot = byUnit.FirstOrDefault(x => ReferenceEquals(x.Unit, unit));
+            if (slot.Unit is null)
+            {
+                slot = (unit, new List<PlacedObject>());
+                byUnit.Add(slot);
+            }
+
+            // In the region's own member order, so a covering rectangle is built
+            // from the same sequence the analyzer produced — and so a folder and
+            // one of its objects both being selected cannot list it twice.
+            var wanted = row.Object is null ? unit.Region.Members : new[] { row.Object };
+            foreach (var member in unit.Region.Members)
+            {
+                if (wanted.Contains(member) && !slot.Members.Contains(member))
+                {
+                    slot.Members.Add(member);
+                }
+            }
+        }
+        return byUnit
+            .Where(x => x.Members.Count > 0)
+            .Select(x => (x.Unit, (IReadOnlyList<PlacedObject>)x.Members))
+            .ToArray();
+    }
+
+    /// <summary>
+    /// The places to flatten, per source file — each covering only the objects
+    /// that are selected. A unit with nothing selected is not in the result.
+    /// </summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<OverlapRegion>> SelectedRegionsByFile()
+    {
+        var byFile = new Dictionary<string, List<OverlapRegion>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (unit, members) in SelectedByUnit())
+        {
+            if (!byFile.TryGetValue(unit.FilePath, out var regions))
+            {
+                regions = new List<OverlapRegion>();
+                byFile[unit.FilePath] = regions;
+            }
+            regions.Add(OverlapDetector.RegionCovering(unit.Region.Page, members.ToArray()));
+        }
+        return byFile.ToDictionary(
+            kv => kv.Key,
+            kv => (IReadOnlyList<OverlapRegion>)kv.Value,
+            StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// What merging and splitting act on: the units of the one page the
+    /// selection is in, and the selected objects. A selection spread over two
+    /// pages or two files answers an empty scope, which disables both commands.
+    ///
+    /// ONE PAGE, and that is not only about what a merge may join. A member
+    /// carries no page number and compares by value, so a footer printed at the
+    /// same spot on twenty pages is twenty EQUAL objects: handed every unit in
+    /// the file, "which units hold this selection" answered twenty, and both
+    /// commands stayed dead on every document with a running header.
+    /// </summary>
+    (IReadOnlyList<OverlapRegion> Units, IReadOnlyList<PlacedObject> Selection) EditingScope()
+    {
+        var selected = SelectedByUnit();
+        if (selected.Count == 0) return (Array.Empty<OverlapRegion>(), Array.Empty<PlacedObject>());
+
+        var filePath = selected[0].Unit.FilePath;
+        int pageNumber = selected[0].Unit.Region.PageNumber;
+        if (selected.Any(x => !string.Equals(x.Unit.FilePath, filePath, StringComparison.OrdinalIgnoreCase)
+                              || x.Unit.Region.PageNumber != pageNumber))
+        {
+            return (Array.Empty<OverlapRegion>(), Array.Empty<PlacedObject>());
+        }
+
+        // Every unit of that page, not only the selected ones: a merge has to
+        // see the units it is taking objects out of.
+        var units = _units
+            .Where(u => string.Equals(u.FilePath, filePath, StringComparison.OrdinalIgnoreCase)
+                        && u.Region.PageNumber == pageNumber)
+            .Select(u => u.Region)
+            .ToArray();
+        return (units, selected.SelectMany(x => x.Members).ToArray());
+    }
+
+    /// <summary>
+    /// Merge or split, then hand the new unit list back.
+    /// </summary>
+    void EditUnits(bool merge)
+    {
+        var (units, selection) = EditingScope();
+        if (units.Count == 0) return;
+
+        var edited = merge
+            ? FlattenUnitEditing.Merge(units, selection)
+            : FlattenUnitEditing.Split(units, selection);
+        if (ReferenceEquals(edited, units)) return;
+
+        // The unit an edit just made holds the objects that were selected, which
+        // are not necessarily the object selected in the list on the left — and
+        // the panel lists only the units of THAT object. Without pinning, a
+        // merge answered by making its own result disappear.
+        _pinnedUnits = edited
+            .Where(r => !units.Any(u => ReferenceEquals(u, r)))
+            .ToArray();
+
+        var filePath = _units
+            .First(u => units.Contains(u.Region))
+            .FilePath;
+        UnitsEdited?.Invoke(this, new UnitsEditedEventArgs(filePath, edited));
+    }
+
+    /// <summary>
+    /// Raised when the user merges or splits units by hand. The panel does not
+    /// own the workspace, so it cannot store the correction — it hands it to
     /// whoever does.
     /// </summary>
     public event EventHandler<UnitsEditedEventArgs>? UnitsEdited;
@@ -742,83 +818,6 @@ internal sealed class FlattenPanel : UserControl
     }
 
     /// <summary>
-    /// What merging and splitting act on: the units of the one file the ticks
-    /// are in, and the ticked objects themselves. Ticks in more than one file
-    /// answer an empty scope, which disables both buttons — a unit is a
-    /// rectangle on one page and there is no such rectangle across two files.
-    /// </summary>
-    (IReadOnlyList<OverlapRegion> Units, IReadOnlyList<PlacedObject> Selection) EditingScope()
-    {
-        var ticked = _units
-            .Where(u => _checked.TryGetValue(u.Region, out var set) && set.Count > 0)
-            .ToList();
-        if (ticked.Count == 0) return (Array.Empty<OverlapRegion>(), Array.Empty<PlacedObject>());
-
-        var filePath = ticked[0].FilePath;
-        var pageNumber = ticked[0].Region.PageNumber;
-        if (ticked.Any(u => !string.Equals(u.FilePath, filePath, StringComparison.OrdinalIgnoreCase)
-                            || u.Region.PageNumber != pageNumber))
-        {
-            return (Array.Empty<OverlapRegion>(), Array.Empty<PlacedObject>());
-        }
-
-        var selection = ticked
-            .SelectMany(u => u.Region.Members.Where(_checked[u.Region].Contains))
-            .ToArray();
-        // Every unit of that page, not only the ticked ones: a merge has to see
-        // the units it is taking objects out of.
-        //
-        // ONE PAGE, and that is not only about what a merge may join. A member
-        // carries no page number and compares by value, so a footer printed at
-        // the same spot on twenty pages is twenty EQUAL objects: handed every
-        // unit in the file, "which units hold this selection" answered twenty,
-        // and both buttons stayed dead on every document with a running header.
-        var units = _units
-            .Where(u => string.Equals(u.FilePath, filePath, StringComparison.OrdinalIgnoreCase)
-                        && u.Region.PageNumber == pageNumber)
-            .Select(u => u.Region)
-            .ToArray();
-        return (units, selection);
-    }
-
-    /// <summary>
-    /// Merge or split, then hand the new unit list back. The ticks are put back
-    /// on afterwards: they are the same objects, so the user's selection
-    /// survives an operation that rearranges the units around it.
-    /// </summary>
-    void EditUnits(bool merge)
-    {
-        var (units, selection) = EditingScope();
-        if (units.Count == 0) return;
-
-        var edited = merge
-            ? FlattenUnitEditing.Merge(units, selection)
-            : FlattenUnitEditing.Split(units, selection);
-        if (ReferenceEquals(edited, units)) return;
-
-        // The unit an edit just made holds the objects that were ticked, which
-        // are not necessarily the object selected in the list on the left — and
-        // the panel lists only the units of THAT object. Without pinning, a
-        // merge answered by making its own result disappear.
-        _pinnedUnits = edited
-            .Where(r => !units.Any(u => ReferenceEquals(u, r)))
-            .ToArray();
-
-        var filePath = _units
-            .First(u => units.Contains(u.Region))
-            .FilePath;
-        _pendingChecks = selection;
-        UnitsEdited?.Invoke(this, new UnitsEditedEventArgs(filePath, edited));
-    }
-
-    /// <summary>
-    /// Ticks to re-apply after the workspace hands the panel its documents
-    /// back. Cleared as soon as they are used, so an unrelated rebuild — a save,
-    /// a file being opened — still starts with nothing ticked.
-    /// </summary>
-    IReadOnlyList<PlacedObject>? _pendingChecks;
-
-    /// <summary>
     /// Units made by the last merge or split. They are listed whatever the
     /// object list has selected, until the user moves that selection — the
     /// result of an action has to be visible, and the action is over as soon as
@@ -827,23 +826,48 @@ internal sealed class FlattenPanel : UserControl
     IReadOnlyList<OverlapRegion> _pinnedUnits = Array.Empty<OverlapRegion>();
 
     /// <summary>
-    /// Announce a change of ticks, and keep the panel's own clear button in
-    /// step with them. Every path that touches <c>_checked</c> comes through
-    /// here, so the button can never claim there is something to clear when
-    /// there is not.
+    /// Put the cursor on the unit a merge or a split has just made, so the
+    /// result is what the user is looking at rather than something they have to
+    /// find. Silent when there is none.
+    /// </summary>
+    void FocusPinnedUnit()
+    {
+        if (_pinnedUnits.Count == 0) return;
+
+        RebuildRows(resetScroll: false);
+        for (int i = 0; i < _rows.Count; i++)
+        {
+            if (_rows[i].Object is not null) continue;
+            if (!_pinnedUnits.Any(r => ReferenceEquals(r, _units[_rows[i].UnitIndex].Region))) continue;
+
+            _list.SelectOnly(i);
+            return;
+        }
+    }
+
+    /// <summary>
+    /// Announce a change of selection, and keep the menu's own commands in step
+    /// with it. Every path that changes what is selected comes through here.
     /// </summary>
     void RaiseSelectionChanged()
     {
-        _clearChecks.Enabled = _checked.Count > 0;
-        // Anything ticked can be flattened, whatever units it is spread over —
-        // each unit's ticked objects become one picture, which is the same rule
-        // the save used to apply on its own.
-        _flattenSelection.Enabled = _checked.Count > 0;
+        RefreshCommandState();
+        RefreshWholePageWarning();
+        SelectionChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    void RefreshCommandState()
+    {
+        var selected = SelectedByUnit();
+        // Anything selected can be flattened, whatever units it is spread over —
+        // each unit's selected objects become one picture.
+        _flattenSelection.Enabled = selected.Count > 0;
+        _clearSelection.Enabled = selected.Count > 0;
+        _undoFlatten.Enabled = CanUndoFlatten;
+
         var (units, selection) = EditingScope();
         _mergeSelection.Enabled = FlattenUnitEditing.CanMerge(units, selection);
         _splitSelection.Enabled = FlattenUnitEditing.CanSplit(units, selection);
-        RefreshWholePageWarning();
-        SelectionChanged?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
@@ -869,32 +893,44 @@ internal sealed class FlattenPanel : UserControl
     }
 
     /// <summary>
-    /// The places to flatten, per source file — each covering only the objects
-    /// that are actually ticked, which is also all that will be removed. A unit
-    /// with nothing ticked is not in the result at all.
+    /// Repaint the rows: their thumbnails come from the same cache the object
+    /// list uses, and the host fills that in the background.
     /// </summary>
-    public IReadOnlyDictionary<string, IReadOnlyList<OverlapRegion>> SelectedRegionsByFile()
-    {
-        var byFile = new Dictionary<string, List<OverlapRegion>>(StringComparer.OrdinalIgnoreCase);
-        foreach (var unit in _units)
-        {
-            if (!_checked.TryGetValue(unit.Region, out var ticked) || ticked.Count == 0) continue;
+    public void RefreshThumbnails() => _list.Invalidate();
 
-            // In the region's own member order, so the covering rectangle is
-            // built from the same sequence the analyzer produced.
-            var members = unit.Region.Members.Where(ticked.Contains).ToArray();
-            if (!byFile.TryGetValue(unit.FilePath, out var regions))
-            {
-                regions = new List<OverlapRegion>();
-                byFile[unit.FilePath] = regions;
-            }
-            regions.Add(OverlapDetector.RegionCovering(unit.Region.Page, members));
+    // =======================================================================
+    // The preview
+    // =======================================================================
+
+    /// <summary>
+    /// The outline answers "what would become a picture", so it follows the
+    /// SELECTION. With nothing selected it follows the first row, which is what
+    /// makes clicking an object on the left already show where it is.
+    /// </summary>
+    void ShowPreviewForSelection()
+    {
+        var selected = SelectedByUnit();
+        if (selected.Count == 0)
+        {
+            if (_rows.Count > 0) ShowPreviewFor(_rows[0]);
+            return;
         }
-        return byFile.ToDictionary(
-            kv => kv.Key,
-            kv => (IReadOnlyList<OverlapRegion>)kv.Value,
-            StringComparer.OrdinalIgnoreCase);
+
+        var (unit, members) = selected[0];
+        _preview.Show(
+            unit.FilePath, unit.Region.PageNumber, members.Select(RectOf).ToArray());
     }
+
+    void ShowPreviewFor(Row row)
+    {
+        var unit = _units[row.UnitIndex];
+        var shown = row.Object is null ? unit.Region.Members : new[] { row.Object };
+        _preview.Show(
+            unit.FilePath, unit.Region.PageNumber, shown.Select(RectOf).ToArray());
+    }
+
+    static RectangleF RectOf(PlacedObject o) =>
+        new((float)o.X, (float)o.Y, (float)o.Width, (float)o.Height);
 
     // =======================================================================
     // The preview pane

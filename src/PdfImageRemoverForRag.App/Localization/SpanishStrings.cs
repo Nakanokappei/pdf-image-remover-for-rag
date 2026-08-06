@@ -144,8 +144,8 @@ internal sealed class SpanishStrings : IStrings
     public string AboutLicenseLink => "Información de licencias";
     public string ContextMenuUsageLocations => "Mostrar &ubicaciones de uso…";
 
-    public string FlattenPanelTitle => "Acoplar";
-    public string ColumnSelect => "Selección";
+    public string FlattenPanelTitle => "Capas";
+    public string FlattenMenu => "Comandos de capa";
     public string FlattenApply => "Acoplar selección";
     public string FlattenUndo => "Deshacer acoplado";
     public string FlattenMerge => "Unir selección";
@@ -155,13 +155,12 @@ internal sealed class SpanishStrings : IStrings
         "Funde los objetos superpuestos en una sola imagen. La página se ve igual, "
         + "pero el texto que contiene deja de ser texto.";
 
-    public string FlattenUnitLabel(int document, int page, int number) =>
-        $"Unidad {document}-{page}-{number}";
     public string FlattenObjectNotOverlapping => "Este objeto no se superpone con nada.";
     public string FlattenNoOverlaps => "No se encontraron objetos superpuestos.";
     public string FlattenWholePageWarning =>
         "Los objetos marcados cubren casi toda la página. Al aplanarlos, la página se convierte en una sola imagen y ningún texto sigue siendo texto.";
-    public string StatusFlattenSelection(int objectCount) => $"{objectCount} objeto(s) para acoplar";
+    public string StatusFlattenSelection(int objectCount) =>
+        $"{objectCount} capa(s) seleccionada(s)";
     public string AccessibleFlattenPreview => "Vista previa";
 
     public string ErrorSameAsSource =>

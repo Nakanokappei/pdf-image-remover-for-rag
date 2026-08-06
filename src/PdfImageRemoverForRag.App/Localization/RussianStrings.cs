@@ -148,8 +148,8 @@ internal sealed class RussianStrings : IStrings
     public string AboutLicenseLink => "Сведения о лицензиях";
     public string ContextMenuUsageLocations => "Показать &места использования…";
 
-    public string FlattenPanelTitle => "Объединить";
-    public string ColumnSelect => "Выбрано";
+    public string FlattenPanelTitle => "Слои";
+    public string FlattenMenu => "Команды слоёв";
     public string FlattenApply => "Объединить выбранное";
     public string FlattenUndo => "Отменить объединение";
     public string FlattenMerge => "Объединить";
@@ -159,13 +159,12 @@ internal sealed class RussianStrings : IStrings
         "Сводит перекрывающиеся объекты в одно изображение. Страница выглядит так же, "
         + "но текст внутри перестаёт быть текстом.";
 
-    public string FlattenUnitLabel(int document, int page, int number) =>
-        $"Группа {document}-{page}-{number}";
     public string FlattenObjectNotOverlapping => "Этот объект ни с чем не перекрывается.";
     public string FlattenNoOverlaps => "Перекрывающиеся объекты не найдены.";
     public string FlattenWholePageWarning =>
         "Отмеченные объекты занимают почти всю страницу. После объединения страница станет одним изображением, и весь её текст перестанет быть текстом.";
-    public string StatusFlattenSelection(int objectCount) => $"Объектов для объединения: {objectCount}";
+    public string StatusFlattenSelection(int objectCount) =>
+        $"Выбрано слоёв: {objectCount}";
     public string AccessibleFlattenPreview => "Предварительный просмотр";
 
     public string ErrorSameAsSource =>

@@ -137,8 +137,8 @@ internal sealed class ChineseTraditionalStrings : IStrings
     public string AboutLicenseLink => "授權資訊";
     public string ContextMenuUsageLocations => "顯示使用位置(&U)…";
 
-    public string FlattenPanelTitle => "平面化";
-    public string ColumnSelect => "選取";
+    public string FlattenPanelTitle => "圖層";
+    public string FlattenMenu => "圖層命令";
     public string FlattenApply => "平面化所選";
     public string FlattenUndo => "復原平面化";
     public string FlattenMerge => "合併所選";
@@ -147,13 +147,12 @@ internal sealed class ChineseTraditionalStrings : IStrings
     public string FlattenDescription =>
         "將重疊的物件平面化為一張影像。頁面外觀不變，但其中的文字將不再是文字。";
 
-    public string FlattenUnitLabel(int document, int page, int number) =>
-        $"平面化單元 {document}-{page}-{number}";
     public string FlattenObjectNotOverlapping => "該物件沒有與任何內容重疊。";
     public string FlattenNoOverlaps => "找不到重疊的物件。";
     public string FlattenWholePageWarning =>
         "勾選的範圍幾乎涵蓋整頁。合併後本頁將變成一張圖片，其中的文字將不再是文字。";
-    public string StatusFlattenSelection(int objectCount) => $"已選取 {objectCount} 個物件進行平面化";
+    public string StatusFlattenSelection(int objectCount) =>
+        $"已選取 {objectCount} 個圖層";
     public string AccessibleFlattenPreview => "預覽";
 
     public string ErrorSameAsSource =>

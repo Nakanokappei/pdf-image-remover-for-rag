@@ -35,6 +35,38 @@ internal sealed partial class MainForm
     }
 
     /// <summary>
+    /// Hide or show layers, which is the same fact as ticking their objects for
+    /// removal — so it goes through the one selection the workspace keeps, and
+    /// both sides of the window are put back in step with it.
+    ///
+    /// An object identifies a GROUP: the same logo drawn in six places is one
+    /// object with six placements, and hiding it hides all six. That is what the
+    /// object list has always meant by a tick, and two granularities for one
+    /// mark would be worse than this.
+    /// </summary>
+    void OnLayerVisibilityChangeRequested(
+        object? sender, FlattenPanel.VisibilityChangeEventArgs e)
+    {
+        bool changed = false;
+        foreach (var placed in e.Objects)
+        {
+            var group = _workflow.ImageGroups.FirstOrDefault(g => g.Matches(placed));
+            // Only what a save could actually take out: an object the analysis
+            // flagged as unsafe to remove has no tick on the other side either.
+            if (group is null || !group.IsSafelyRemovable) continue;
+
+            SetSelected(group.Hash, e.Hide);
+            changed = true;
+        }
+        if (!changed) return;
+
+        SyncAllViewCheckStates();
+        _flattenPanel.RefreshVisibility();
+        UpdateSelectionState();
+        RefreshSelectionStatus();
+    }
+
+    /// <summary>
     /// Flatten what is ticked, now. The result is a picture in place of those
     /// objects, and the lists are rebuilt from the document as it stands — which
     /// is where the user sees that anything happened. Nothing they own is

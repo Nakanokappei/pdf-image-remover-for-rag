@@ -2,12 +2,22 @@ using System.Drawing.Drawing2D;
 
 namespace PdfImageRemoverForRag.App;
 
+/// <summary>Whether a layer is drawn — and, for a folder, whether all of it is.</summary>
+internal enum LayerVisibility
+{
+    Visible,
+    Hidden,
+
+    /// <summary>A folder holding some of each. Nothing else can be in this state.</summary>
+    Mixed,
+}
+
 /// <summary>
 /// What one line of <see cref="LayerListView"/> shows. The view holds none of
 /// this: it asks for a row's visual while painting it, so the thumbnail cache
 /// stays free to dispose anything that scrolls out of its window.
 /// </summary>
-/// <param name="IsGroup">A unit header rather than one of its objects.</param>
+/// <param name="IsGroup">A folder — a flatten unit — rather than one of its objects.</param>
 /// <param name="Subtitle">Where the unit is — file and page — under its title.</param>
 /// <param name="TextContent">For text objects: the string, drawn rather than rasterized.</param>
 /// <param name="IsThumbnailPending">
@@ -15,11 +25,9 @@ namespace PdfImageRemoverForRag.App;
 /// one is already drawn and when none can ever exist — a format nothing here
 /// can decode must not be left promising a thumbnail forever.
 /// </param>
-/// <param name="Check">
-/// Three states, because a unit's box answers "is all of this being flattened"
-/// and that has a third answer. <see cref="CheckState.Indeterminate"/> is drawn
-/// as a dash: with only ticked and cleared to draw, a unit holding one ticked
-/// object out of four looked exactly like a unit holding none.
+/// <param name="Visibility">
+/// Whether the layer is drawn. A folder answers for everything inside it, and
+/// has a third answer when its objects disagree.
 /// </param>
 internal readonly record struct LayerVisual(
     bool IsGroup,
@@ -28,56 +36,73 @@ internal readonly record struct LayerVisual(
     Image? Thumbnail,
     string? TextContent,
     bool IsThumbnailPending,
-    CheckState Check,
+    LayerVisibility Visibility,
     bool IsExpanded);
 
 /// <summary>
 /// The flatten panel's list, laid out like an image editor's layers panel: a
-/// unit is a layer group, and the objects inside it are its layers, each with a
-/// thumbnail, a name and a checkbox.
+/// flatten unit is a folder, the objects inside it are its layers, and each row
+/// has an eye that says whether it is drawn.
 ///
 /// One scrolling control that paints its rows, for the reason set out on
 /// <see cref="TileView"/>: a control per row is what broke that view on a real
 /// document, and this list is fed from the same workspace.
 ///
-/// Rows are a uniform height so hit-testing is arithmetic rather than a walk,
-/// and only the visible span is ever painted.
+/// Rows come in two heights — a folder is a line of text, an object needs room
+/// for its thumbnail — so their tops are worked out once per rebuild and
+/// hit-testing looks them up rather than dividing.
 ///
 /// **Accessibility.** Because the rows are painted rather than hosted, they do
 /// not exist as controls for a screen reader or the keyboard, so both are added
 /// back by hand — the same treatment <see cref="TileView"/> needed, and for the
 /// same reason. <see cref="CreateAccessibilityInstance"/> publishes one child
 /// per row, and the control is focusable so the arrow keys move a cursor and
-/// Space ticks the row under it. This is MSAA, which NVDA and JAWS read;
-/// Narrator wants UIA fragments, whose API surface is internal to WinForms in
-/// .NET 8 and cannot be implemented from outside (see docs/known-limitations).
+/// Space hides or shows what is selected. This is MSAA, which NVDA and JAWS
+/// read; Narrator wants UIA fragments, whose API surface is internal to WinForms
+/// in .NET 8 and cannot be implemented from outside (see docs/known-limitations).
 /// </summary>
 internal sealed class LayerListView : Panel
 {
     // Logical (96-DPI) metrics — every use goes through Dip(). Nothing painted
     // by hand in this app may assume 96 DPI; at 200 % it would come out half
     // size, which is exactly what happened to the tile view once already.
-    const int RowHeight = 44;
+    const int ObjectRowHeight = 44;
+    const int GroupRowHeight = 26;
     const int RowInset = 6;
     const int IndentWidth = 18;
     const int DisclosureWidth = 14;
-    const int CheckBoxSize = 16;
+    const int EyeWidth = 18;
+    const int FolderSize = 16;
     const int ThumbnailSize = 32;
     const int Gap = 6;
 
     readonly Func<int, LayerVisual> _visualFor;
+    readonly Func<int, bool> _isGroupRow;
     int _rowCount;
     int _hoveredRow = -1;
-    int _selectedRow = -1;
+    int _focusedRow = -1;
 
-    /// <summary>Raised when a row's checkbox is clicked.</summary>
-    public event Action<int>? CheckToggled;
+    // Where each row starts, with one extra entry for the total height. Two row
+    // heights mean the position of a row is a running total rather than a
+    // multiplication, and it is wanted on every paint, hit-test and scroll.
+    int[] _rowTops = { 0 };
 
-    /// <summary>Raised when a group header's disclosure triangle is clicked.</summary>
+    // What the commands act on. A layers panel selects by clicking the row, the
+    // way an image editor does; the eye is a separate control on the same line.
+    readonly HashSet<int> _selected = new();
+
+    // Where a Shift range starts. Kept apart from the focused row so that
+    // Shift-clicking twice extends from the same place both times.
+    int _selectionAnchor = -1;
+
+    /// <summary>Raised when a row's eye is clicked, or Space is pressed on it.</summary>
+    public event Action<int>? VisibilityToggled;
+
+    /// <summary>Raised when a folder's chevron is clicked.</summary>
     public event Action<int>? ExpandToggled;
 
-    /// <summary>Raised when a row becomes the selected one.</summary>
-    public event Action<int>? RowSelected;
+    /// <summary>Raised whenever the set of selected rows changes.</summary>
+    public event EventHandler? SelectionChanged;
 
     /// <summary>
     /// Raised whenever the visible span may have changed. The wheel does not
@@ -91,9 +116,13 @@ internal sealed class LayerListView : Panel
 
     readonly ToolTip _toolTip = new();
 
-    public LayerListView(Func<int, LayerVisual> visualFor)
+    public LayerListView(Func<int, LayerVisual> visualFor, Func<int, bool> isGroupRow)
     {
         _visualFor = visualFor;
+        // Asked separately from the visual because it decides the row's HEIGHT,
+        // which every row needs at rebuild time — and building a visual fetches
+        // a thumbnail, which the rows off screen must not pay for.
+        _isGroupRow = isGroupRow;
         AutoScroll = true;
         DoubleBuffered = true;
         // Selectable + TabStop make the list reachable by keyboard; without
@@ -108,32 +137,46 @@ internal sealed class LayerListView : Panel
 
     int Dip(int logical) => LogicalToDeviceUnits(logical);
 
-    int Pitch => Dip(RowHeight);
+    int HeightOf(int row) => Dip(_isGroupRow(row) ? GroupRowHeight : ObjectRowHeight);
 
     /// <summary>
     /// Replace the contents.
     /// </summary>
     /// <param name="startOver">
-    /// True when the rows now describe something else — the cursor and the
-    /// scroll position are meaningless and are dropped, because an index kept
-    /// across such a rebuild would point at a different object. False for a
-    /// change that keeps the same rows (an expand), where dropping them would
-    /// throw away where the user is looking.
+    /// True when the rows now describe something else — the cursor, the
+    /// selection and the scroll position are meaningless and are dropped,
+    /// because an index kept across such a rebuild would point at a different
+    /// object. False for a change that keeps the same rows (an expand), where
+    /// dropping them would throw away where the user is looking.
     /// </param>
     public void SetRowCount(int count, bool startOver)
     {
         _rowCount = Math.Max(0, count);
         _hoveredRow = -1;
-        AutoScrollMinSize = new Size(0, _rowCount * Pitch);
+
+        _rowTops = new int[_rowCount + 1];
+        for (int row = 0; row < _rowCount; row++)
+        {
+            _rowTops[row + 1] = _rowTops[row] + HeightOf(row);
+        }
+        AutoScrollMinSize = new Size(0, _rowTops[_rowCount]);
 
         if (startOver)
         {
-            _selectedRow = -1;
+            _focusedRow = -1;
+            _selectionAnchor = -1;
+            _selected.Clear();
             AutoScrollPosition = Point.Empty;
+            SelectionChanged?.Invoke(this, EventArgs.Empty);
         }
-        else if (_selectedRow >= _rowCount)
+        else
         {
-            _selectedRow = -1;
+            // Anything that no longer exists goes; what survives keeps its row.
+            if (_focusedRow >= _rowCount) _focusedRow = -1;
+            if (_selected.RemoveWhere(row => row >= _rowCount) > 0)
+            {
+                SelectionChanged?.Invoke(this, EventArgs.Empty);
+            }
         }
 
         Invalidate();
@@ -145,39 +188,60 @@ internal sealed class LayerListView : Panel
     {
         if (_rowCount == 0) return (0, 0);
         int scrolled = Math.Max(0, -AutoScrollPosition.Y);
-        int first = Math.Min(_rowCount - 1, scrolled / Pitch);
+        int first = RowAtOffset(scrolled);
+        int last = RowAtOffset(scrolled + ClientSize.Height);
         // One extra row at each end so a partially visible row is included.
-        int count = (ClientSize.Height / Pitch) + 2;
-        return (first, Math.Min(count, _rowCount - first));
+        first = Math.Max(0, first - 1);
+        last = Math.Min(_rowCount - 1, last + 1);
+        return (first, last - first + 1);
     }
 
-    Rectangle BoundsOf(int row) =>
-        new(0, (row * Pitch) + AutoScrollPosition.Y, ClientSize.Width, Pitch);
+    /// <summary>The row containing a distance down the whole list.</summary>
+    int RowAtOffset(int offset)
+    {
+        int found = Array.BinarySearch(_rowTops, 0, _rowCount + 1, offset);
+        if (found >= 0) return Math.Min(found, _rowCount - 1);
+        return Math.Clamp(~found - 1, 0, _rowCount - 1);
+    }
 
-    // Where the two clickable parts of a row sit. Painting and hit-testing both
-    // ask these, so a click can never land beside the box it is aimed at —
-    // which is what a second copy of the arithmetic would eventually cause, and
-    // the compiler would never notice.
+    Rectangle BoundsOf(int row) => new(
+        0, _rowTops[row] + AutoScrollPosition.Y, ClientSize.Width, HeightOf(row));
 
-    /// <summary>Objects sit one level in from their unit.</summary>
-    int RowIndent(bool isGroup) => Dip(RowInset) + (isGroup ? 0 : Dip(IndentWidth));
+    // Where the clickable parts of a row sit. Painting and hit-testing both ask
+    // these, so a click can never land beside the thing it is aimed at — which
+    // is what a second copy of the arithmetic would eventually cause, and the
+    // compiler would never notice.
 
-    Rectangle DisclosureRect(Rectangle bounds, bool isGroup) => new(
-        bounds.Left + RowIndent(isGroup),
+    /// <summary>The eye leads every row, folder and object alike.</summary>
+    Rectangle EyeRect(Rectangle bounds) => new(
+        bounds.Left + Dip(RowInset),
+        bounds.Top + ((bounds.Height - Dip(EyeWidth)) / 2),
+        Dip(EyeWidth), Dip(EyeWidth));
+
+    /// <summary>Then the chevron, on folders only, immediately left of the folder.</summary>
+    Rectangle DisclosureRect(Rectangle bounds) => new(
+        EyeRect(bounds).Right + Dip(Gap),
         bounds.Top + ((bounds.Height - Dip(DisclosureWidth)) / 2),
         Dip(DisclosureWidth), Dip(DisclosureWidth));
 
-    Rectangle CheckBoxRect(Rectangle bounds, bool isGroup) => new(
-        DisclosureRect(bounds, isGroup).Right + Dip(Gap),
-        bounds.Top + ((bounds.Height - Dip(CheckBoxSize)) / 2),
-        Dip(CheckBoxSize), Dip(CheckBoxSize));
+    /// <summary>
+    /// The picture column: a folder icon on a unit, the object's thumbnail on
+    /// its members. Objects sit one level in from their folder.
+    /// </summary>
+    Rectangle IconRect(Rectangle bounds, bool isGroup)
+    {
+        int size = Dip(isGroup ? FolderSize : ThumbnailSize);
+        int left = isGroup
+            ? DisclosureRect(bounds).Right + Dip(Gap)
+            : EyeRect(bounds).Right + Dip(Gap) + Dip(IndentWidth);
+        return new Rectangle(left, bounds.Top + ((bounds.Height - size) / 2), size, size);
+    }
 
     int RowAt(Point client)
     {
         int y = client.Y - AutoScrollPosition.Y;
-        if (y < 0) return -1;
-        int row = y / Pitch;
-        return row >= 0 && row < _rowCount ? row : -1;
+        if (y < 0 || _rowCount == 0 || y >= _rowTops[_rowCount]) return -1;
+        return RowAtOffset(y);
     }
 
     // =======================================================================
@@ -199,10 +263,10 @@ internal sealed class LayerListView : Panel
     void PaintRow(Graphics g, int row, Rectangle bounds)
     {
         var visual = _visualFor(row);
-        bool selected = row == _selectedRow;
+        bool selected = _selected.Contains(row);
 
-        // A group header gets a band so the grouping reads at a glance; an
-        // object row sits on the panel background, indented under it.
+        // Selected rows carry the highlight, as a layers panel does; a folder
+        // otherwise gets a band so the grouping reads at a glance.
         var back = selected
             ? SystemColors.Highlight
             : visual.IsGroup ? SystemColors.ControlLight
@@ -213,24 +277,24 @@ internal sealed class LayerListView : Panel
         var text = selected ? SystemColors.HighlightText : SystemColors.WindowText;
         var muted = selected ? SystemColors.HighlightText : SystemColors.GrayText;
 
-        // Disclosure triangle, groups only.
-        var disclosure = DisclosureRect(bounds, visual.IsGroup);
-        if (visual.IsGroup) DrawDisclosure(g, disclosure, visual.IsExpanded, text);
+        DrawEye(g, EyeRect(bounds), visual.Visibility, text);
 
-        DrawCheckBox(g, CheckBoxRect(bounds, visual.IsGroup), visual.Check);
-
-        // Thumbnail, objects only — a group is a folder, and in an image editor
-        // a layer group shows no picture of its own either.
-        int x = CheckBoxRect(bounds, visual.IsGroup).Right + Dip(Gap);
-        if (!visual.IsGroup)
+        var icon = IconRect(bounds, visual.IsGroup);
+        if (visual.IsGroup)
         {
-            var box = new Rectangle(x, bounds.Top + ((bounds.Height - Dip(ThumbnailSize)) / 2),
-                Dip(ThumbnailSize), Dip(ThumbnailSize));
-            DrawThumbnail(g, box, visual, muted);
-            x += Dip(ThumbnailSize) + Dip(Gap);
+            DrawDisclosure(g, DisclosureRect(bounds), visual.IsExpanded, text);
+            DrawFolder(g, icon, text, visual.IsExpanded);
+        }
+        else
+        {
+            DrawThumbnail(g, icon, visual, muted);
         }
 
-        // Title, with the subtitle beneath it when there is one.
+        // A hidden layer is greyed, the way an image editor greys one out: the
+        // eye alone is a small mark to read a whole list by.
+        if (visual.Visibility == LayerVisibility.Hidden && !selected) text = SystemColors.GrayText;
+
+        int x = icon.Right + Dip(Gap);
         var titleFont = visual.IsGroup ? new Font(Font, FontStyle.Bold) : Font;
         try
         {
@@ -266,39 +330,116 @@ internal sealed class LayerListView : Panel
 
         // Where the keyboard is. Drawn only while the list has focus, so a
         // mouse user is not shown a cursor they are not driving.
-        if (selected && Focused)
+        if (row == _focusedRow && Focused)
         {
             ControlPaint.DrawFocusRectangle(g, Rectangle.Inflate(bounds, -Dip(2), -Dip(2)));
         }
     }
 
     /// <summary>
-    /// Draw a checkbox in one of three states. <see cref="ControlPaint"/> knows
-    /// ticked and cleared but has no mixed state, so the dash is drawn by hand
-    /// over a cleared box — which also keeps all three the same size, since the
-    /// themed renderer picks its own.
+    /// The eye every layers panel draws: an almond with a pupil when the layer
+    /// is drawn, an empty almond with a stroke through it when it is not, and a
+    /// half-filled one for a folder whose objects disagree.
+    ///
+    /// Drawn rather than shipped as an icon, for the same reason the disclosure
+    /// chevron is: it has to be crisp at 450 % as well as 100 %, and a bitmap
+    /// would have to exist at every size in between.
     /// </summary>
-    void DrawCheckBox(Graphics g, Rectangle box, CheckState state)
+    void DrawEye(Graphics g, Rectangle box, LayerVisibility visibility, Color color)
     {
-        ControlPaint.DrawCheckBox(g, box,
-            ButtonState.Flat | (state == CheckState.Checked
-                ? ButtonState.Checked
-                : ButtonState.Normal));
-        if (state != CheckState.Indeterminate) return;
+        var saved = g.SmoothingMode;
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        try
+        {
+            float centreY = box.Top + (box.Height / 2f);
+            float halfWidth = box.Width * 0.45f;
+            float halfHeight = box.Height * 0.28f;
+            float centreX = box.Left + (box.Width / 2f);
 
-        // A bar across the middle, inset from the border so it reads as a mark
-        // inside the box rather than as a struck-through box.
-        int inset = Math.Max(Dip(3), box.Width / 4);
-        int thickness = Math.Max(Dip(2), box.Height / 6);
-        var bar = new Rectangle(
-            box.Left + inset,
-            box.Top + ((box.Height - thickness) / 2),
-            Math.Max(1, box.Width - (inset * 2)),
-            thickness);
-        // Theme colour, so the mark survives a high-contrast theme the same way
-        // the tick drawn by ControlPaint does.
-        using var brush = new SolidBrush(SystemColors.ControlText);
-        g.FillRectangle(brush, bar);
+            using var pen = new Pen(color, Math.Max(1f, box.Width / 12f))
+            {
+                StartCap = LineCap.Round,
+                EndCap = LineCap.Round,
+                LineJoin = LineJoin.Round,
+            };
+            using var brush = new SolidBrush(color);
+
+            // The outline: two arcs meeting at the corners, drawn as a closed
+            // path so the shape is one stroke rather than two touching curves.
+            using var almond = new GraphicsPath();
+            almond.AddBezier(
+                centreX - halfWidth, centreY,
+                centreX - (halfWidth / 2), centreY - (halfHeight * 2),
+                centreX + (halfWidth / 2), centreY - (halfHeight * 2),
+                centreX + halfWidth, centreY);
+            almond.AddBezier(
+                centreX + halfWidth, centreY,
+                centreX + (halfWidth / 2), centreY + (halfHeight * 2),
+                centreX - (halfWidth / 2), centreY + (halfHeight * 2),
+                centreX - halfWidth, centreY);
+            g.DrawPath(pen, almond);
+
+            if (visibility != LayerVisibility.Hidden)
+            {
+                // The pupil, filled for a layer that is drawn and half the size
+                // for a folder that is only partly drawn.
+                float radius = box.Width * (visibility == LayerVisibility.Mixed ? 0.10f : 0.17f);
+                g.FillEllipse(brush,
+                    centreX - radius, centreY - radius, radius * 2, radius * 2);
+            }
+            else
+            {
+                // Struck through, corner to corner, which is how every editor
+                // says "not drawn" without relying on colour.
+                g.DrawLine(pen,
+                    box.Left + (box.Width * 0.1f), box.Bottom - (box.Height * 0.15f),
+                    box.Right - (box.Width * 0.1f), box.Top + (box.Height * 0.15f));
+            }
+        }
+        finally
+        {
+            g.SmoothingMode = saved;
+        }
+    }
+
+    /// <summary>
+    /// A folder: the shape an image editor uses for a layer group, so the row
+    /// reads as "these belong together" before a word of it is read.
+    /// </summary>
+    void DrawFolder(Graphics g, Rectangle box, Color color, bool open)
+    {
+        var saved = g.SmoothingMode;
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        try
+        {
+            using var pen = new Pen(color, Math.Max(1f, box.Width / 12f))
+            {
+                LineJoin = LineJoin.Round,
+            };
+            float tabHeight = box.Height * 0.22f;
+            var body = new RectangleF(
+                box.Left, box.Top + tabHeight, box.Width - 1, box.Height - tabHeight - 1);
+
+            // The tab across the top-left corner, then the body under it.
+            g.DrawLines(pen, new[]
+            {
+                new PointF(body.Left, body.Top),
+                new PointF(body.Left, box.Top),
+                new PointF(body.Left + (box.Width * 0.45f), box.Top),
+                new PointF(body.Left + (box.Width * 0.55f), body.Top),
+            });
+            g.DrawRectangle(pen, body.Left, body.Top, body.Width, body.Height);
+
+            // An open folder is filled, so an expanded unit and a closed one are
+            // told apart by the icon as well as by the chevron.
+            if (!open) return;
+            using var brush = new SolidBrush(Color.FromArgb(48, color));
+            g.FillRectangle(brush, body);
+        }
+        finally
+        {
+            g.SmoothingMode = saved;
+        }
     }
 
     static void DrawDisclosure(Graphics g, Rectangle box, bool expanded, Color color)
@@ -362,7 +503,7 @@ internal sealed class LayerListView : Panel
         if (visual.Thumbnail is not null)
         {
             var saved = g.InterpolationMode;
-            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
             g.DrawImage(visual.Thumbnail, FitInside(visual.Thumbnail.Size, inner));
             g.InterpolationMode = saved;
             return;
@@ -391,35 +532,85 @@ internal sealed class LayerListView : Panel
     {
         base.OnMouseDown(e);
         // Clicking has to bring the keyboard cursor with it, or Space would
-        // afterwards tick a row nobody is looking at.
+        // afterwards act on a row nobody is looking at.
         Focus();
 
         int row = RowAt(e.Location);
         if (row < 0) return;
-        SetFocusedRow(row);
 
-        // The triangle and the checkbox are the only parts of a row that do
-        // something other than select it, and they are hit-tested through the
-        // very rectangles that placed them. Only the horizontal span is
-        // compared: the glyphs are a third of the row's height, and demanding
-        // the pointer land inside them vertically would shrink a target the
-        // user is already aiming at by eye.
+        // The eye and the chevron are the only parts of a row that do something
+        // other than select it, and they are hit-tested through the very
+        // rectangles that placed them. Only the horizontal span is compared: the
+        // glyphs are a third of the row's height, and demanding the pointer land
+        // inside them vertically would shrink a target the user is already
+        // aiming at by eye.
         var visual = _visualFor(row);
         var bounds = BoundsOf(row);
-        var disclosure = DisclosureRect(bounds, visual.IsGroup);
-        var checkBox = CheckBoxRect(bounds, visual.IsGroup);
 
-        if (visual.IsGroup && Spans(e.X, disclosure))
+        if (Spans(e.X, EyeRect(bounds)))
         {
+            SetFocusedRow(row);
+            ToggleVisibility(row);
+            return;
+        }
+        if (visual.IsGroup && Spans(e.X, DisclosureRect(bounds)))
+        {
+            SetFocusedRow(row);
             ExpandToggled?.Invoke(row);
+            return;
         }
-        else if (Spans(e.X, checkBox))
-        {
-            ToggleRow(row);
-        }
+
+        SelectRow(row, ModifierKeys);
     }
 
     static bool Spans(int x, Rectangle box) => x >= box.Left && x < box.Right;
+
+    // =======================================================================
+    // Selection
+    // =======================================================================
+
+    /// <summary>The rows the commands act on, in list order.</summary>
+    public IReadOnlyList<int> SelectedRows => _selected.OrderBy(row => row).ToArray();
+
+    /// <summary>
+    /// Take a row into the selection the way the modifier keys ask: Ctrl adds
+    /// or removes one, Shift takes everything from the anchor, and a plain click
+    /// replaces the lot. The rules an image editor's layers panel follows, so
+    /// nobody has to learn them here.
+    /// </summary>
+    void SelectRow(int row, Keys modifiers)
+    {
+        if ((modifiers & Keys.Control) != 0)
+        {
+            if (!_selected.Add(row)) _selected.Remove(row);
+            _selectionAnchor = row;
+        }
+        else if ((modifiers & Keys.Shift) != 0 && _selectionAnchor >= 0)
+        {
+            _selected.Clear();
+            int from = Math.Min(_selectionAnchor, row), to = Math.Max(_selectionAnchor, row);
+            for (int i = from; i <= to; i++) _selected.Add(i);
+        }
+        else
+        {
+            _selected.Clear();
+            _selected.Add(row);
+            _selectionAnchor = row;
+        }
+
+        SetFocusedRow(row);
+        Invalidate();
+        SelectionChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Drop the selection without touching anything else.</summary>
+    public void ClearSelection()
+    {
+        if (_selected.Count == 0) return;
+        _selected.Clear();
+        Invalidate();
+        SelectionChanged?.Invoke(this, EventArgs.Empty);
+    }
 
     // =======================================================================
     // Keyboard
@@ -438,7 +629,7 @@ internal sealed class LayerListView : Panel
     {
         base.OnGotFocus(e);
         // Land the cursor on the first visible row the first time focus arrives.
-        if (_selectedRow < 0 && _rowCount > 0) SetFocusedRow(VisibleRange().First);
+        if (_focusedRow < 0 && _rowCount > 0) SetFocusedRow(VisibleRange().First);
         else Invalidate();
     }
 
@@ -453,26 +644,48 @@ internal sealed class LayerListView : Panel
         base.OnKeyDown(e);
         if (_rowCount == 0) return;
 
-        int row = _selectedRow < 0 ? VisibleRange().First : _selectedRow;
-        int page = Math.Max(1, ClientSize.Height / Pitch);
+        int row = _focusedRow < 0 ? VisibleRange().First : _focusedRow;
+        int page = Math.Max(1, ClientSize.Height / Dip(ObjectRowHeight));
 
         switch (e.KeyCode)
         {
-            case Keys.Up: SetFocusedRow(row - 1); break;
-            case Keys.Down: SetFocusedRow(row + 1); break;
-            case Keys.Home: SetFocusedRow(0); break;
-            case Keys.End: SetFocusedRow(_rowCount - 1); break;
-            case Keys.PageUp: SetFocusedRow(row - page); break;
-            case Keys.PageDown: SetFocusedRow(row + page); break;
-            case Keys.Space: ToggleRow(row); break;
-            // Left and Right fold a group, mirroring every tree control. On an
-            // object row Left goes up to the group it belongs to, which is the
+            case Keys.Up: MoveTo(row - 1, e.Modifiers); break;
+            case Keys.Down: MoveTo(row + 1, e.Modifiers); break;
+            case Keys.Home: MoveTo(0, e.Modifiers); break;
+            case Keys.End: MoveTo(_rowCount - 1, e.Modifiers); break;
+            case Keys.PageUp: MoveTo(row - page, e.Modifiers); break;
+            case Keys.PageDown: MoveTo(row + page, e.Modifiers); break;
+            // Space is the eye, on everything selected: hiding six layers is a
+            // thing a user does, and doing it one row at a time is not.
+            case Keys.Space: ToggleVisibilityOfSelection(row); break;
+            // Left and Right fold a folder, mirroring every tree control. On an
+            // object row Left goes up to the folder it belongs to, which is the
             // only "out" move this two-level list has.
             case Keys.Left: CollapseOrGoToGroup(row); break;
             case Keys.Right: ExpandGroup(row); break;
             default: return;
         }
         e.Handled = true;
+    }
+
+    /// <summary>
+    /// Move the cursor, taking the selection with it — or extending it, when
+    /// Shift is down.
+    /// </summary>
+    void MoveTo(int row, Keys modifiers)
+    {
+        row = Math.Clamp(row, 0, _rowCount - 1);
+        SelectRow(row, modifiers & Keys.Shift);
+    }
+
+    void ToggleVisibilityOfSelection(int row)
+    {
+        if (_selected.Count == 0)
+        {
+            ToggleVisibility(row);
+            return;
+        }
+        foreach (int selected in SelectedRows) ToggleVisibility(selected);
     }
 
     void CollapseOrGoToGroup(int row)
@@ -483,11 +696,11 @@ internal sealed class LayerListView : Panel
             if (visual.IsExpanded) ExpandToggled?.Invoke(row);
             return;
         }
-        // Walk back to this object's group header.
+        // Walk back to this object's folder.
         for (int i = row - 1; i >= 0; i--)
         {
-            if (!_visualFor(i).IsGroup) continue;
-            SetFocusedRow(i);
+            if (!_isGroupRow(i)) continue;
+            SelectRow(i, Keys.None);
             return;
         }
     }
@@ -507,28 +720,31 @@ internal sealed class LayerListView : Panel
         if (_rowCount == 0) return;
         row = Math.Clamp(row, 0, _rowCount - 1);
 
-        int old = _selectedRow;
-        _selectedRow = row;
+        int old = _focusedRow;
+        _focusedRow = row;
         EnsureVisible(row);
         // Only the two rows whose appearance changed; EnsureVisible already
         // invalidates the lot when it had to scroll.
         if (old >= 0 && old != row) Invalidate(BoundsOf(old));
         Invalidate(BoundsOf(row));
-        if (old != row) RowSelected?.Invoke(row);
 
         // childID is 1-based here: 0 identifies the control itself, and the
         // framework maps an OS childID back to GetChild(childID - 1).
         AccessibilityNotifyClients(AccessibleEvents.Focus, row + 1);
     }
 
+    /// <summary>Put the cursor on a row and make it the whole selection.</summary>
+    internal void SelectOnly(int row) => SelectRow(Math.Clamp(row, 0, _rowCount - 1), Keys.None);
+
     void EnsureVisible(int row)
     {
-        int top = row * Pitch;
+        int top = _rowTops[row];
+        int height = HeightOf(row);
         int viewTop = Math.Max(0, -AutoScrollPosition.Y);
         int viewBottom = viewTop + ClientSize.Height;
 
         if (top < viewTop) AutoScrollPosition = new Point(0, top);
-        else if (top + Pitch > viewBottom) AutoScrollPosition = new Point(0, top + Pitch - ClientSize.Height);
+        else if (top + height > viewBottom) AutoScrollPosition = new Point(0, top + height - ClientSize.Height);
         else return;
 
         Invalidate();
@@ -536,14 +752,14 @@ internal sealed class LayerListView : Panel
     }
 
     /// <summary>
-    /// Tick or clear the row's checkbox — the same path the mouse takes, so the
-    /// two input routes can never drift apart.
+    /// Hide or show the row's layer — the same path the mouse takes, so the two
+    /// input routes can never drift apart.
     /// </summary>
-    internal void ToggleRow(int row)
+    internal void ToggleVisibility(int row)
     {
         if (row < 0 || row >= _rowCount) return;
 
-        CheckToggled?.Invoke(row);
+        VisibilityToggled?.Invoke(row);
         AccessibilityNotifyClients(AccessibleEvents.StateChange, row + 1);
     }
 
@@ -552,7 +768,8 @@ internal sealed class LayerListView : Panel
     // =======================================================================
 
     internal int RowCount => _rowCount;
-    internal int FocusedRow => _selectedRow;
+    internal int FocusedRow => _focusedRow;
+    internal bool IsRowSelected(int row) => _selected.Contains(row);
     internal Rectangle RowScreenBounds(int row) => RectangleToScreen(BoundsOf(row));
     internal int RowIndexAt(Point clientPoint) => RowAt(clientPoint);
     internal LayerVisual RowVisual(int row) => _visualFor(row);
@@ -560,8 +777,8 @@ internal sealed class LayerListView : Panel
     /// <summary>
     /// What a screen reader reads for a row: its name, then the file and page
     /// underneath it when there is one. No extra vocabulary — the role carries
-    /// "check box" and the state carries ticked / part-ticked / expanded, each
-    /// in the reader's own words.
+    /// "check box" and the state carries shown / part-shown / expanded, each in
+    /// the reader's own words.
     /// </summary>
     internal string RowAccessibleName(int row)
     {

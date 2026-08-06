@@ -243,28 +243,25 @@ internal interface IStrings
     // in the title: it labels a panel, not a menu, and "&" would show literally.
 
     /// <summary>
-    /// Title over the panel where overlapping objects are baked into one image.
-    /// Use the term the language's image editors use for Photoshop's "Flatten
-    /// Image", if it has one — that is the operation, and users have met it
-    /// there.
+    /// Title over the panel that lists what overlaps, as an image editor lists
+    /// layers. Use the word that language's image editors use for a layers
+    /// panel — the panel is built to be recognised as one, and the word is half
+    /// of that.
     /// </summary>
     string FlattenPanelTitle { get; }
 
     /// <summary>
-    /// The word over the flatten panel's tick column. The tick marks what the
-    /// commands under it act on and nothing else — it reserves no operation, so
-    /// it says "selected" rather than naming one. Its opposite number over the
-    /// object list, <see cref="ColumnDelete"/>, DOES name one, because a tick
-    /// there is what a save removes.
+    /// Spoken name of the menu button in the panel's title bar, which holds the
+    /// commands below. It shows a hamburger glyph and no words, so this is all
+    /// a screen reader has to go on.
     /// </summary>
-    string ColumnSelect { get; }
+    string FlattenMenu { get; }
 
     /// <summary>
-    /// Commands acting on the ticked objects, every one of them taking effect at
-    /// once: flatten replaces them with a picture of themselves, undo takes such
-    /// a picture back, merge gathers ticks into one unit, split takes them out of
-    /// the one they are in. Keep them short — five share one row and the panel
-    /// can be dragged narrow.
+    /// Commands acting on the selected layers, every one of them taking effect
+    /// at once: flatten replaces them with a picture of themselves, undo takes
+    /// such a picture back, merge gathers them into one unit, split takes them
+    /// out of the one they are in.
     /// </summary>
     string FlattenApply { get; }
     string FlattenUndo { get; }
@@ -277,20 +274,6 @@ internal interface IStrings
     /// what changes is invisible — the text stops being text.
     /// </summary>
     string FlattenDescription { get; }
-
-    /// <summary>
-    /// A place where objects of different kinds overlap, numbered within its
-    /// page: one such place is baked into one image. Keep it short — it is a
-    /// tree node label, followed by the kinds it contains in parentheses.
-    /// </summary>
-    /// <summary>
-    /// A unit's heading, numbered document-page-unit ("Unit 1-12-3"). Units are
-    /// counted within a page and pages within a document, so the bare count
-    /// repeats itself several times over in a panel that shows more than one
-    /// page — which it does whenever an object appears more than once. Keep the
-    /// three numbers joined by hyphens; only the word is translated.
-    /// </summary>
-    string FlattenUnitLabel(int document, int page, int number);
 
     /// <summary>
     /// Shown in the panel when the object selected in the list overlaps nothing
@@ -315,8 +298,10 @@ internal interface IStrings
     string FlattenWholePageWarning { get; }
 
     /// <summary>
-    /// Status bar while objects are checked for flattening. Counts objects, not
-    /// units, because that is what the user ticks.
+    /// Status bar while layers are selected in the panel. Counts layers, not
+    /// folders: selecting a folder selects everything in it, and the number the
+    /// commands will act on is the one worth showing. It says selected and not
+    /// what will happen to them — the selection reserves nothing.
     /// </summary>
     string StatusFlattenSelection(int objectCount);
 

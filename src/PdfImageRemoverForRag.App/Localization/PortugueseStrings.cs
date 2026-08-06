@@ -141,8 +141,8 @@ internal sealed class PortugueseStrings : IStrings
     public string AboutLicenseLink => "Informações de licença";
     public string ContextMenuUsageLocations => "Mostrar &locais de utilização…";
 
-    public string FlattenPanelTitle => "Achatar";
-    public string ColumnSelect => "Seleção";
+    public string FlattenPanelTitle => "Camadas";
+    public string FlattenMenu => "Comandos de camada";
     public string FlattenApply => "Achatar seleção";
     public string FlattenUndo => "Desfazer achatamento";
     public string FlattenMerge => "Unir seleção";
@@ -152,13 +152,12 @@ internal sealed class PortugueseStrings : IStrings
         "Funde os objetos sobrepostos numa única imagem. A página fica igual, "
         + "mas o texto lá dentro deixa de ser texto.";
 
-    public string FlattenUnitLabel(int document, int page, int number) =>
-        $"Unidade {document}-{page}-{number}";
     public string FlattenObjectNotOverlapping => "Este objeto não se sobrepõe a nada.";
     public string FlattenNoOverlaps => "Não foram encontrados objetos sobrepostos.";
     public string FlattenWholePageWarning =>
         "Os objetos marcados cobrem quase toda a página. Ao achatá-los, a página vira uma única imagem e nenhum texto continua sendo texto.";
-    public string StatusFlattenSelection(int objectCount) => $"{objectCount} objeto(s) para achatar";
+    public string StatusFlattenSelection(int objectCount) =>
+        $"{objectCount} camada(s) selecionada(s)";
     public string AccessibleFlattenPreview => "Pré-visualização";
 
     public string ErrorSameAsSource =>

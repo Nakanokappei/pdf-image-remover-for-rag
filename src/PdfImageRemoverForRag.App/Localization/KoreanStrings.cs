@@ -134,8 +134,8 @@ internal sealed class KoreanStrings : IStrings
     public string AboutLicenseLink => "라이선스 정보";
     public string ContextMenuUsageLocations => "사용 위치 표시(&U)…";
 
-    public string FlattenPanelTitle => "병합";
-    public string ColumnSelect => "선택";
+    public string FlattenPanelTitle => "레이어";
+    public string FlattenMenu => "레이어 명령";
     public string FlattenApply => "선택 병합";
     public string FlattenUndo => "병합 취소";
     public string FlattenMerge => "선택 합치기";
@@ -145,13 +145,12 @@ internal sealed class KoreanStrings : IStrings
         "겹쳐 있는 개체를 한 장의 이미지로 병합합니다. 페이지 모양은 그대로이지만 "
         + "그 안의 텍스트는 더 이상 텍스트가 아닙니다.";
 
-    public string FlattenUnitLabel(int document, int page, int number) =>
-        $"병합 단위 {document}-{page}-{number}";
     public string FlattenObjectNotOverlapping => "이 개체는 아무것과도 겹치지 않습니다.";
     public string FlattenNoOverlaps => "겹쳐 있는 개체가 없습니다.";
     public string FlattenWholePageWarning =>
         "선택한 범위가 페이지 거의 전체입니다. 병합하면 이 페이지는 한 장의 이미지가 되고 글자는 모두 텍스트가 아니게 됩니다.";
-    public string StatusFlattenSelection(int objectCount) => $"개체 {objectCount}개를 병합";
+    public string StatusFlattenSelection(int objectCount) =>
+        $"레이어 {objectCount}개 선택됨";
     public string AccessibleFlattenPreview => "미리 보기";
 
     public string ErrorSameAsSource =>

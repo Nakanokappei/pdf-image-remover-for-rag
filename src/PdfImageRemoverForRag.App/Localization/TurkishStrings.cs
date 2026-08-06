@@ -147,8 +147,8 @@ internal sealed class TurkishStrings : IStrings
     public string AboutLicenseLink => "Lisans bilgileri";
     public string ContextMenuUsageLocations => "&Kullanım Konumlarını Göster…";
 
-    public string FlattenPanelTitle => "Birleştir";
-    public string ColumnSelect => "Seçim";
+    public string FlattenPanelTitle => "Katmanlar";
+    public string FlattenMenu => "Katman komutları";
     public string FlattenApply => "Seçimi birleştir";
     public string FlattenUndo => "Birleştirmeyi geri al";
     public string FlattenMerge => "Birleştir";
@@ -158,13 +158,12 @@ internal sealed class TurkishStrings : IStrings
         "Üst üste gelen nesneleri tek bir görüntüde birleştirir. Sayfa aynı görünür, "
         + "ancak içindeki metin artık metin olmaz.";
 
-    public string FlattenUnitLabel(int document, int page, int number) =>
-        $"Birim {document}-{page}-{number}";
     public string FlattenObjectNotOverlapping => "Bu nesne hiçbir şeyle üst üste gelmiyor.";
     public string FlattenNoOverlaps => "Üst üste gelen nesne bulunamadı.";
     public string FlattenWholePageWarning =>
         "İşaretlenen nesneler sayfanın neredeyse tamamını kaplıyor. Birleştirildiğinde sayfa tek bir görüntüye dönüşür ve hiçbir metin metin olarak kalmaz.";
-    public string StatusFlattenSelection(int objectCount) => $"Birleştirilecek nesne: {objectCount}";
+    public string StatusFlattenSelection(int objectCount) =>
+        $"{objectCount} katman seçildi";
     public string AccessibleFlattenPreview => "Önizleme";
 
     public string ErrorSameAsSource =>

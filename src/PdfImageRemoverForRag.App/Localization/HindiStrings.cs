@@ -139,8 +139,8 @@ internal sealed class HindiStrings : IStrings
     public string AboutLicenseLink => "लाइसेंस जानकारी";
     public string ContextMenuUsageLocations => "उपयोग स्थान दिखाएँ(&U)…";
 
-    public string FlattenPanelTitle => "मिलाएँ";
-    public string ColumnSelect => "चयन";
+    public string FlattenPanelTitle => "लेयर";
+    public string FlattenMenu => "लेयर कमांड";
     public string FlattenApply => "चयनित मिलाएँ";
     public string FlattenUndo => "मिलाना पूर्ववत करें";
     public string FlattenMerge => "चयन मिलाएँ";
@@ -150,13 +150,12 @@ internal sealed class HindiStrings : IStrings
         "एक-दूसरे पर आने वाली वस्तुओं को एक ही छवि में मिला देता है। पृष्ठ वैसा ही दिखता है, "
         + "पर उसके भीतर का पाठ अब पाठ नहीं रहता।";
 
-    public string FlattenUnitLabel(int document, int page, int number) =>
-        $"इकाई {document}-{page}-{number}";
     public string FlattenObjectNotOverlapping => "यह वस्तु किसी से नहीं मिलती।";
     public string FlattenNoOverlaps => "एक-दूसरे पर आने वाली कोई वस्तु नहीं मिली।";
     public string FlattenWholePageWarning =>
         "चुनी गई वस्तुएँ लगभग पूरे पृष्ठ को ढक रही हैं। इन्हें चित्र बनाने पर यह पृष्ठ एक ही चित्र बन जाएगा और इसका कोई भी लेख टेक्स्ट नहीं रहेगा।";
-    public string StatusFlattenSelection(int objectCount) => $"मिलाने के लिए {objectCount} वस्तुएँ";
+    public string StatusFlattenSelection(int objectCount) =>
+        $"{objectCount} लेयर चयनित";
     public string AccessibleFlattenPreview => "पूर्वावलोकन";
 
     public string ErrorSameAsSource =>

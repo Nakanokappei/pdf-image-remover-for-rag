@@ -38,9 +38,9 @@ internal sealed class LayerListAccessibleObject : Control.ControlAccessibleObjec
 
 /// <summary>
 /// One row as seen by a screen reader: a check button whose name says what the
-/// row is and whose state carries ticked, part-ticked, and — for a unit — open
-/// or closed. Toggling it marks the object for flattening, exactly as a click
-/// or the Space key does.
+/// row is and whose state carries shown, part-shown, selected, and — for a
+/// folder — open or closed. Toggling it hides or shows the layer, exactly as
+/// clicking its eye or pressing Space does.
 /// </summary>
 internal sealed class LayerRowAccessibleObject : AccessibleObject
 {
@@ -55,9 +55,9 @@ internal sealed class LayerRowAccessibleObject : AccessibleObject
 
     public override AccessibleObject Parent => _owner.AccessibilityObject;
 
-    // CheckButton so a reader announces the ticked state and the "press Space
-    // to toggle" affordance in its own words and language. A unit is also a
-    // container, but the checkbox is what the row DOES; its open/closed state
+    // CheckButton so a reader announces the shown/hidden state and the "press
+    // Space to toggle" affordance in its own words and language. A folder is
+    // also a container, but the eye is what the row DOES; its open/closed state
     // is reported separately below.
     public override AccessibleRole Role => AccessibleRole.CheckButton;
 
@@ -75,19 +75,19 @@ internal sealed class LayerRowAccessibleObject : AccessibleObject
         {
             var states = AccessibleStates.Focusable | AccessibleStates.Selectable;
 
-            if (_owner.Focused && _owner.FocusedRow == _row)
-            {
-                states |= AccessibleStates.Focused | AccessibleStates.Selected;
-            }
+            if (_owner.Focused && _owner.FocusedRow == _row) states |= AccessibleStates.Focused;
+            // Selection is its own thing here: the commands act on the selected
+            // rows, and several can be selected at once.
+            if (_owner.IsRowSelected(_row)) states |= AccessibleStates.Selected;
 
             var visual = _owner.RowVisual(_row);
-            states |= visual.Check switch
+            states |= visual.Visibility switch
             {
-                CheckState.Checked => AccessibleStates.Checked,
-                // A unit holding some of its objects is neither ticked nor
-                // clear, and reporting it as either would be a lie the sighted
-                // user is not told — the box shows a dash.
-                CheckState.Indeterminate => AccessibleStates.Mixed,
+                LayerVisibility.Visible => AccessibleStates.Checked,
+                // A folder holding some of each is neither shown nor hidden, and
+                // reporting it as either would be a lie the sighted user is not
+                // told — its eye shows the difference too.
+                LayerVisibility.Mixed => AccessibleStates.Mixed,
                 _ => AccessibleStates.None,
             };
 
@@ -102,14 +102,14 @@ internal sealed class LayerRowAccessibleObject : AccessibleObject
         }
     }
 
-    public override void DoDefaultAction() => _owner.ToggleRow(_row);
+    public override void DoDefaultAction() => _owner.ToggleVisibility(_row);
 
     public override void Select(AccessibleSelection flags)
     {
         if ((flags & AccessibleSelection.TakeFocus) != 0)
         {
             _owner.Focus();
-            _owner.SetFocusedRow(_row);
+            _owner.SelectOnly(_row);
         }
     }
 }

@@ -141,8 +141,8 @@ internal sealed class GermanStrings : IStrings
     public string AboutLicenseLink => "Lizenzinformationen";
     public string ContextMenuUsageLocations => "&Verwendungsorte anzeigen…";
 
-    public string FlattenPanelTitle => "Zusammenfügen";
-    public string ColumnSelect => "Auswahl";
+    public string FlattenPanelTitle => "Ebenen";
+    public string FlattenMenu => "Ebenenbefehle";
     public string FlattenApply => "Auswahl zusammenfügen";
     public string FlattenUndo => "Zusammenfügen aufheben";
     public string FlattenMerge => "Zusammenführen";
@@ -152,13 +152,12 @@ internal sealed class GermanStrings : IStrings
         "Fügt überlappende Objekte zu einem einzigen Bild zusammen. Die Seite sieht "
         + "unverändert aus, doch der Text darin ist danach kein Text mehr.";
 
-    public string FlattenUnitLabel(int document, int page, int number) =>
-        $"Einheit {document}-{page}-{number}";
     public string FlattenObjectNotOverlapping => "Dieses Objekt überlappt mit nichts.";
     public string FlattenNoOverlaps => "Es wurden keine überlappenden Objekte gefunden.";
     public string FlattenWholePageWarning =>
         "Die markierten Objekte bedecken fast die ganze Seite. Beim Zusammenfassen wird die Seite zu einem einzigen Bild, und kein Text bleibt Text.";
-    public string StatusFlattenSelection(int objectCount) => $"{objectCount} Objekt(e) zum Zusammenfügen";
+    public string StatusFlattenSelection(int objectCount) =>
+        $"{objectCount} Ebene(n) ausgewählt";
     public string AccessibleFlattenPreview => "Vorschau";
 
     public string ErrorSameAsSource =>

@@ -102,12 +102,26 @@ internal static class L10n
     public static string ColumnDelete => S.ColumnDelete;
 
     /// <summary>
-    /// The flatten panel's tick column: what its commands act on. It used to
-    /// name the operation, as the object list's does, and that stopped being
-    /// true when flattening became a command of its own — a tick here now
-    /// reserves nothing.
+    /// The layers panel's heading. Just the word: the row's first column is an
+    /// eye, not a tick, and a glyph in the heading would be describing a column
+    /// that is no longer there.
     /// </summary>
-    public static string FlattenPanelHeader => $"{CheckGlyph} {S.ColumnSelect}";
+    public static string FlattenPanelHeader => S.FlattenPanelTitle;
+
+    /// <summary>
+    /// The hamburger. Not translated — it is a symbol, and the button's spoken
+    /// name carries the words.
+    /// </summary>
+    public const string MenuGlyph = "☰";
+
+    /// <summary>
+    /// A unit's heading: which document, which page, which unit on it. The same
+    /// in every language, because it is three numbers and three tags — a reader
+    /// matching "Doc:01 P.12 Unit 03" against a page needs it to look the same
+    /// wherever they are, and there is nothing here to translate.
+    /// </summary>
+    public static string FlattenUnitLabel(int document, int page, int number) =>
+        $"Doc:{document:00} P.{page:00} Unit {number:00}";
 
     /// <summary>Compression cell for non-image objects (they have none).</summary>
     public static string CompressionNotApplicable => "N/A";
@@ -239,13 +253,12 @@ internal static class L10n
     // --- the flatten panel --------------------------------------------------
 
     public static string FlattenPanelTitle => S.FlattenPanelTitle;
+    public static string FlattenMenu => S.FlattenMenu;
     public static string FlattenApply => S.FlattenApply;
     public static string FlattenUndo => S.FlattenUndo;
     public static string FlattenMerge => S.FlattenMerge;
     public static string FlattenSplit => S.FlattenSplit;
     public static string FlattenDescription => S.FlattenDescription;
-    public static string FlattenUnitLabel(int document, int page, int number) =>
-        S.FlattenUnitLabel(document, page, number);
     public static string FlattenObjectNotOverlapping => S.FlattenObjectNotOverlapping;
     public static string FlattenNoOverlaps => S.FlattenNoOverlaps;
     public static string FlattenWholePageWarning => S.FlattenWholePageWarning;

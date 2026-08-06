@@ -143,8 +143,8 @@ internal sealed class FrenchStrings : IStrings
     public string AboutLicenseLink => "Informations de licence";
     public string ContextMenuUsageLocations => "Afficher les &emplacements d'utilisation…";
 
-    public string FlattenPanelTitle => "Aplatir";
-    public string ColumnSelect => "Sélection";
+    public string FlattenPanelTitle => "Calques";
+    public string FlattenMenu => "Commandes de calque";
     public string FlattenApply => "Aplatir la sélection";
     public string FlattenUndo => "Annuler l'aplatissement";
     public string FlattenMerge => "Fusionner";
@@ -154,13 +154,12 @@ internal sealed class FrenchStrings : IStrings
         "Fusionne les objets superposés en une seule image. La page garde le même "
         + "aspect, mais le texte qu'elle contient n'est plus du texte.";
 
-    public string FlattenUnitLabel(int document, int page, int number) =>
-        $"Unité {document}-{page}-{number}";
     public string FlattenObjectNotOverlapping => "Cet objet ne chevauche rien.";
     public string FlattenNoOverlaps => "Aucun objet superposé n'a été trouvé.";
     public string FlattenWholePageWarning =>
         "Les objets cochés couvrent presque toute la page. En les aplatissant, la page devient une seule image et plus aucun texte ne reste du texte.";
-    public string StatusFlattenSelection(int objectCount) => $"{objectCount} objet(s) à aplatir";
+    public string StatusFlattenSelection(int objectCount) =>
+        $"{objectCount} calque(s) sélectionné(s)";
     public string AccessibleFlattenPreview => "Aperçu";
 
     public string ErrorSameAsSource =>

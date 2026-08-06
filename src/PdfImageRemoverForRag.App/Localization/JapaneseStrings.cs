@@ -133,8 +133,8 @@ internal sealed class JapaneseStrings : IStrings
     public string AboutLicenseLink => "ライセンス情報";
     public string ContextMenuUsageLocations => "使用箇所を表示(&U)…";
 
-    public string FlattenPanelTitle => "統合";
-    public string ColumnSelect => "選択";
+    public string FlattenPanelTitle => "レイヤー";
+    public string FlattenMenu => "レイヤー操作";
     public string FlattenApply => "選択を統合";
     public string FlattenUndo => "統合を解除";
     public string FlattenMerge => "選択を合流";
@@ -144,13 +144,12 @@ internal sealed class JapaneseStrings : IStrings
         "重なっているオブジェクトをまとめて画像化します。見た目は変わりませんが、"
         + "その部分のテキストはテキストでなくなります。";
 
-    public string FlattenUnitLabel(int document, int page, int number) =>
-        $"統合単位 {document}-{page}-{number}";
     public string FlattenObjectNotOverlapping => "このオブジェクトは何とも重なっていません。";
     public string FlattenNoOverlaps => "重なっているオブジェクトはありません。";
     public string FlattenWholePageWarning =>
         "チェックした範囲がページのほぼ全体です。統合するとこのページは 1 枚の画像になり、文字はすべてテキストでなくなります。";
-    public string StatusFlattenSelection(int objectCount) => $"{objectCount} 個のオブジェクトを統合";
+    public string StatusFlattenSelection(int objectCount) =>
+        $"レイヤーを {objectCount} 個選択中";
     public string AccessibleFlattenPreview => "プレビュー";
 
     public string ErrorSameAsSource =>

@@ -140,8 +140,8 @@ internal sealed class ItalianStrings : IStrings
     public string AboutLicenseLink => "Informazioni sulle licenze";
     public string ContextMenuUsageLocations => "Mostra &posizioni di utilizzo…";
 
-    public string FlattenPanelTitle => "Unisci";
-    public string ColumnSelect => "Selezione";
+    public string FlattenPanelTitle => "Livelli";
+    public string FlattenMenu => "Comandi livello";
     public string FlattenApply => "Unisci selezione";
     public string FlattenUndo => "Annulla unione";
     public string FlattenMerge => "Unisci";
@@ -151,13 +151,12 @@ internal sealed class ItalianStrings : IStrings
         "Fonde gli oggetti sovrapposti in un'unica immagine. La pagina resta uguale, "
         + "ma il testo al suo interno non è più testo.";
 
-    public string FlattenUnitLabel(int document, int page, int number) =>
-        $"Unità {document}-{page}-{number}";
     public string FlattenObjectNotOverlapping => "Questo oggetto non si sovrappone a nulla.";
     public string FlattenNoOverlaps => "Nessun oggetto sovrapposto trovato.";
     public string FlattenWholePageWarning =>
         "Gli oggetti selezionati coprono quasi tutta la pagina. Unendoli, la pagina diventa una sola immagine e nessun testo resta testo.";
-    public string StatusFlattenSelection(int objectCount) => $"{objectCount} oggetto/i da unire";
+    public string StatusFlattenSelection(int objectCount) =>
+        $"{objectCount} livello/i selezionato/i";
     public string AccessibleFlattenPreview => "Anteprima";
 
     public string ErrorSameAsSource =>

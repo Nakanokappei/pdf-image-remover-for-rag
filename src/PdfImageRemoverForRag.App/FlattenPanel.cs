@@ -194,6 +194,13 @@ internal sealed class FlattenPanel : UserControl
     public Func<PlacedObject, LayerThumbnail>? ThumbnailFor { get; set; }
 
     /// <summary>
+    /// The file to render a page from: the document with the hidden layers
+    /// actually taken out. Greying them on top of the page was tried first and
+    /// was hard to read.
+    /// </summary>
+    public Func<string, Task<string>>? PreviewSourceFor { get; set; }
+
+    /// <summary>
     /// Whether this drawing of this object, on this page of this file, is
     /// hidden. Answered by the host, because that is where the mark lives — and
     /// asked per PLACEMENT, because hiding a layer here hides the one layer, not
@@ -947,43 +954,47 @@ internal sealed class FlattenPanel : UserControl
         }
 
         var (unit, members) = selected[0];
-        _preview.Show(
-            unit.FilePath, unit.Region.PageNumber,
-            members.Select(RectOf).ToArray(),
-            HiddenOn(unit.FilePath, unit.Region.PageNumber));
+        ShowPreview(unit, members.Select(RectOf).ToArray());
     }
 
     void ShowPreviewFor(Row row)
     {
         var unit = _units[row.UnitIndex];
         var shown = row.Object is null ? unit.Region.Members : new[] { row.Object };
-        _preview.Show(
-            unit.FilePath, unit.Region.PageNumber,
-            shown.Select(RectOf).ToArray(),
-            HiddenOn(unit.FilePath, unit.Region.PageNumber));
+        ShowPreview(unit, shown.Select(RectOf).ToArray());
     }
 
     /// <summary>
-    /// Every hidden layer on one page, wherever in the file's units it sits —
-    /// not only the units on screen. The preview shows the PAGE, and a layer
-    /// that is going to be taken out of it is going to be taken out of it
-    /// whether or not the panel happens to be listing its unit.
+    /// Show a page with the selected layers outlined. The page comes from
+    /// wherever the host says — with hidden layers taken out, that is a copy —
+    /// and asking for it is work, so it is awaited and only the newest answer is
+    /// used. Until it arrives the pane keeps showing what it had.
     /// </summary>
-    IReadOnlyList<RectangleF> HiddenOn(string filePath, int pageNumber)
+    async void ShowPreview(UnitEntry unit, IReadOnlyList<RectangleF> outlined)
     {
-        var boxes = new List<RectangleF>();
-        foreach (var unit in _units)
+        int request = ++_previewRequest;
+        var source = unit.FilePath;
+        if (PreviewSourceFor is not null)
         {
-            if (!string.Equals(unit.FilePath, filePath, StringComparison.OrdinalIgnoreCase)) continue;
-            if (unit.Region.PageNumber != pageNumber) continue;
-
-            foreach (var member in unit.Region.Members)
+            try
             {
-                if (Hidden(unit, member)) boxes.Add(RectOf(member));
+                source = await PreviewSourceFor(unit.FilePath);
+            }
+            catch (Exception)
+            {
+                // The page as it stands is a worse answer than the page without
+                // its hidden layers, and a better one than no page at all.
+                source = unit.FilePath;
             }
         }
-        return boxes;
+        if (request != _previewRequest || IsDisposed) return;
+
+        _preview.Show(source, unit.Region.PageNumber, outlined);
     }
+
+    // Only the newest preview may install itself: the user can click down a
+    // list, and each click can be waiting on a copy being written.
+    int _previewRequest;
 
     static RectangleF RectOf(PlacedObject o) =>
         new((float)o.X, (float)o.Y, (float)o.Width, (float)o.Height);
@@ -1006,10 +1017,9 @@ internal sealed class FlattenPanel : UserControl
 
         readonly PdfPageRenderer _renderer = new();
         RenderedPage? _page;
-        // What is selected, outlined; and what is hidden, greyed out. Two
-        // questions, two marks — one set drawn as both was read as neither.
+        // What is selected, outlined. What is HIDDEN needs no mark here: the
+        // page being rendered is one those layers are already gone from.
         IReadOnlyList<RectangleF> _boxesInPoints = Array.Empty<RectangleF>();
-        IReadOnlyList<RectangleF> _hiddenInPoints = Array.Empty<RectangleF>();
         string? _filePath;
         int _pageNumber;
         int _renderedWidth;
@@ -1029,12 +1039,9 @@ internal sealed class FlattenPanel : UserControl
         int Dip(int logical) => LogicalToDeviceUnits(logical);
 
         public void Show(
-            string filePath, int pageNumber,
-            IReadOnlyList<RectangleF> selectedInPoints,
-            IReadOnlyList<RectangleF> hiddenInPoints)
+            string filePath, int pageNumber, IReadOnlyList<RectangleF> selectedInPoints)
         {
             _boxesInPoints = selectedInPoints;
-            _hiddenInPoints = hiddenInPoints;
             // Same page, different boxes (a different row on the same page):
             // repaint, do not render again.
             if (_filePath == filePath && _pageNumber == pageNumber && _page is not null)
@@ -1054,7 +1061,6 @@ internal sealed class FlattenPanel : UserControl
             _page?.Bitmap.Dispose();
             _page = null;
             _boxesInPoints = Array.Empty<RectangleF>();
-            _hiddenInPoints = Array.Empty<RectangleF>();
             Invalidate();
         }
 
@@ -1109,11 +1115,9 @@ internal sealed class FlattenPanel : UserControl
             var boxes = PageHighlightPainter.MapToDisplay(
                 display, _page.PageWidthPoints, _page.PageHeightPoints, _page.RotationDegrees,
                 _boxesInPoints, Dip(4));
-            var hidden = PageHighlightPainter.MapToDisplay(
-                display, _page.PageWidthPoints, _page.PageHeightPoints, _page.RotationDegrees,
-                _hiddenInPoints, Dip(4));
             e.Graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-            PageHighlightPainter.DrawPageWithDimmedPlaces(e.Graphics, _page.Bitmap, display, hidden);
+            PageHighlightPainter.DrawPage(
+                e.Graphics, _page.Bitmap, display, Array.Empty<RectangleF>());
             using (var frame = new Pen(SystemColors.ControlDark))
             {
                 e.Graphics.DrawRectangle(frame, display.X, display.Y, display.Width - 1, display.Height - 1);

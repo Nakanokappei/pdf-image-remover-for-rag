@@ -151,6 +151,7 @@ internal sealed class PdfCleaningWorkflow
         // The working copies describe documents that are no longer open, so
         // they are deleted here rather than left for the temp folder to collect.
         foreach (var filePath in _workingCopies.Keys.ToArray()) DiscardWorkingCopy(filePath);
+        foreach (var filePath in _previewCopies.Keys.ToArray()) DiscardPreviewCopy(filePath);
         _flattenedPlaces.Clear();
         _hiddenPlacements.Clear();
         _documents.Clear();
@@ -206,16 +207,78 @@ internal sealed class PdfCleaningWorkflow
             r => r.PageNumber == pageNumber && r.Members.Contains(placed));
         if (hide)
         {
-            if (found < 0) hidden.Add(OverlapDetector.RegionCovering(page, new[] { placed }));
+            if (found >= 0) return;
+            hidden.Add(OverlapDetector.RegionCovering(page, new[] { placed }));
         }
-        else if (found >= 0)
+        else
         {
+            if (found < 0) return;
             hidden.RemoveAt(found);
         }
+        // The preview renders a copy with these taken out; it is stale now.
+        _hiddenVersion++;
     }
 
     /// <summary>True when a save has hidden layers to write out.</summary>
     public bool HasHiddenPlacements => _hiddenPlacements.Values.Any(list => list.Count > 0);
+
+    // A copy of a file with its hidden layers taken out, for the preview to
+    // render — and the count of changes that produced it, so the copy is only
+    // rebuilt when it is out of date.
+    readonly Dictionary<string, (string Path, int Version)> _previewCopies =
+        new(StringComparer.OrdinalIgnoreCase);
+    int _hiddenVersion;
+
+    /// <summary>
+    /// The file to render a page from so that hidden layers are actually
+    /// absent: the document with them taken out. Greying them on top of the
+    /// page was tried first and was hard to read — this shows the page as the
+    /// save will write it, which is the question the preview is being asked.
+    ///
+    /// Rebuilt only when something has been hidden or shown since the last one.
+    /// </summary>
+    public async Task<string> PreviewSourceAsync(string filePath, CancellationToken ct = default)
+    {
+        var hidden = HiddenIn(filePath);
+        if (hidden.Count == 0)
+        {
+            DiscardPreviewCopy(filePath);
+            return ReadPathOf(filePath);
+        }
+        if (_previewCopies.TryGetValue(filePath, out var cached) && cached.Version == _hiddenVersion)
+        {
+            return cached.Path;
+        }
+
+        var next = WorkingCopyPath(filePath);
+        try
+        {
+            await _cleaner.CleanAsync(
+                    ReadPathOf(filePath), next, Array.Empty<ImageRemovalSelection>(),
+                    regionsToFlatten: null, regionsToClear: hidden,
+                    fitImagesToScreen: false, ct)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            // A preview that cannot be built is not worth failing anything for:
+            // the page is shown as it stands, with the layers still on it.
+            _logger.LogWarning(ex, "preview copy failed");
+            TryDeleteTempFile(next);
+            return ReadPathOf(filePath);
+        }
+
+        DiscardPreviewCopy(filePath);
+        _previewCopies[filePath] = (next, _hiddenVersion);
+        return next;
+    }
+
+    void DiscardPreviewCopy(string filePath)
+    {
+        if (!_previewCopies.TryGetValue(filePath, out var copy)) return;
+        _previewCopies.Remove(filePath);
+        TryDeleteTempFile(copy.Path);
+    }
 
     IReadOnlyList<OverlapRegion> HiddenIn(string filePath) =>
         _hiddenPlacements.TryGetValue(filePath, out var hidden)
@@ -390,6 +453,7 @@ internal sealed class PdfCleaningWorkflow
 
         var info = await AnalyzeForWorkspaceAsync(readPath, progress, ct).ConfigureAwait(false);
         DiscardWorkingCopy(document.FilePath);
+        DiscardPreviewCopy(document.FilePath);
         if (nextCopy is not null) _workingCopies[document.FilePath] = nextCopy;
 
         // Labelled with the user's path, whatever it was read from: that is the
@@ -536,6 +600,7 @@ internal sealed class PdfCleaningWorkflow
             // working copy has done its job: it goes, and with it the record of
             // what had been flattened but not written.
             DiscardWorkingCopy(_documents[index].FilePath);
+            DiscardPreviewCopy(_documents[index].FilePath);
             _flattenedPlaces.Remove(_documents[index].FilePath);
             _hiddenPlacements.Remove(_documents[index].FilePath);
 

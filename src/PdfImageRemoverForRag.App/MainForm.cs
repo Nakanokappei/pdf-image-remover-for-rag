@@ -415,6 +415,10 @@ internal sealed partial class MainForm : Form
             || (_workflow.ImageGroups.FirstOrDefault(g => g.Matches(placed)) is { } group
                 && _selectedHashes.Contains(group.Hash));
         _flattenPanel.VisibilityChangeRequested += OnLayerVisibilityChangeRequested;
+        // A hidden layer is shown by not being there: the preview renders a copy
+        // of the document with those layers taken out, which the workspace
+        // builds and keeps until they change.
+        _flattenPanel.PreviewSourceFor = filePath => _workflow.PreviewSourceAsync(filePath);
         // A hand-made merge or split goes back to the workspace, and the panel
         // is rebuilt from it — the panel describes the documents, so it must
         // not be the only place a correction exists.

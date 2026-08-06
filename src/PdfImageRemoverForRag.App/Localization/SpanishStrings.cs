@@ -144,9 +144,9 @@ internal sealed class SpanishStrings : IStrings
     public string AboutLicenseLink => "Información de licencias";
     public string ContextMenuUsageLocations => "Mostrar &ubicaciones de uso…";
 
-    public string FlattenPanelTitle => "Capas";
-    public string FlattenMenu => "Comandos de capa";
-    public string FlattenApply => "Combinar capas visibles";
+    public string FlattenPanelTitle => "Objetos";
+    public string FlattenMenu => "Comandos de objeto";
+    public string FlattenApply => "Combinar objetos visibles";
     public string FlattenUndo => "Deshacer acoplado";
     public string FlattenMerge => "Unir selección";
     public string FlattenSplit => "Dividir selección";
@@ -160,7 +160,7 @@ internal sealed class SpanishStrings : IStrings
     public string FlattenWholePageWarning =>
         "Los objetos marcados cubren casi toda la página. Al aplanarlos, la página se convierte en una sola imagen y ningún texto sigue siendo texto.";
     public string StatusFlattenSelection(int objectCount) =>
-        $"{objectCount} capa(s) seleccionada(s)";
+        $"{objectCount} objeto(s) seleccionado(s)";
     public string AccessibleFlattenPreview => "Vista previa";
 
     public string ErrorSameAsSource =>

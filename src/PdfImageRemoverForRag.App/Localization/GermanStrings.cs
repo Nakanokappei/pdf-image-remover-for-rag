@@ -141,9 +141,9 @@ internal sealed class GermanStrings : IStrings
     public string AboutLicenseLink => "Lizenzinformationen";
     public string ContextMenuUsageLocations => "&Verwendungsorte anzeigen…";
 
-    public string FlattenPanelTitle => "Ebenen";
-    public string FlattenMenu => "Ebenenbefehle";
-    public string FlattenApply => "Sichtbare Ebenen zusammenfügen";
+    public string FlattenPanelTitle => "Objekte";
+    public string FlattenMenu => "Objektbefehle";
+    public string FlattenApply => "Sichtbare Objekte zusammenfügen";
     public string FlattenUndo => "Zusammenfügen aufheben";
     public string FlattenMerge => "Zusammenführen";
     public string FlattenSplit => "Trennen";
@@ -157,7 +157,7 @@ internal sealed class GermanStrings : IStrings
     public string FlattenWholePageWarning =>
         "Die markierten Objekte bedecken fast die ganze Seite. Beim Zusammenfassen wird die Seite zu einem einzigen Bild, und kein Text bleibt Text.";
     public string StatusFlattenSelection(int objectCount) =>
-        $"{objectCount} Ebene(n) ausgewählt";
+        $"{objectCount} Objekt(e) ausgewählt";
     public string AccessibleFlattenPreview => "Vorschau";
 
     public string ErrorSameAsSource =>

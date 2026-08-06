@@ -139,9 +139,9 @@ internal sealed class HindiStrings : IStrings
     public string AboutLicenseLink => "लाइसेंस जानकारी";
     public string ContextMenuUsageLocations => "उपयोग स्थान दिखाएँ(&U)…";
 
-    public string FlattenPanelTitle => "लेयर";
-    public string FlattenMenu => "लेयर कमांड";
-    public string FlattenApply => "दृश्य लेयर मिलाएँ";
+    public string FlattenPanelTitle => "ऑब्जेक्ट";
+    public string FlattenMenu => "ऑब्जेक्ट कमांड";
+    public string FlattenApply => "दृश्य ऑब्जेक्ट मिलाएँ";
     public string FlattenUndo => "मिलाना पूर्ववत करें";
     public string FlattenMerge => "चयन मिलाएँ";
     public string FlattenSplit => "चयन अलग करें";
@@ -155,7 +155,7 @@ internal sealed class HindiStrings : IStrings
     public string FlattenWholePageWarning =>
         "चुनी गई वस्तुएँ लगभग पूरे पृष्ठ को ढक रही हैं। इन्हें चित्र बनाने पर यह पृष्ठ एक ही चित्र बन जाएगा और इसका कोई भी लेख टेक्स्ट नहीं रहेगा।";
     public string StatusFlattenSelection(int objectCount) =>
-        $"{objectCount} लेयर चयनित";
+        $"{objectCount} ऑब्जेक्ट चयनित";
     public string AccessibleFlattenPreview => "पूर्वावलोकन";
 
     public string ErrorSameAsSource =>

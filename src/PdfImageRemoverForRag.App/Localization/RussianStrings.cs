@@ -148,9 +148,9 @@ internal sealed class RussianStrings : IStrings
     public string AboutLicenseLink => "Сведения о лицензиях";
     public string ContextMenuUsageLocations => "Показать &места использования…";
 
-    public string FlattenPanelTitle => "Слои";
-    public string FlattenMenu => "Команды слоёв";
-    public string FlattenApply => "Объединить видимые слои";
+    public string FlattenPanelTitle => "Объекты";
+    public string FlattenMenu => "Команды объектов";
+    public string FlattenApply => "Объединить видимые объекты";
     public string FlattenUndo => "Отменить объединение";
     public string FlattenMerge => "Объединить";
     public string FlattenSplit => "Разделить";
@@ -164,7 +164,7 @@ internal sealed class RussianStrings : IStrings
     public string FlattenWholePageWarning =>
         "Отмеченные объекты занимают почти всю страницу. После объединения страница станет одним изображением, и весь её текст перестанет быть текстом.";
     public string StatusFlattenSelection(int objectCount) =>
-        $"Выбрано слоёв: {objectCount}";
+        $"Выбрано объектов: {objectCount}";
     public string AccessibleFlattenPreview => "Предварительный просмотр";
 
     public string ErrorSameAsSource =>

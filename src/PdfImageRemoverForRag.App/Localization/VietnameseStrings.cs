@@ -143,9 +143,9 @@ internal sealed class VietnameseStrings : IStrings
     public string AboutLicenseLink => "Thông tin giấy phép";
     public string ContextMenuUsageLocations => "Hiển thị &Vị trí Sử dụng…";
 
-    public string FlattenPanelTitle => "Lớp";
-    public string FlattenMenu => "Lệnh lớp";
-    public string FlattenApply => "Gộp các lớp hiển thị";
+    public string FlattenPanelTitle => "Đối tượng";
+    public string FlattenMenu => "Lệnh đối tượng";
+    public string FlattenApply => "Gộp các đối tượng hiển thị";
     public string FlattenUndo => "Hoàn tác gộp";
     public string FlattenMerge => "Gộp lựa chọn";
     public string FlattenSplit => "Tách lựa chọn";
@@ -159,7 +159,7 @@ internal sealed class VietnameseStrings : IStrings
     public string FlattenWholePageWarning =>
         "Các đối tượng đã chọn phủ gần hết trang. Khi gộp lại, trang này sẽ thành một ảnh duy nhất và không còn chữ nào là văn bản.";
     public string StatusFlattenSelection(int objectCount) =>
-        $"Đã chọn {objectCount} lớp";
+        $"Đã chọn {objectCount} đối tượng";
     public string AccessibleFlattenPreview => "Xem trước";
 
     public string ErrorSameAsSource =>

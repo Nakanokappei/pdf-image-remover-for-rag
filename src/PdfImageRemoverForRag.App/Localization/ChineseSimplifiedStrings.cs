@@ -135,9 +135,9 @@ internal sealed class ChineseSimplifiedStrings : IStrings
     public string AboutLicenseLink => "许可证信息";
     public string ContextMenuUsageLocations => "显示使用位置(&U)…";
 
-    public string FlattenPanelTitle => "图层";
-    public string FlattenMenu => "图层命令";
-    public string FlattenApply => "合并可见图层";
+    public string FlattenPanelTitle => "对象";
+    public string FlattenMenu => "对象命令";
+    public string FlattenApply => "合并可见对象";
     public string FlattenUndo => "撤销拼合";
     public string FlattenMerge => "合并所选";
     public string FlattenSplit => "拆分所选";
@@ -150,7 +150,7 @@ internal sealed class ChineseSimplifiedStrings : IStrings
     public string FlattenWholePageWarning =>
         "勾选的范围几乎覆盖整页。合并后本页将变成一张图片，其中的文字将不再是文本。";
     public string StatusFlattenSelection(int objectCount) =>
-        $"已选择 {objectCount} 个图层";
+        $"已选择 {objectCount} 个对象";
     public string AccessibleFlattenPreview => "预览";
 
     public string ErrorSameAsSource =>

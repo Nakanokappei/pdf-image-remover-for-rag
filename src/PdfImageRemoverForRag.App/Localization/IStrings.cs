@@ -243,30 +243,31 @@ internal interface IStrings
     // in the title: it labels a panel, not a menu, and "&" would show literally.
 
     /// <summary>
-    /// Title over the panel that lists what overlaps, as an image editor lists
-    /// layers. Use the word that language's image editors use for a layers
-    /// panel — the panel is built to be recognised as one, and the word is half
-    /// of that.
+    /// Title over the panel that lists what overlaps, laid out the way an image
+    /// editor lays out layers. The word is OBJECT, not layer: PDF has layers of
+    /// its own — optional content groups, which a viewer shows and hides — and
+    /// this application does not touch them. Use the same word as
+    /// <see cref="ColumnObjectId"/>, so the two panes cannot name the same thing
+    /// differently.
     /// </summary>
     string FlattenPanelTitle { get; }
 
     /// <summary>
-    /// Spoken name of the menu button in the panel's title bar, which holds the
-    /// commands below. It shows a hamburger glyph and no words, so this is all
+    /// Spoken name of the menu button in the objects panel's title bar, which
+    /// holds the commands below. It shows a hamburger glyph and no words, so this is all
     /// a screen reader has to go on.
     /// </summary>
     string FlattenMenu { get; }
 
     /// <summary>
-    /// Commands acting on the selected layers, every one of them taking effect
+    /// Commands acting on the selected objects, every one of them taking effect
     /// at once: merge replaces them with a picture of themselves, undo takes
-    /// such a picture back, and the two below gather layers into one unit or
+    /// such a picture back, and the two below gather objects into one unit or
     /// take them out of the one they are in.
     ///
-    /// The first says VISIBLE because that is what it combines — a hidden layer
-    /// is one the save is going to take out, and baking it into the picture
-    /// would put it back as pixels. Use the wording that language's image
-    /// editors use for Photoshop's "Merge Visible".
+    /// The first says VISIBLE because that is what it combines — an object whose
+    /// eye is closed is one the save is going to take out, and baking it into
+    /// the picture would put it back as pixels.
     /// </summary>
     string FlattenApply { get; }
     string FlattenUndo { get; }
@@ -303,7 +304,7 @@ internal interface IStrings
     string FlattenWholePageWarning { get; }
 
     /// <summary>
-    /// Status bar while layers are selected in the panel. Counts layers, not
+    /// Status bar while objects are selected in the panel. Counts objects, not
     /// folders: selecting a folder selects everything in it, and the number the
     /// commands will act on is the one worth showing. It says selected and not
     /// what will happen to them — the selection reserves nothing.

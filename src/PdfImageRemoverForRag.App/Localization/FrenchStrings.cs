@@ -143,9 +143,9 @@ internal sealed class FrenchStrings : IStrings
     public string AboutLicenseLink => "Informations de licence";
     public string ContextMenuUsageLocations => "Afficher les &emplacements d'utilisation…";
 
-    public string FlattenPanelTitle => "Calques";
-    public string FlattenMenu => "Commandes de calque";
-    public string FlattenApply => "Fusionner les calques visibles";
+    public string FlattenPanelTitle => "Objets";
+    public string FlattenMenu => "Commandes d'objet";
+    public string FlattenApply => "Fusionner les objets visibles";
     public string FlattenUndo => "Annuler l'aplatissement";
     public string FlattenMerge => "Fusionner";
     public string FlattenSplit => "Séparer";
@@ -159,7 +159,7 @@ internal sealed class FrenchStrings : IStrings
     public string FlattenWholePageWarning =>
         "Les objets cochés couvrent presque toute la page. En les aplatissant, la page devient une seule image et plus aucun texte ne reste du texte.";
     public string StatusFlattenSelection(int objectCount) =>
-        $"{objectCount} calque(s) sélectionné(s)";
+        $"{objectCount} objet(s) sélectionné(s)";
     public string AccessibleFlattenPreview => "Aperçu";
 
     public string ErrorSameAsSource =>

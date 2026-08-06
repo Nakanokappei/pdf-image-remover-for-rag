@@ -137,9 +137,9 @@ internal sealed class EnglishStrings : IStrings
     public string AboutLicenseLink => "License information";
     public string ContextMenuUsageLocations => "Show &Usage Locations…";
 
-    public string FlattenPanelTitle => "Layers";
-    public string FlattenMenu => "Layer commands";
-    public string FlattenApply => "Merge visible layers";
+    public string FlattenPanelTitle => "Objects";
+    public string FlattenMenu => "Object commands";
+    public string FlattenApply => "Merge visible objects";
     public string FlattenUndo => "Undo flatten";
     public string FlattenMerge => "Merge selected";
     public string FlattenSplit => "Split selected";
@@ -153,7 +153,7 @@ internal sealed class EnglishStrings : IStrings
     public string FlattenWholePageWarning =>
         "The ticked objects cover almost the whole page. Flattening them turns the page into a single image, and none of its text stays text.";
     public string StatusFlattenSelection(int objectCount) =>
-        $"{objectCount} layer(s) selected";
+        $"{objectCount} object(s) selected";
     public string AccessibleFlattenPreview => "Preview";
 
     public string ErrorSameAsSource =>

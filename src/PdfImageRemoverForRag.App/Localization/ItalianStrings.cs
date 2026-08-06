@@ -140,9 +140,9 @@ internal sealed class ItalianStrings : IStrings
     public string AboutLicenseLink => "Informazioni sulle licenze";
     public string ContextMenuUsageLocations => "Mostra &posizioni di utilizzo…";
 
-    public string FlattenPanelTitle => "Livelli";
-    public string FlattenMenu => "Comandi livello";
-    public string FlattenApply => "Unisci livelli visibili";
+    public string FlattenPanelTitle => "Oggetti";
+    public string FlattenMenu => "Comandi oggetto";
+    public string FlattenApply => "Unisci oggetti visibili";
     public string FlattenUndo => "Annulla unione";
     public string FlattenMerge => "Unisci";
     public string FlattenSplit => "Dividi";
@@ -156,7 +156,7 @@ internal sealed class ItalianStrings : IStrings
     public string FlattenWholePageWarning =>
         "Gli oggetti selezionati coprono quasi tutta la pagina. Unendoli, la pagina diventa una sola immagine e nessun testo resta testo.";
     public string StatusFlattenSelection(int objectCount) =>
-        $"{objectCount} livello/i selezionato/i";
+        $"{objectCount} oggetto/i selezionato/i";
     public string AccessibleFlattenPreview => "Anteprima";
 
     public string ErrorSameAsSource =>

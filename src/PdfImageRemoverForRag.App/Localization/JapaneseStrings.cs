@@ -133,9 +133,9 @@ internal sealed class JapaneseStrings : IStrings
     public string AboutLicenseLink => "ライセンス情報";
     public string ContextMenuUsageLocations => "使用箇所を表示(&U)…";
 
-    public string FlattenPanelTitle => "レイヤー";
-    public string FlattenMenu => "レイヤー操作";
-    public string FlattenApply => "表示レイヤーを結合";
+    public string FlattenPanelTitle => "オブジェクト";
+    public string FlattenMenu => "オブジェクト操作";
+    public string FlattenApply => "表示オブジェクトを結合";
     public string FlattenUndo => "統合を解除";
     public string FlattenMerge => "選択を合流";
     public string FlattenSplit => "選択を分割";
@@ -149,7 +149,7 @@ internal sealed class JapaneseStrings : IStrings
     public string FlattenWholePageWarning =>
         "チェックした範囲がページのほぼ全体です。統合するとこのページは 1 枚の画像になり、文字はすべてテキストでなくなります。";
     public string StatusFlattenSelection(int objectCount) =>
-        $"レイヤーを {objectCount} 個選択中";
+        $"オブジェクトを {objectCount} 個選択中";
     public string AccessibleFlattenPreview => "プレビュー";
 
     public string ErrorSameAsSource =>

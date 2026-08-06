@@ -137,9 +137,9 @@ internal sealed class ChineseTraditionalStrings : IStrings
     public string AboutLicenseLink => "授權資訊";
     public string ContextMenuUsageLocations => "顯示使用位置(&U)…";
 
-    public string FlattenPanelTitle => "圖層";
-    public string FlattenMenu => "圖層命令";
-    public string FlattenApply => "合併可見圖層";
+    public string FlattenPanelTitle => "物件";
+    public string FlattenMenu => "物件命令";
+    public string FlattenApply => "合併可見物件";
     public string FlattenUndo => "復原平面化";
     public string FlattenMerge => "合併所選";
     public string FlattenSplit => "分割所選";
@@ -152,7 +152,7 @@ internal sealed class ChineseTraditionalStrings : IStrings
     public string FlattenWholePageWarning =>
         "勾選的範圍幾乎涵蓋整頁。合併後本頁將變成一張圖片，其中的文字將不再是文字。";
     public string StatusFlattenSelection(int objectCount) =>
-        $"已選取 {objectCount} 個圖層";
+        $"已選取 {objectCount} 個物件";
     public string AccessibleFlattenPreview => "預覽";
 
     public string ErrorSameAsSource =>

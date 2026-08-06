@@ -40,9 +40,14 @@ internal readonly record struct LayerVisual(
     bool IsExpanded);
 
 /// <summary>
-/// The flatten panel's list, laid out like an image editor's layers panel: a
-/// flatten unit is a folder, the objects inside it are its layers, and each row
+/// The objects panel's list, laid out like an image editor's layers panel: a
+/// flatten unit is a folder, the objects inside it sit under it, and each row
 /// has an eye that says whether it is drawn.
+///
+/// The type is named for the LAYOUT it borrows, which is the only thing here
+/// that is a layer. What the user reads says object throughout, because PDF's
+/// own layers are optional content groups — a feature this application does not
+/// touch — and the list on the other side of the window has always said object.
 ///
 /// One scrolling control that paints its rows, for the reason set out on
 /// <see cref="TileView"/>: a control per row is what broke that view on a real

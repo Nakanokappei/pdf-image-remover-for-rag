@@ -145,9 +145,9 @@ internal sealed class IndonesianMalayStrings : IStrings
     public string AboutLicenseLink => "Informasi lisensi";
     public string ContextMenuUsageLocations => "Tampilkan &Lokasi Penggunaan…";
 
-    public string FlattenPanelTitle => "Lapisan";
-    public string FlattenMenu => "Perintah lapisan";
-    public string FlattenApply => "Gabungkan lapisan terlihat";
+    public string FlattenPanelTitle => "Objek";
+    public string FlattenMenu => "Perintah objek";
+    public string FlattenApply => "Gabungkan objek terlihat";
     public string FlattenUndo => "Batalkan penggabungan";
     public string FlattenMerge => "Gabungkan";
     public string FlattenSplit => "Pisahkan";
@@ -161,7 +161,7 @@ internal sealed class IndonesianMalayStrings : IStrings
     public string FlattenWholePageWarning =>
         "Objek yang dicentang menutupi hampir seluruh halaman. Setelah digabung, halaman ini menjadi satu gambar dan teksnya tidak lagi berupa teks.";
     public string StatusFlattenSelection(int objectCount) =>
-        $"{objectCount} lapisan dipilih";
+        $"{objectCount} objek dipilih";
     public string AccessibleFlattenPreview => "Pratinjau";
 
     public string ErrorSameAsSource =>

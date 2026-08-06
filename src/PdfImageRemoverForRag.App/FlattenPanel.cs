@@ -20,7 +20,7 @@ internal readonly record struct LayerThumbnail(
     bool CanEverRender);
 
 /// <summary>
-/// The Layers panel, docked to the right of the object list: the flatten units
+/// The objects panel, docked to the right of the object list: the flatten units
 /// the object selected on the left takes part in, laid out the way an image
 /// editor lays out layers, with a preview of the page underneath.
 ///
@@ -30,12 +30,11 @@ internal readonly record struct LayerThumbnail(
 /// overview, and duplicating it beside itself gave the user two lists to read
 /// and no reason to prefer either.
 ///
-/// A unit is a folder and its objects are the layers inside it. Each row has an
-/// eye that says whether it is drawn, and hiding a layer means what it means in
-/// an image editor: it does not appear in what gets written, which here is the
-/// same thing as ticking it for removal on the other side of the window.
-/// Selection is separate from all that — a row is selected by clicking it, and
-/// the commands act on what is selected.
+/// A unit is a folder and its objects sit under it. Each row has an eye that
+/// says whether it is drawn, and closing one means what it means in an image
+/// editor: that object does not appear in what gets written — here, at that one
+/// place on that one page. Selection is separate from all that: a row is
+/// selected by clicking it, and the commands act on what is selected.
 ///
 /// **Nothing is held per row.** The list is a filtered view — moving the
 /// selection on the left changes which units are shown — so state kept against

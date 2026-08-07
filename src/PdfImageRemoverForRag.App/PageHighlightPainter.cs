@@ -149,12 +149,46 @@ internal static class PageHighlightPainter
         var colour = HighlightColour;
         var saved = g.SmoothingMode;
         g.SmoothingMode = SmoothingMode.AntiAlias;
+
+        // One arrow per PLACE, not per box. A table's five rules are five thin
+        // boxes a few pixels apart, each pointed at from the same side, and the
+        // arrows landed one on top of another as a totem pole — five times the
+        // ink to say what one arrow said.
+        var pointedAt = new List<PointF>();
         foreach (var box in boxes)
         {
             if (Math.Min(box.Width, box.Height) > small) continue;
+
+            // Within an arrow's own length of one already drawn is the same
+            // place: an arrow is what it is pointing at, and two of them that
+            // close are one gesture drawn twice.
+            var tip = Aim(page, box, length, small);
+            float apart = length * 2;
+            if (pointedAt.Any(p => Math.Abs(p.X - tip.X) < apart && Math.Abs(p.Y - tip.Y) < apart))
+            {
+                continue;
+            }
+            pointedAt.Add(tip);
             DrawPointer(g, page, box, colour, length, small);
         }
         g.SmoothingMode = saved;
+    }
+
+    /// <summary>
+    /// Where the arrow's tip would go for this box — the same arithmetic the
+    /// drawing does, so "have I already pointed here" is asked of the answer
+    /// rather than of a guess at it.
+    /// </summary>
+    static PointF Aim(Rectangle page, RectangleF box, float length, float small)
+    {
+        float dx = box.Width >= small ? 0
+            : page.Right - box.Right > box.Left - page.Left ? 1 : -1;
+        float dy = box.Height >= small ? 0
+            : page.Bottom - box.Bottom > box.Top - page.Top ? 1 : -1;
+        float gap = length / 5f;
+        return new PointF(
+            dx > 0 ? box.Right + gap : dx < 0 ? box.Left - gap : box.X + (box.Width / 2f),
+            dy > 0 ? box.Bottom + gap : dy < 0 ? box.Top - gap : box.Y + (box.Height / 2f));
     }
 
     /// <summary>One arrow: a shaft out from the box and a head back at it.</summary>
@@ -173,10 +207,7 @@ internal static class PageHighlightPainter
 
         // The tip stops short of the box so the outline stays readable, and the
         // tail runs out from there.
-        float gap = length / 5f;
-        var tip = new PointF(
-            dx > 0 ? box.Right + gap : dx < 0 ? box.Left - gap : box.X + (box.Width / 2f),
-            dy > 0 ? box.Bottom + gap : dy < 0 ? box.Top - gap : box.Y + (box.Height / 2f));
+        var tip = Aim(page, box, length, small);
         var tail = new PointF(tip.X + (dx * length), tip.Y + (dy * length));
 
         float thickness = Math.Max(1.5f, length / 12f);

@@ -132,12 +132,27 @@ internal sealed partial class MainForm
     {
         base.OnShown(e);
         if (_startupPdfPaths.Count > 0) await OpenPdfFilesAsync(_startupPdfPaths);
+        if (_screenshot is not null) await TakeScreenshotAsync(_screenshot);
     }
 
     protected override void OnDpiChanged(DpiChangedEventArgs e)
     {
         base.OnDpiChanged(e);
         ApplyDpiDependentLayout();
+    }
+
+    /// <summary>
+    /// Re-share the workspace when the window changes size. Only matters while
+    /// the panel's width is this side's decision: once the user has dragged the
+    /// splitter, the width is theirs and resizing leaves it alone.
+    /// </summary>
+    protected override void OnResize(EventArgs e)
+    {
+        base.OnResize(e);
+        if (IsHandleCreated && !_flattenPanelWidthIsTheUsersChoice)
+        {
+            ApplyWorkspaceSplitMetrics();
+        }
     }
 
     /// <summary>
@@ -195,10 +210,11 @@ internal sealed partial class MainForm
 
     /// <summary>
     /// Give the flatten panel the width in <see cref="_flattenPanelWidth"/>,
-    /// which is in logical pixels. Re-applied on a DPI change because
-    /// <see cref="SplitContainer.FixedPanel"/> holds a panel to its size in
-    /// device pixels — left alone, the panel would shrink by half when the
-    /// window moved to a 200 % display.
+    /// which is in logical pixels. This SEEDS the panel — at the size the window
+    /// happens to be — and from then on the splitter keeps its share of the
+    /// width by itself, so resizing the window never asks the user to drag it
+    /// back. Re-applied on a DPI change, where a share is not what is wanted:
+    /// the same panel at twice the scale is twice the pixels.
     /// </summary>
     void ApplyWorkspaceSplitMetrics()
     {
@@ -206,7 +222,11 @@ internal sealed partial class MainForm
         _workspaceSplit.Panel1MinSize = Dip(320);
         _workspaceSplit.Panel2MinSize = Dip(200);
 
-        int wanted = Dip(_flattenPanelWidth);
+        int wanted = _flattenPanelWidthIsTheUsersChoice
+            ? Dip(_flattenPanelWidth)
+            : Math.Max(
+                (int)(_workspaceSplit.Width * DefaultFlattenPanelShare),
+                Dip(MinimumSharedPanelWidth));
         int room = _workspaceSplit.Width
                  - _workspaceSplit.Panel1MinSize - _workspaceSplit.SplitterWidth;
         if (room < _workspaceSplit.Panel2MinSize) return;
@@ -228,6 +248,7 @@ internal sealed partial class MainForm
         int panelWidth = _workspaceSplit.Width
                        - _workspaceSplit.SplitterDistance - _workspaceSplit.SplitterWidth;
         _flattenPanelWidth = (int)Math.Round(panelWidth * 96.0 / DeviceDpi);
+        _flattenPanelWidthIsTheUsersChoice = true;
     }
 
     void BuildLayout()

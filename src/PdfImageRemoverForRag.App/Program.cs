@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using PdfImageRemoverForRag.Infrastructure;
@@ -13,6 +14,27 @@ internal static class Program
     [STAThread]
     static void Main(string[] args)
     {
+        var commandLine = CommandLine.Parse(args);
+        if (commandLine.Error is not null)
+        {
+            WriteToTheCallingConsole(commandLine.Error + Environment.NewLine
+                                     + ScreenshotViews.Describe());
+            return;
+        }
+        if (commandLine.ListViews)
+        {
+            WriteToTheCallingConsole(ScreenshotViews.Describe());
+            return;
+        }
+
+        // Before anything reads a translated string: L10n resolves the language
+        // once, on first use, and never again.
+        if (commandLine.Language is not null)
+        {
+            CultureInfo.CurrentUICulture = commandLine.Language;
+            CultureInfo.DefaultThreadCurrentUICulture = commandLine.Language;
+        }
+
         ApplicationConfiguration.Initialize();
 
         var logFilePath = Path.Combine(
@@ -46,7 +68,9 @@ internal static class Program
 
         try
         {
-            Application.Run(new MainForm(workflow, thumbnailStore, logger, PdfPathsFrom(args)));
+            Application.Run(new MainForm(
+                workflow, thumbnailStore, logger,
+                commandLine.PdfPaths, commandLine.Screenshot));
         }
         catch (Exception ex)
         {
@@ -58,21 +82,37 @@ internal static class Program
     }
 
     /// <summary>
-    /// The PDF paths to open at startup, taken from the command line.
+    /// Print to the console that started this process, if there was one.
     ///
-    /// This is what makes "drop a PDF onto the app's icon" work: Explorer
-    /// launches the exe with the dropped paths as arguments. The app
-    /// deliberately does NOT declare a file-type association — it is not a PDF
-    /// viewer, so it should not compete to become the default handler for .pdf.
-    ///
-    /// Anything that is not an existing .pdf file is dropped silently: the user
-    /// dropped it on the wrong app, and an error dialog before the window has
-    /// even appeared would be worse than simply starting empty.
+    /// A desktop application has no console of its own: its output goes
+    /// nowhere, which for <c>--list-views</c> means the answer is lost. So it
+    /// borrows the caller's — and if there is no caller (started from Explorer),
+    /// nothing is printed and nothing breaks.
     /// </summary>
-    static IReadOnlyList<string> PdfPathsFrom(string[] args) => args
-        .Where(a => string.Equals(Path.GetExtension(a), ".pdf", StringComparison.OrdinalIgnoreCase))
-        .Where(File.Exists)
-        .ToArray();
+    static void WriteToTheCallingConsole(string text)
+    {
+        const int ParentProcess = -1;
+        if (!AttachConsole(ParentProcess)) return;
+
+        try
+        {
+            using var output = Console.OpenStandardOutput();
+            var bytes = System.Text.Encoding.UTF8.GetBytes(Environment.NewLine + text);
+            output.Write(bytes, 0, bytes.Length);
+        }
+        finally
+        {
+            FreeConsole();
+        }
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    static extern bool AttachConsole(int processId);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    static extern bool FreeConsole();
 
     /// <summary>Log the §19 environment block once per session.</summary>
     static void LogEnvironment(ILogger logger)

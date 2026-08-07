@@ -143,17 +143,24 @@ internal sealed partial class MainForm
         if (flattened.Count == 0) return;
 
         var (filePath, place) = flattened[^1];
-        var picture = _workflow.PictureDrawnFor(filePath, place);
-        if (picture is null) return;
+        if (_workflow.PictureDrawnFor(filePath, place) is { } picture) FocusRowFor(picture);
+    }
 
+    /// <summary>
+    /// Put the cursor on the row or tile that stands for one object, in
+    /// whichever view is showing. Silent when the object has no row — a filter
+    /// can be hiding its kind.
+    /// </summary>
+    void FocusRowFor(CrossFileImageGroup group)
+    {
         if (_isTileView)
         {
-            _tileView.FocusGroup(picture);
+            _tileView.FocusGroup(group);
             return;
         }
         foreach (DataGridViewRow row in _imageListGrid.Rows)
         {
-            if (!ReferenceEquals(row.Tag, picture)) continue;
+            if (!ReferenceEquals(row.Tag, group)) continue;
 
             row.Selected = true;
             var cell = row.Cells[_objectIdColumn.Index];

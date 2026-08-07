@@ -690,6 +690,22 @@ internal sealed class FlattenPanel : UserControl
     /// <summary>Drop the selection. The panel's own command, not the toolbar's.</summary>
     public void ClearSelection() => _list.ClearSelection();
 
+    /// <summary>
+    /// Select the first row that is an object rather than a unit. Showing the
+    /// panel normally selects the unit — the commands act on units — and this
+    /// is the one caller that wants the other thing: a photograph of the panel
+    /// should show what an outlined object looks like.
+    /// </summary>
+    public void SelectFirstObject()
+    {
+        for (int i = 0; i < _rows.Count; i++)
+        {
+            if (_rows[i].Object is null) continue;
+            _list.SelectOnly(i);
+            return;
+        }
+    }
+
     /// <summary>How many objects the selection covers, for the status line.</summary>
     public int SelectedObjectCount => SelectedByUnit().Sum(x => x.Members.Count);
 

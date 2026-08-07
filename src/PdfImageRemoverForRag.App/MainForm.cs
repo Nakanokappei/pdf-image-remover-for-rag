@@ -150,8 +150,11 @@ internal sealed partial class MainForm : Form
     // object list fills the window and the flatten tree docks to its right,
     // the way an image editor keeps its layers panel beside the canvas.
     //
-    // FixedPanel is Panel2 so widening the window feeds the object list; the
-    // panel is a fixture at the edge, not a share of the width.
+    // FixedPanel is Panel2 so a drag holds: the panel stays the width the user
+    // put it at. What it is worth when NOBODY has put it anywhere is decided by
+    // ApplyWorkspaceSplitMetrics, and that is a share of the window rather than
+    // a number of pixels — a fixed 300 came out as a sliver on a 2710-pixel
+    // window, which made every resize the user's problem to drag back.
     readonly SplitContainer _workspaceSplit = new()
     {
         Dock = DockStyle.Fill,
@@ -168,6 +171,24 @@ internal sealed partial class MainForm : Form
     // object label is the starting point.
     int _flattenPanelWidth = DefaultFlattenPanelWidth;
     const int DefaultFlattenPanelWidth = 300;
+
+    // Whether that width is the USER's answer — dragged now or restored from a
+    // session where they dragged it. Until it is, the panel takes a share of
+    // the window instead, so a big window gets a big panel without anybody
+    // having to ask for one. A drag is never overruled: the share is what to do
+    // in the absence of a choice, not a correction of one.
+    bool _flattenPanelWidthIsTheUsersChoice;
+
+    // The share: the golden section. The list and the panel stand as φ to 1,
+    // which makes the panel 1/φ² — a shade over a third — of the width.
+    //
+    // A proportion rather than a number of pixels answers the question the
+    // number could not: what IS the right width for a panel beside a list, at
+    // whatever size the window happens to be. The floor is there because below
+    // it the unit labels wrap, and no proportion is worth an unreadable panel.
+    const double GoldenRatio = 1.6180339887;
+    static readonly double DefaultFlattenPanelShare = 1 / (GoldenRatio * GoldenRatio);
+    const int MinimumSharedPanelWidth = 260;
 
     // Set by SplitterMoving, which ONLY fires while the user is dragging, and
     // consumed by the SplitterMoved that ends the drag. SplitterMoved alone is
@@ -217,6 +238,11 @@ internal sealed partial class MainForm : Form
     // PDFs named on the command line, opened once the window is on screen.
     // Populated when the user drops files onto the app's icon.
     readonly IReadOnlyList<string> _startupPdfPaths;
+
+    // The photograph this run was started to take, or null for an ordinary run.
+    // A run holding a pose must not touch the remembered window placement: it
+    // is a size and a splitter position chosen by a camera, not by the user.
+    readonly ScreenshotRequest? _screenshot;
 
     // Timings for the two halves of opening a document. The form logs them
     // itself rather than calling through the workflow: they describe the UI's
@@ -311,8 +337,10 @@ internal sealed partial class MainForm : Form
     }
 
     public MainForm(PdfCleaningWorkflow workflow, ThumbnailStore store, ILogger logger,
-                    IReadOnlyList<string>? startupPdfPaths = null)
+                    IReadOnlyList<string>? startupPdfPaths = null,
+                    ScreenshotRequest? screenshot = null)
     {
+        _screenshot = screenshot;
         _workflow = workflow;
         foreach (var toggle in _kindToggles) _visibleKinds.Add(toggle.Kind);
         _tileView = new TileView(TileVisualFor)
@@ -335,7 +363,8 @@ internal sealed partial class MainForm : Form
             if (iconStream is not null) Icon = new Icon(iconStream);
         }
         MinimumSize = new Size(760, 480);
-        ClientSize = new Size(920, 600);
+        // The golden section, like the workspace split inside it.
+        ClientSize = new Size(920, 569);
         AllowDrop = true;
 
         // Restore the last window placement when the display arrangement is
@@ -343,7 +372,7 @@ internal sealed partial class MainForm : Form
         // The splitter sizes come back either way — they cannot put anything
         // off-screen, so a new monitor is no reason to forget them. Both are set
         // before the handles exist, which is when they are first applied.
-        var savedLayout = WindowLayoutStore.TryLoad();
+        var savedLayout = _screenshot is null ? WindowLayoutStore.TryLoad() : null;
         if (savedLayout is not null)
         {
             if (WindowLayoutStore.PlacementIsUsable(savedLayout))
@@ -352,7 +381,11 @@ internal sealed partial class MainForm : Form
                 Bounds = new Rectangle(savedLayout.X, savedLayout.Y, savedLayout.Width, savedLayout.Height);
                 if (savedLayout.Maximized) WindowState = FormWindowState.Maximized;
             }
-            if (savedLayout.FlattenPanelWidth > 0) _flattenPanelWidth = savedLayout.FlattenPanelWidth;
+            if (savedLayout.FlattenPanelWidth > 0)
+            {
+                _flattenPanelWidth = savedLayout.FlattenPanelWidth;
+                _flattenPanelWidthIsTheUsersChoice = true;
+            }
             _flattenPanel.PreviewHeight = savedLayout.FlattenPreviewHeight;
         }
 
@@ -453,9 +486,16 @@ internal sealed partial class MainForm : Form
         // splitter reports itself; this one is the workspace split.
         _workspaceSplit.SplitterMoving += (_, _) => _workspaceSplitterDragged = true;
         _workspaceSplit.SplitterMoved += OnWorkspaceSplitterMoved;
-        // Remember size/position, the display arrangement, and both splitters.
+        // Remember size/position, the display arrangement, and both splitters —
+        // unless this run was posing for a photograph, whose size was chosen by
+        // the camera and would overwrite the window the user actually arranged.
         FormClosing += (_, _) =>
-            WindowLayoutStore.Save(this, _flattenPanelWidth, _flattenPanel.PreviewHeight);
+        {
+            if (_screenshot is null)
+            {
+                WindowLayoutStore.Save(this, _flattenPanelWidth, _flattenPanel.PreviewHeight);
+            }
+        };
         FormClosed += (_, _) => DisposeThumbnailImages(disposePlaceholder: true);
     }
 }

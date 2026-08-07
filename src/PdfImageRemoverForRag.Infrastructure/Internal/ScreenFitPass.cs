@@ -19,6 +19,11 @@ namespace PdfImageRemoverForRag.Infrastructure.Internal;
 /// decides, scaling whatever resolution the image happens to have, so the same
 /// picture with fewer pixels lands in exactly the same place at the same size.
 ///
+/// A JPEG that already fits is written again when it was saved ABOVE the
+/// quality ceiling, at the same size. A screenshot-heavy manual exported at
+/// quality 95 is under the screen size already, so nothing above would touch
+/// it, and the quality alone is worth several megabytes.
+///
 /// What is left alone: anything whose bytes this cannot read back (JPEG 2000,
 /// JBIG2, fax), anything but 8 bits a component, indexed and separation colours,
 /// and anything already small enough. Leaving an image as it was is always safe;
@@ -79,11 +84,27 @@ internal static class ScreenFitPass
 
         double scale = Math.Min(
             Math.Min(1.0, maximumWidth / (double)width), maximumHeight / (double)height);
-        if (scale >= 1.0) return false;
+
+        // An image that already fits is left alone unless it is a JPEG written
+        // above the ceiling, which is worth writing again at the ceiling — that
+        // is the whole saving on a document of screenshots taken at quality 95.
+        // Asked before the pixels are read: unpacking a Flate image that is
+        // going to be left alone is the expensive way to decide nothing.
+        bool resizing = scale < 1.0;
+        if (!resizing && FilterNameOf(image) != "/DCTDecode") return false;
 
         var stored = Read(image, width, height);
         if (stored is null) return false;
 
+        if (!resizing
+            && (Core.Imaging.JpegQuality.Estimate(stored.Data) is not { } quality
+                || quality <= jpegQuality))
+        {
+            return false;
+        }
+
+        // At scale 1 this asks for the size it already is, which is a re-encode
+        // and nothing else — the one path that reaches here without resizing.
         int fittedWidth = Math.Max(1, (int)Math.Round(width * scale));
         int fittedHeight = Math.Max(1, (int)Math.Round(height * scale));
         var fitted = resampler.Resize(stored, fittedWidth, fittedHeight, jpegQuality);

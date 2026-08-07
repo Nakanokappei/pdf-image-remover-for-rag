@@ -142,6 +142,114 @@ public class ScreenFitTests : IClassFixture<SamplePdfFixture>
         Assert.Contains((800, 1100), ImageSizesIn(destination));
     }
 
+    /// <summary>
+    /// Answers with the same picture in half the bytes. A JPEG's data is the
+    /// file itself, so the size-only fake above (which cuts to
+    /// width × height × components) cannot stand in for one.
+    /// </summary>
+    sealed class HalfTheBytesResampler : IImageResampler
+    {
+        public List<(int Width, int Height)> Asked { get; } = new();
+
+        public StoredImage? Resize(StoredImage image, int width, int height, int jpegQuality)
+        {
+            Asked.Add((width, height));
+            return image with
+            {
+                Width = width,
+                Height = height,
+                Data = image.Data[..(image.Data.Length / 2)],
+            };
+        }
+    }
+
+    /// <summary>
+    /// A one-page document holding one JPEG image, written at a quality this
+    /// controls. Built by hand rather than taken from the samples because what
+    /// is under test is the quality, and a sample carries whatever quality the
+    /// generator happened to use.
+    /// </summary>
+    static PdfDocument DocumentWithJpeg(int quality, int width, int height)
+    {
+        var document = new PdfDocument();
+        var page = document.AddPage();
+
+        var image = new PdfDictionary(document);
+        image.Elements.SetName("/Type", "/XObject");
+        image.Elements.SetName("/Subtype", "/Image");
+        image.Elements.SetInteger("/Width", width);
+        image.Elements.SetInteger("/Height", height);
+        image.Elements.SetInteger("/BitsPerComponent", 8);
+        image.Elements.SetName("/ColorSpace", "/DeviceRGB");
+        image.Elements.SetName("/Filter", "/DCTDecode");
+        image.CreateStream(JpegBytesAtQuality(quality));
+        document.Internals.AddObject(image);
+
+        var xObjects = new PdfDictionary(document);
+        xObjects.Elements["/Im1"] = image.Reference;
+        page.Resources.Elements["/XObject"] = xObjects;
+        return document;
+    }
+
+    /// <summary>
+    /// A JPEG carrying the quantization table an encoder would write for that
+    /// quality, which is where the quality is read from. Padded so halving it
+    /// still leaves something to store.
+    /// </summary>
+    static byte[] JpegBytesAtQuality(int quality)
+    {
+        int[] standard =
+        {
+            16, 11, 10, 16, 24, 40, 51, 61,
+            12, 12, 14, 19, 26, 58, 60, 55,
+            14, 13, 16, 24, 40, 57, 69, 56,
+            14, 17, 22, 29, 51, 87, 80, 62,
+            18, 22, 37, 56, 68, 109, 103, 77,
+            24, 35, 55, 64, 81, 104, 113, 92,
+            49, 64, 78, 87, 103, 121, 120, 101,
+            72, 92, 95, 98, 112, 100, 103, 99,
+        };
+        int scale = quality < 50 ? 5000 / quality : 200 - (quality * 2);
+
+        var bytes = new List<byte> { 0xFF, 0xD8, 0xFF, 0xDB, 0x00, 0x43, 0x00 };
+        foreach (int entry in standard)
+        {
+            bytes.Add((byte)Math.Clamp(((entry * scale) + 50) / 100, 1, 255));
+        }
+        bytes.AddRange(new byte[512]);
+        bytes.AddRange(new byte[] { 0xFF, 0xD9 });
+        return bytes.ToArray();
+    }
+
+    [Fact]
+    public void AJpegAboveTheQualityCeilingIsWrittenAgainAtItsOwnSize()
+    {
+        // A manual full of screenshots exported at 95 is already inside the
+        // screen, so nothing about its size would touch it — and the quality
+        // alone is worth megabytes.
+        using var document = DocumentWithJpeg(quality: 95, width: 240, height: 80);
+        var resampler = new HalfTheBytesResampler();
+
+        var resized = ScreenFitPass.Apply(document, resampler, 1920, 1080, 85, CancellationToken.None);
+
+        Assert.Equal((240, 80), Assert.Single(resampler.Asked));
+        Assert.Single(resized);
+    }
+
+    [Fact]
+    public void AJpegAtOrBelowTheCeilingIsNotWrittenAgain()
+    {
+        // Re-encoding it would cost detail and return nothing: the quality it
+        // was saved at is already the one being asked for.
+        using var document = DocumentWithJpeg(quality: 75, width: 240, height: 80);
+        var resampler = new HalfTheBytesResampler();
+
+        var resized = ScreenFitPass.Apply(document, resampler, 1920, 1080, 85, CancellationToken.None);
+
+        Assert.Empty(resampler.Asked);
+        Assert.Empty(resized);
+    }
+
     [Fact]
     public async Task TheHashesOfWhatWasRedrawnComeBack()
     {

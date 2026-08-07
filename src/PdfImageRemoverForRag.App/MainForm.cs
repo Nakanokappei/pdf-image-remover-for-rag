@@ -275,9 +275,11 @@ internal sealed partial class MainForm : Form
     static Color HeaderBorder => HighContrast ? SystemColors.ControlDark : Color.FromArgb(0xC6, 0xC6, 0xC6);
     static Color HeaderText => HighContrast ? SystemColors.ControlText : Color.FromArgb(0x44, 0x44, 0x44);
     static Color GridLineColor => HighContrast ? SystemColors.ControlDark : Color.FromArgb(0xD6, 0xD6, 0xD6);
-    // Windows' standard error red, dark enough to stay legible on the white row
-    // and on the blue selection highlight. High contrast drops the red — the
-    // theme owns all colors there, and the warning text carries the meaning.
+    // Windows' standard error red, dark enough to stay legible on the white row.
+    // NOT on the blue selection highlight — it is illegible there, which is why
+    // the warning cell keeps a light background when its row is selected. High
+    // contrast drops the red: the theme owns all colors there, and the warning
+    // text carries the meaning.
     static Color WarningText => WarningTextColour;
 
     /// <summary>

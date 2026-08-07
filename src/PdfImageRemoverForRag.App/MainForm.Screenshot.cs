@@ -86,6 +86,11 @@ internal sealed partial class MainForm
             case ScreenshotViews.Tiles:
                 TickAFewObjects();
                 _tileViewMenuItem.PerformClick();
+                // After the switch, so the focus lands on a tile rather than on
+                // a row nobody can see — and on one that overlaps something, so
+                // the panel beside it is not a third of the picture saying it
+                // has nothing to show.
+                FocusAnOverlappingObject();
                 return this;
 
             case ScreenshotViews.Objects:

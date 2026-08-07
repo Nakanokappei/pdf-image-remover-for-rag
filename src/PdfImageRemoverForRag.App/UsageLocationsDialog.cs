@@ -88,15 +88,18 @@ internal sealed class UsageLocationsDialog : Form
     {
         // Logical (96-DPI) metrics; everything drawn goes through Dip().
         //
-        // The page fills the row's width and the words go underneath it, as a
-        // caption. It was a two-column row — page on the left, file name and
-        // page number to its right — and the column of text was reserving a
-        // third of the window for two short lines, at the expense of the one
-        // thing the window exists to show. Three times the area (212*283 =
-        // 59,996 -> 367*490 = 179,830), which is the same page and the same
-        // outline at 1.73x.
-        const int ThumbWidth = 367;
-        const int ThumbHeight = 490;
+        // The page fills the row and the words go underneath it, as a caption.
+        // It was a two-column row — page on the left, file name and page number
+        // to its right — and the column of text was reserving a third of the
+        // window for two short lines, at the expense of the one thing the
+        // window exists to show.
+        //
+        // The page is sized to the WINDOW, not to a constant: one row is one
+        // screenful, so making the window bigger makes the page bigger. A fixed
+        // size left a stamp in the middle of a wide window and a margin either
+        // side of it — the same fault the panel beside the object list had.
+        const double PageShape = 367.0 / 490.0;     // portrait, the shape A4 lands in
+        const int SmallestPageHeight = 300;
         const int RowPadding = 12;
         const int CaptionGap = 8;
 
@@ -127,13 +130,55 @@ internal sealed class UsageLocationsDialog : Form
         /// </summary>
         int CaptionHeight => (Font.Height * 2) + Dip(2);
 
+        /// <summary>
+        /// The box the page is drawn in: as tall as the window leaves after the
+        /// caption and the padding, and as wide as that height allows a portrait
+        /// page to be — narrowed to the window when the window is the narrower
+        /// of the two.
+        /// </summary>
+        Size PageBox()
+        {
+            int height = Math.Max(
+                Dip(SmallestPageHeight),
+                ClientSize.Height - CaptionHeight - Dip(CaptionGap) - (Dip(RowPadding) * 2));
+            int width = (int)(height * PageShape);
+
+            int widest = Math.Max(Dip(100), ClientSize.Width - (Dip(RowPadding) * 2));
+            if (width > widest)
+            {
+                width = widest;
+                height = (int)(width / PageShape);
+            }
+            return new Size(width, height);
+        }
+
         int RowHeight =>
-            Dip(ThumbHeight) + Dip(CaptionGap) + CaptionHeight + (Dip(RowPadding) * 2);
+            PageBox().Height + Dip(CaptionGap) + CaptionHeight + (Dip(RowPadding) * 2);
 
         protected override void OnHandleCreated(EventArgs e)
         {
             base.OnHandleCreated(e);
             AutoScrollMinSize = new Size(0, _rows.Count * RowHeight);
+            EnsureRenders();
+        }
+
+        /// <summary>
+        /// The page follows the window, so a resize changes how tall a row is
+        /// and how many pixels each page wants. The rendered ones were drawn for
+        /// the old width; they are dropped rather than stretched.
+        /// </summary>
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+            if (!IsHandleCreated) return;
+
+            var wanted = new Size(0, _rows.Count * RowHeight);
+            if (AutoScrollMinSize == wanted) return;
+
+            AutoScrollMinSize = wanted;
+            foreach (var page in _rendered.Values) page.Bitmap.Dispose();
+            _rendered.Clear();
+            Invalidate();
             EnsureRenders();
         }
 
@@ -178,12 +223,12 @@ internal sealed class UsageLocationsDialog : Form
             var row = _rows[index];
             var bounds = RowBounds(index);
 
-            // Centred, and never wider than the window: the page is the row now,
-            // so a narrow window shrinks it rather than clipping it.
-            int thumbWidth = Math.Min(Dip(ThumbWidth), bounds.Width - (Dip(RowPadding) * 2));
+            // Centred: the page is the row now, and it is as big as the window
+            // allows.
+            var box = PageBox();
             var thumbBox = new Rectangle(
-                bounds.Left + ((bounds.Width - thumbWidth) / 2), bounds.Top + Dip(RowPadding),
-                Math.Max(1, thumbWidth), Dip(ThumbHeight));
+                bounds.Left + ((bounds.Width - box.Width) / 2), bounds.Top + Dip(RowPadding),
+                box.Width, box.Height);
 
             // Thumbnail (or a placeholder while it renders), with the object's
             // location(s) outlined once the page is available.
@@ -279,7 +324,7 @@ internal sealed class UsageLocationsDialog : Form
                     }
                     if (target < 0) break;
 
-                    int widthPx = Dip(ThumbWidth);
+                    int widthPx = PageBox().Width;
                     var page = await _renderer.RenderAsync(
                         _rows[target].FilePath, _rows[target].PageNumber, widthPx);
                     if (_closed)

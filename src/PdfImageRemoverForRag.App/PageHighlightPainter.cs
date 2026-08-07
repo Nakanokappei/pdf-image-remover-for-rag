@@ -90,8 +90,7 @@ internal static class PageHighlightPainter
     {
         if (boxes.Count == 0) return;
 
-        var color = SystemInformation.HighContrast
-            ? SystemColors.Highlight : Color.FromArgb(0x1E, 0x90, 0xFF);
+        var color = HighlightColour;
         var saved = g.SmoothingMode;
         g.SmoothingMode = SmoothingMode.AntiAlias;
         foreach (var box in boxes)
@@ -101,6 +100,87 @@ internal static class PageHighlightPainter
             g.DrawRectangle(pen, box.X, box.Y, box.Width, box.Height);
         }
         g.SmoothingMode = saved;
+    }
+
+    /// <summary>The one light blue, so an outline and an arrow cannot differ.</summary>
+    static Color HighlightColour => SystemInformation.HighContrast
+        ? SystemColors.Highlight : Color.FromArgb(0x1E, 0x90, 0xFF);
+
+    /// <summary>
+    /// How small a box has to be before it is pointed at as well as outlined,
+    /// as a fraction of the page's longer side. Two centimetres on A4 is 6.7 %
+    /// of its height, and that is the size a reader reported not being able to
+    /// find on a page this size — so the threshold is a shade above it.
+    ///
+    /// A fraction of the DISPLAYED page rather than a length in points: what is
+    /// being answered is whether the eye can find it in this picture, and the
+    /// picture is the same size whatever paper the page claims to be.
+    /// </summary>
+    const float PointerThreshold = 0.07f;
+
+    /// <summary>
+    /// Put an arrow beside every box too small to notice, in the same light
+    /// blue as the outline.
+    ///
+    /// The arrow lies on the far side of the box from the nearest corner of the
+    /// page: a box in the top-left quarter is pointed at from below and to its
+    /// right, so the arrow is drawn over the middle of the page and never off
+    /// its edge — whichever quarter the box is in.
+    /// </summary>
+    /// <param name="page">The page as displayed, which the quarters divide.</param>
+    public static void DrawPointers(Graphics g, Rectangle page, IReadOnlyList<RectangleF> boxes)
+    {
+        if (boxes.Count == 0 || page.Width <= 0 || page.Height <= 0) return;
+
+        float small = Math.Max(page.Width, page.Height) * PointerThreshold;
+        // Proportional to the picture, so the arrow is the same gesture at any
+        // size the page happens to be drawn at.
+        float length = Math.Max(8f, Math.Min(page.Width, page.Height) * 0.12f);
+
+        var colour = HighlightColour;
+        var saved = g.SmoothingMode;
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        foreach (var box in boxes)
+        {
+            if (Math.Max(box.Width, box.Height) > small) continue;
+            DrawPointer(g, page, box, colour, length);
+        }
+        g.SmoothingMode = saved;
+    }
+
+    /// <summary>One arrow: a shaft out along the diagonal and a head at the box.</summary>
+    static void DrawPointer(Graphics g, Rectangle page, RectangleF box, Color colour, float length)
+    {
+        // +1 means the arrow goes right / down from the box, which is where it
+        // goes when the box is in the left / top half.
+        float dx = box.X + (box.Width / 2f) < page.X + (page.Width / 2f) ? 1 : -1;
+        float dy = box.Y + (box.Height / 2f) < page.Y + (page.Height / 2f) ? 1 : -1;
+
+        // The tip stops short of the box so the outline stays readable, and the
+        // tail runs out along the diagonal from there.
+        float gap = length / 5f;
+        var tip = new PointF(
+            dx > 0 ? box.Right + gap : box.Left - gap,
+            dy > 0 ? box.Bottom + gap : box.Top - gap);
+        var tail = new PointF(tip.X + (dx * length), tip.Y + (dy * length));
+
+        float thickness = Math.Max(1.5f, length / 12f);
+        using var pen = new Pen(colour, thickness);
+        g.DrawLine(pen, tail, tip);
+
+        // The head, pointing the way the shaft runs: back towards the box.
+        float head = length * 0.4f;
+        var along = new PointF(-dx / MathF.Sqrt(2), -dy / MathF.Sqrt(2));
+        var across = new PointF(-along.Y, along.X);
+        var baseCentre = new PointF(tip.X - (along.X * head), tip.Y - (along.Y * head));
+        float halfWidth = head * 0.45f;
+        using var brush = new SolidBrush(colour);
+        g.FillPolygon(brush, new[]
+        {
+            tip,
+            new PointF(baseCentre.X + (across.X * halfWidth), baseCentre.Y + (across.Y * halfWidth)),
+            new PointF(baseCentre.X - (across.X * halfWidth), baseCentre.Y - (across.Y * halfWidth)),
+        });
     }
 
     /// <summary>

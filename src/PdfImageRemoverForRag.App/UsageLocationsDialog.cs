@@ -198,6 +198,10 @@ internal sealed class UsageLocationsDialog : Form
                     g.DrawRectangle(frame, disp.X, disp.Y, disp.Width - 1, disp.Height - 1);
                 }
                 PageHighlightPainter.DrawOutlines(g, boxes, Dip(2));
+                // An outline this small is findable only if something points at
+                // it: at this size a 2 cm square on A4 is a few millimetres of
+                // screen, and the reader is looking for it on a whole page.
+                PageHighlightPainter.DrawPointers(g, disp, boxes);
             }
             else
             {

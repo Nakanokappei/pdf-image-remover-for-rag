@@ -224,9 +224,7 @@ internal sealed partial class MainForm
 
         int wanted = _flattenPanelWidthIsTheUsersChoice
             ? Dip(_flattenPanelWidth)
-            : Math.Max(
-                (int)(_workspaceSplit.Width * DefaultFlattenPanelShare),
-                Dip(MinimumSharedPanelWidth));
+            : GoldenPanelWidth();
         int room = _workspaceSplit.Width
                  - _workspaceSplit.Panel1MinSize - _workspaceSplit.SplitterWidth;
         if (room < _workspaceSplit.Panel2MinSize) return;
@@ -234,6 +232,40 @@ internal sealed partial class MainForm
         int panelWidth = Math.Max(_workspaceSplit.Panel2MinSize, Math.Min(wanted, room));
         _workspaceSplit.SplitterDistance =
             _workspaceSplit.Width - panelWidth - _workspaceSplit.SplitterWidth;
+    }
+
+    /// <summary>
+    /// The panel's width when nobody has chosen one: the golden section of the
+    /// workspace — but never at the expense of the object list's own columns.
+    ///
+    /// A proportion is what to do with room to spare, not a reason to put a
+    /// scroll bar under a table that would otherwise fit. On a window wide
+    /// enough for both, the golden section is what shows; on a narrower one the
+    /// list keeps its columns and the panel takes the rest, down to the floor
+    /// below which its labels wrap.
+    /// </summary>
+    int GoldenPanelWidth()
+    {
+        int golden = (int)(_workspaceSplit.Width * DefaultFlattenPanelShare);
+        int sparedByTheList = _workspaceSplit.Width
+                            - PreferredObjectListWidth() - _workspaceSplit.SplitterWidth;
+        return Math.Max(Dip(MinimumSharedPanelWidth), Math.Min(golden, sparedByTheList));
+    }
+
+    /// <summary>
+    /// What the object list needs to show every column it has: the columns as
+    /// they were auto-sized, plus the row-number gutter and the frame.
+    /// </summary>
+    int PreferredObjectListWidth()
+    {
+        int columns = 0;
+        foreach (DataGridViewColumn column in _imageListGrid.Columns)
+        {
+            // The warning column fills, so its chosen width lives in the
+            // minimum; every other column carries its own.
+            if (column.Visible) columns += Math.Max(column.Width, column.MinimumWidth);
+        }
+        return columns + _imageListGrid.RowHeadersWidth + Dip(6);
     }
 
     /// <summary>
@@ -538,6 +570,11 @@ internal sealed partial class MainForm
                 column.Width = width;
             }
         }
+
+        // The columns just decided how much room the list wants, and the split
+        // is the answer to that question — re-asked here so opening a document
+        // does not leave a scroll bar under a table the window could hold.
+        if (!_flattenPanelWidthIsTheUsersChoice) ApplyWorkspaceSplitMetrics();
     }
 
     /// <summary>

@@ -217,7 +217,32 @@ internal sealed class FlattenPanel : UserControl
     /// because a DPI change re-applies it: converting device pixels back at the
     /// NEW scale would move the splitter every time the window changed monitor.
     /// </summary>
-    public int PreviewHeight { get; set; }
+    public int PreviewHeight
+    {
+        get => _previewHeight;
+        set
+        {
+            _previewHeight = value;
+            // A height arriving from outside is one the user chose in an
+            // earlier session, and setting it has to show.
+            _previewHeightIsTheUsersChoice = value > 0;
+            if (IsHandleCreated) ApplyPreviewHeight();
+        }
+    }
+
+    int _previewHeight;
+
+    /// <summary>
+    /// Whether that height is the USER's answer rather than this panel's. Until
+    /// it is, the preview takes the golden section of the panel and grows with
+    /// it — the same rule the workspace split follows, and for the same reason:
+    /// a height fixed in pixels turns every resize into a drag the user has to
+    /// do themselves.
+    /// </summary>
+    bool _previewHeightIsTheUsersChoice;
+
+    const double GoldenRatio = 1.6180339887;
+    static readonly double PreviewShare = 1 / (GoldenRatio * GoldenRatio);
 
     // Set by SplitterMoving, which ONLY fires while the user is dragging, and
     // consumed by the SplitterMoved that ends the drag. SplitterMoved alone is
@@ -296,7 +321,8 @@ internal sealed class FlattenPanel : UserControl
     {
         if (!_splitterDragged) return;
         _splitterDragged = false;
-        PreviewHeight = Undip(PreviewHeightInDevicePixels);
+        _previewHeight = Undip(PreviewHeightInDevicePixels);
+        _previewHeightIsTheUsersChoice = true;
     }
 
     protected override void OnHandleCreated(EventArgs e)
@@ -337,9 +363,9 @@ internal sealed class FlattenPanel : UserControl
         int available = _split.Height;
         if (available <= _split.Panel1MinSize + _split.Panel2MinSize + _split.SplitterWidth) return;
 
-        int wantedListHeight = PreviewHeight > 0
-            ? available - Dip(PreviewHeight) - _split.SplitterWidth
-            : (int)(available * 0.6);
+        int wantedListHeight = _previewHeightIsTheUsersChoice
+            ? available - Dip(_previewHeight) - _split.SplitterWidth
+            : (int)(available * (1 - PreviewShare));
 
         _split.SplitterDistance = Math.Clamp(
             wantedListHeight,
@@ -388,7 +414,11 @@ internal sealed class FlattenPanel : UserControl
     protected override void OnResize(EventArgs e)
     {
         base.OnResize(e);
-        if (IsHandleCreated) FitWarningHeight();
+        if (!IsHandleCreated) return;
+        FitWarningHeight();
+        // Re-share the panel: growing it should grow the page underneath, not
+        // leave it at the height a smaller window decided.
+        if (!_previewHeightIsTheUsersChoice) ApplyPreviewHeight();
     }
 
     // =======================================================================

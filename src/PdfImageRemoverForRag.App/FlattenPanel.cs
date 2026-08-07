@@ -1131,6 +1131,10 @@ internal sealed class FlattenPanel : UserControl
                 e.Graphics.DrawRectangle(frame, display.X, display.Y, display.Width - 1, display.Height - 1);
             }
             PageHighlightPainter.DrawOutlines(e.Graphics, boxes, Dip(3));
+            // The same arrows the usage window draws: a thin or small object is
+            // as hard to find here, and the two windows answer the same
+            // question about a page.
+            PageHighlightPainter.DrawPointers(e.Graphics, display, boxes);
         }
 
         static Rectangle FitInside(Size imageSize, Rectangle area)

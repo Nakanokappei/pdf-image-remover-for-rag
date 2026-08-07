@@ -112,6 +112,10 @@ internal static class PageHighlightPainter
     /// of its height, and that is the size a reader reported not being able to
     /// find on a page this size — so the threshold is a shade above it.
     ///
+    /// EITHER side counts, not the larger one. A rule across the page is 7 mm
+    /// tall and just as easy to miss as a stamp is: thin is thin whichever way
+    /// it runs.
+    ///
     /// A fraction of the DISPLAYED page rather than a length in points: what is
     /// being answered is whether the eye can find it in this picture, and the
     /// picture is the same size whatever paper the page claims to be.
@@ -122,12 +126,17 @@ internal static class PageHighlightPainter
     /// Put an arrow beside every box too small to notice, in the same light
     /// blue as the outline.
     ///
-    /// The arrow lies on the far side of the box from the nearest corner of the
-    /// page: a box in the top-left quarter is pointed at from below and to its
-    /// right, so the arrow is drawn over the middle of the page and never off
-    /// its edge — whichever quarter the box is in.
+    /// The arrow lies on the side of the box with more room, which for a small
+    /// box is the far side from the nearest corner of the page: one in the
+    /// top-left quarter is pointed at from below and to its right. That is what
+    /// keeps every arrow on the page — the roomier half is at least half the
+    /// page, and an arrow is a seventh of it.
+    ///
+    /// A box that is only thin ONE way is pointed at only that way: a rule
+    /// across the page gets an arrow from above or below, aimed at its middle,
+    /// because it needs no help being found from side to side.
     /// </summary>
-    /// <param name="page">The page as displayed, which the quarters divide.</param>
+    /// <param name="page">The page as displayed, which the halves divide.</param>
     public static void DrawPointers(Graphics g, Rectangle page, IReadOnlyList<RectangleF> boxes)
     {
         if (boxes.Count == 0 || page.Width <= 0 || page.Height <= 0) return;
@@ -142,35 +151,44 @@ internal static class PageHighlightPainter
         g.SmoothingMode = SmoothingMode.AntiAlias;
         foreach (var box in boxes)
         {
-            if (Math.Max(box.Width, box.Height) > small) continue;
-            DrawPointer(g, page, box, colour, length);
+            if (Math.Min(box.Width, box.Height) > small) continue;
+            DrawPointer(g, page, box, colour, length, small);
         }
         g.SmoothingMode = saved;
     }
 
-    /// <summary>One arrow: a shaft out along the diagonal and a head at the box.</summary>
-    static void DrawPointer(Graphics g, Rectangle page, RectangleF box, Color colour, float length)
+    /// <summary>One arrow: a shaft out from the box and a head back at it.</summary>
+    static void DrawPointer(
+        Graphics g, Rectangle page, RectangleF box, Color colour, float length, float small)
     {
-        // +1 means the arrow goes right / down from the box, which is where it
-        // goes when the box is in the left / top half.
-        float dx = box.X + (box.Width / 2f) < page.X + (page.Width / 2f) ? 1 : -1;
-        float dy = box.Y + (box.Height / 2f) < page.Y + (page.Height / 2f) ? 1 : -1;
+        // +1 means the arrow lies to the right of / below the box. Which side
+        // has more room is the same question as which half of the page the box
+        // sits in, and it is the one that still answers for a box spanning the
+        // page. Zero means the box is long that way and needs no offset: the
+        // arrow meets it at its middle instead.
+        float dx = box.Width >= small ? 0
+            : page.Right - box.Right > box.Left - page.Left ? 1 : -1;
+        float dy = box.Height >= small ? 0
+            : page.Bottom - box.Bottom > box.Top - page.Top ? 1 : -1;
 
         // The tip stops short of the box so the outline stays readable, and the
-        // tail runs out along the diagonal from there.
+        // tail runs out from there.
         float gap = length / 5f;
         var tip = new PointF(
-            dx > 0 ? box.Right + gap : box.Left - gap,
-            dy > 0 ? box.Bottom + gap : box.Top - gap);
+            dx > 0 ? box.Right + gap : dx < 0 ? box.Left - gap : box.X + (box.Width / 2f),
+            dy > 0 ? box.Bottom + gap : dy < 0 ? box.Top - gap : box.Y + (box.Height / 2f));
         var tail = new PointF(tip.X + (dx * length), tip.Y + (dy * length));
 
         float thickness = Math.Max(1.5f, length / 12f);
         using var pen = new Pen(colour, thickness);
         g.DrawLine(pen, tail, tip);
 
-        // The head, pointing the way the shaft runs: back towards the box.
+        // The head, pointing the way the shaft runs: back towards the box. The
+        // shaft is a diagonal or an axis depending on how the box is thin, so
+        // the direction is normalised rather than assumed.
         float head = length * 0.4f;
-        var along = new PointF(-dx / MathF.Sqrt(2), -dy / MathF.Sqrt(2));
+        float norm = MathF.Sqrt((dx * dx) + (dy * dy));
+        var along = new PointF(-dx / norm, -dy / norm);
         var across = new PointF(-along.Y, along.X);
         var baseCentre = new PointF(tip.X - (along.X * head), tip.Y - (along.Y * head));
         float halfWidth = head * 0.45f;

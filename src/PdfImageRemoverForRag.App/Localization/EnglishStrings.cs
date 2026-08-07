@@ -137,23 +137,23 @@ internal sealed class EnglishStrings : IStrings
     public string AboutLicenseLink => "License information";
     public string ContextMenuUsageLocations => "Show &Usage Locations…";
 
-    public string FlattenPanelTitle => "Objects";
-    public string FlattenMenu => "Object commands";
-    public string FlattenApply => "Merge visible objects in the selected unit";
+    public string FlattenPanelTitle => "Graphics objects";
+    public string FlattenMenu => "Graphics object commands";
+    public string FlattenApply => "Merge visible graphics objects in the selected unit";
     public string FlattenUndo => "Undo flatten";
     public string FlattenMerge => "Merge selected";
     public string FlattenSplit => "Split selected";
 
     public string FlattenDescription =>
-        "Bakes overlapping objects into a single image. The page looks the same, "
+        "Bakes overlapping graphics objects into a single image. The page looks the same, "
         + "but the text inside is no longer text.";
 
-    public string FlattenObjectNotOverlapping => "This object does not overlap anything.";
-    public string FlattenNoOverlaps => "No overlapping objects were found.";
+    public string FlattenObjectNotOverlapping => "This graphics object does not overlap anything.";
+    public string FlattenNoOverlaps => "No overlapping graphics objects were found.";
     public string FlattenWholePageWarning =>
         "The ticked objects cover almost the whole page. Flattening them turns the page into a single image, and none of its text stays text.";
     public string StatusFlattenSelection(int objectCount) =>
-        $"{objectCount} object(s) selected";
+        $"{objectCount} graphics object(s) selected";
     public string AccessibleFlattenPreview => "Preview";
 
     public string ErrorSameAsSource =>

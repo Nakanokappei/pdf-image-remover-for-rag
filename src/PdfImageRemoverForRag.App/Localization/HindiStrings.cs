@@ -139,23 +139,23 @@ internal sealed class HindiStrings : IStrings
     public string AboutLicenseLink => "लाइसेंस जानकारी";
     public string ContextMenuUsageLocations => "उपयोग स्थान दिखाएँ(&U)…";
 
-    public string FlattenPanelTitle => "ऑब्जेक्ट";
-    public string FlattenMenu => "ऑब्जेक्ट कमांड";
-    public string FlattenApply => "चयनित यूनिट के दृश्य ऑब्जेक्ट मिलाएँ";
+    public string FlattenPanelTitle => "ग्राफ़िक ऑब्जेक्ट";
+    public string FlattenMenu => "ग्राफ़िक ऑब्जेक्ट कमांड";
+    public string FlattenApply => "चयनित यूनिट के दृश्य ग्राफ़िक ऑब्जेक्ट मिलाएँ";
     public string FlattenUndo => "मिलाना पूर्ववत करें";
     public string FlattenMerge => "चयन मिलाएँ";
     public string FlattenSplit => "चयन अलग करें";
 
     public string FlattenDescription =>
-        "एक-दूसरे पर आने वाली वस्तुओं को एक ही छवि में मिला देता है। पृष्ठ वैसा ही दिखता है, "
+        "एक-दूसरे पर आने वाले ग्राफ़िक ऑब्जेक्ट को एक ही छवि में मिला देता है। पृष्ठ वैसा ही दिखता है, "
         + "पर उसके भीतर का पाठ अब पाठ नहीं रहता।";
 
-    public string FlattenObjectNotOverlapping => "यह वस्तु किसी से नहीं मिलती।";
-    public string FlattenNoOverlaps => "एक-दूसरे पर आने वाली कोई वस्तु नहीं मिली।";
+    public string FlattenObjectNotOverlapping => "यह ग्राफ़िक ऑब्जेक्ट किसी से नहीं मिलता।";
+    public string FlattenNoOverlaps => "एक-दूसरे पर आने वाला कोई ग्राफ़िक ऑब्जेक्ट नहीं मिला।";
     public string FlattenWholePageWarning =>
         "चुनी गई वस्तुएँ लगभग पूरे पृष्ठ को ढक रही हैं। इन्हें चित्र बनाने पर यह पृष्ठ एक ही चित्र बन जाएगा और इसका कोई भी लेख टेक्स्ट नहीं रहेगा।";
     public string StatusFlattenSelection(int objectCount) =>
-        $"{objectCount} ऑब्जेक्ट चयनित";
+        $"{objectCount} ग्राफ़िक ऑब्जेक्ट चयनित";
     public string AccessibleFlattenPreview => "पूर्वावलोकन";
 
     public string ErrorSameAsSource =>

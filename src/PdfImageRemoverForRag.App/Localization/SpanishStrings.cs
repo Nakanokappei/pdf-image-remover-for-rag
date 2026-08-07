@@ -144,23 +144,23 @@ internal sealed class SpanishStrings : IStrings
     public string AboutLicenseLink => "Información de licencias";
     public string ContextMenuUsageLocations => "Mostrar &ubicaciones de uso…";
 
-    public string FlattenPanelTitle => "Objetos";
-    public string FlattenMenu => "Comandos de objeto";
-    public string FlattenApply => "Combinar objetos visibles de la unidad seleccionada";
+    public string FlattenPanelTitle => "Objetos gráficos";
+    public string FlattenMenu => "Comandos de objeto gráfico";
+    public string FlattenApply => "Combinar objetos gráficos visibles de la unidad seleccionada";
     public string FlattenUndo => "Deshacer acoplado";
     public string FlattenMerge => "Unir selección";
     public string FlattenSplit => "Dividir selección";
 
     public string FlattenDescription =>
-        "Funde los objetos superpuestos en una sola imagen. La página se ve igual, "
+        "Funde los objetos gráficos superpuestos en una sola imagen. La página se ve igual, "
         + "pero el texto que contiene deja de ser texto.";
 
-    public string FlattenObjectNotOverlapping => "Este objeto no se superpone con nada.";
-    public string FlattenNoOverlaps => "No se encontraron objetos superpuestos.";
+    public string FlattenObjectNotOverlapping => "Este objeto gráfico no se superpone con nada.";
+    public string FlattenNoOverlaps => "No se encontraron objetos gráficos superpuestos.";
     public string FlattenWholePageWarning =>
         "Los objetos marcados cubren casi toda la página. Al aplanarlos, la página se convierte en una sola imagen y ningún texto sigue siendo texto.";
     public string StatusFlattenSelection(int objectCount) =>
-        $"{objectCount} objeto(s) seleccionado(s)";
+        $"{objectCount} objeto(s) gráfico(s) seleccionado(s)";
     public string AccessibleFlattenPreview => "Vista previa";
 
     public string ErrorSameAsSource =>

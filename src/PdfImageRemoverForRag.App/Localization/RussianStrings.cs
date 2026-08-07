@@ -148,23 +148,23 @@ internal sealed class RussianStrings : IStrings
     public string AboutLicenseLink => "Сведения о лицензиях";
     public string ContextMenuUsageLocations => "Показать &места использования…";
 
-    public string FlattenPanelTitle => "Объекты";
-    public string FlattenMenu => "Команды объектов";
-    public string FlattenApply => "Объединить видимые объекты выбранного блока";
+    public string FlattenPanelTitle => "Графические объекты";
+    public string FlattenMenu => "Команды графических объектов";
+    public string FlattenApply => "Объединить видимые графические объекты выбранного блока";
     public string FlattenUndo => "Отменить объединение";
     public string FlattenMerge => "Объединить";
     public string FlattenSplit => "Разделить";
 
     public string FlattenDescription =>
-        "Сводит перекрывающиеся объекты в одно изображение. Страница выглядит так же, "
+        "Сводит перекрывающиеся графические объекты в одно изображение. Страница выглядит так же, "
         + "но текст внутри перестаёт быть текстом.";
 
-    public string FlattenObjectNotOverlapping => "Этот объект ни с чем не перекрывается.";
-    public string FlattenNoOverlaps => "Перекрывающиеся объекты не найдены.";
+    public string FlattenObjectNotOverlapping => "Этот графический объект ни с чем не перекрывается.";
+    public string FlattenNoOverlaps => "Перекрывающиеся графические объекты не найдены.";
     public string FlattenWholePageWarning =>
         "Отмеченные объекты занимают почти всю страницу. После объединения страница станет одним изображением, и весь её текст перестанет быть текстом.";
     public string StatusFlattenSelection(int objectCount) =>
-        $"Выбрано объектов: {objectCount}";
+        $"Выбрано графических объектов: {objectCount}";
     public string AccessibleFlattenPreview => "Предварительный просмотр";
 
     public string ErrorSameAsSource =>

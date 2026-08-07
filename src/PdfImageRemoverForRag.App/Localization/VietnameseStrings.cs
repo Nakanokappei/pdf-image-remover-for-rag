@@ -143,23 +143,23 @@ internal sealed class VietnameseStrings : IStrings
     public string AboutLicenseLink => "Thông tin giấy phép";
     public string ContextMenuUsageLocations => "Hiển thị &Vị trí Sử dụng…";
 
-    public string FlattenPanelTitle => "Đối tượng";
-    public string FlattenMenu => "Lệnh đối tượng";
-    public string FlattenApply => "Gộp các đối tượng hiển thị trong đơn vị đã chọn";
+    public string FlattenPanelTitle => "Đối tượng đồ họa";
+    public string FlattenMenu => "Lệnh đối tượng đồ họa";
+    public string FlattenApply => "Gộp các đối tượng đồ họa hiển thị trong đơn vị đã chọn";
     public string FlattenUndo => "Hoàn tác gộp";
     public string FlattenMerge => "Gộp lựa chọn";
     public string FlattenSplit => "Tách lựa chọn";
 
     public string FlattenDescription =>
-        "Gộp các đối tượng chồng lên nhau thành một ảnh duy nhất. Trang vẫn trông như cũ, "
+        "Gộp các đối tượng đồ họa chồng lên nhau thành một ảnh duy nhất. Trang vẫn trông như cũ, "
         + "nhưng văn bản bên trong không còn là văn bản nữa.";
 
-    public string FlattenObjectNotOverlapping => "Đối tượng này không chồng lên bất kỳ đối tượng nào.";
-    public string FlattenNoOverlaps => "Không tìm thấy đối tượng nào chồng lên nhau.";
+    public string FlattenObjectNotOverlapping => "Đối tượng đồ họa này không chồng lên bất kỳ đối tượng nào.";
+    public string FlattenNoOverlaps => "Không tìm thấy đối tượng đồ họa nào chồng lên nhau.";
     public string FlattenWholePageWarning =>
         "Các đối tượng đã chọn phủ gần hết trang. Khi gộp lại, trang này sẽ thành một ảnh duy nhất và không còn chữ nào là văn bản.";
     public string StatusFlattenSelection(int objectCount) =>
-        $"Đã chọn {objectCount} đối tượng";
+        $"Đã chọn {objectCount} đối tượng đồ họa";
     public string AccessibleFlattenPreview => "Xem trước";
 
     public string ErrorSameAsSource =>

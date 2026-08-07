@@ -244,11 +244,11 @@ internal interface IStrings
 
     /// <summary>
     /// Title over the panel that lists what overlaps, laid out the way an image
-    /// editor lays out layers. The word is OBJECT, not layer: PDF has layers of
-    /// its own — optional content groups, which a viewer shows and hides — and
-    /// this application does not touch them. Use the same word as
-    /// <see cref="ColumnObjectId"/>, so the two panes cannot name the same thing
-    /// differently.
+    /// editor lays out layers. The word is GRAPHICS OBJECT, which is what ISO
+    /// 32000 §8.2 calls these — text, paths, XObjects. Not layer: PDF's layers
+    /// are optional content groups, which a viewer shows and hides and this
+    /// application never touches. Not plain object either: an object in PDF is
+    /// an indirect object, which is what <see cref="ColumnObjectId"/> numbers.
     /// </summary>
     string FlattenPanelTitle { get; }
 
@@ -275,9 +275,11 @@ internal interface IStrings
     string FlattenSplit { get; }
 
     /// <summary>
-    /// One line under the title, explaining what the panel is for. It has to
-    /// answer "why would I want this": the page looks unchanged afterwards, and
-    /// what changes is invisible — the text stops being text.
+    /// What the panel is for, said once for a screen reader — it is the list's
+    /// spoken description. It has to answer "why would I want this": the page
+    /// looks unchanged afterwards, and what changes is invisible — the text
+    /// stops being text. Sighted users had the same line printed under the
+    /// title until it was removed; the rows are what they are reading.
     /// </summary>
     string FlattenDescription { get; }
 
@@ -289,9 +291,9 @@ internal interface IStrings
     string FlattenObjectNotOverlapping { get; }
 
     /// <summary>
-    /// Shown under the description when files are open but nothing in them can
-    /// be flattened, so the tree is a plain listing. Answers the question the
-    /// user is about to ask: why is there nothing to tick?
+    /// Shown in place of the rows when files are open but nothing in them can be
+    /// flattened. Answers the question the user is about to ask: why is this
+    /// panel empty whatever I select?
     /// </summary>
     string FlattenNoOverlaps { get; }
 

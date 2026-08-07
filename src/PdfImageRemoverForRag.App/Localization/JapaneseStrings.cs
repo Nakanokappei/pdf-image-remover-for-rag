@@ -133,23 +133,23 @@ internal sealed class JapaneseStrings : IStrings
     public string AboutLicenseLink => "ライセンス情報";
     public string ContextMenuUsageLocations => "使用箇所を表示(&U)…";
 
-    public string FlattenPanelTitle => "オブジェクト";
-    public string FlattenMenu => "オブジェクト操作";
-    public string FlattenApply => "選択ユニット内の表示オブジェクトを結合";
+    public string FlattenPanelTitle => "描画オブジェクト";
+    public string FlattenMenu => "描画オブジェクト操作";
+    public string FlattenApply => "選択ユニット内の表示中の描画オブジェクトを結合";
     public string FlattenUndo => "統合を解除";
     public string FlattenMerge => "選択を合流";
     public string FlattenSplit => "選択を分割";
 
     public string FlattenDescription =>
-        "重なっているオブジェクトをまとめて画像化します。見た目は変わりませんが、"
+        "重なっている描画オブジェクトをまとめて画像化します。見た目は変わりませんが、"
         + "その部分のテキストはテキストでなくなります。";
 
-    public string FlattenObjectNotOverlapping => "このオブジェクトは何とも重なっていません。";
-    public string FlattenNoOverlaps => "重なっているオブジェクトはありません。";
+    public string FlattenObjectNotOverlapping => "この描画オブジェクトは何とも重なっていません。";
+    public string FlattenNoOverlaps => "重なっている描画オブジェクトはありません。";
     public string FlattenWholePageWarning =>
         "チェックした範囲がページのほぼ全体です。統合するとこのページは 1 枚の画像になり、文字はすべてテキストでなくなります。";
     public string StatusFlattenSelection(int objectCount) =>
-        $"オブジェクトを {objectCount} 個選択中";
+        $"描画オブジェクトを {objectCount} 個選択中";
     public string AccessibleFlattenPreview => "プレビュー";
 
     public string ErrorSameAsSource =>

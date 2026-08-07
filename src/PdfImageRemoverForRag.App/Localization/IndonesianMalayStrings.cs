@@ -145,23 +145,23 @@ internal sealed class IndonesianMalayStrings : IStrings
     public string AboutLicenseLink => "Informasi lisensi";
     public string ContextMenuUsageLocations => "Tampilkan &Lokasi Penggunaan…";
 
-    public string FlattenPanelTitle => "Objek";
-    public string FlattenMenu => "Perintah objek";
-    public string FlattenApply => "Gabungkan objek terlihat dalam unit terpilih";
+    public string FlattenPanelTitle => "Objek grafis";
+    public string FlattenMenu => "Perintah objek grafis";
+    public string FlattenApply => "Gabungkan objek grafis terlihat dalam unit terpilih";
     public string FlattenUndo => "Batalkan penggabungan";
     public string FlattenMerge => "Gabungkan";
     public string FlattenSplit => "Pisahkan";
 
     public string FlattenDescription =>
-        "Menggabungkan objek yang bertumpang tindih menjadi satu gambar. Halaman tetap "
+        "Menggabungkan objek grafis yang bertumpang tindih menjadi satu gambar. Halaman tetap "
         + "sama, tetapi teks di dalamnya tidak lagi berupa teks.";
 
-    public string FlattenObjectNotOverlapping => "Objek ini tidak bertumpang tindih dengan apa pun.";
-    public string FlattenNoOverlaps => "Tidak ada objek yang bertumpang tindih.";
+    public string FlattenObjectNotOverlapping => "Objek grafis ini tidak bertumpang tindih dengan apa pun.";
+    public string FlattenNoOverlaps => "Tidak ada objek grafis yang bertumpang tindih.";
     public string FlattenWholePageWarning =>
         "Objek yang dicentang menutupi hampir seluruh halaman. Setelah digabung, halaman ini menjadi satu gambar dan teksnya tidak lagi berupa teks.";
     public string StatusFlattenSelection(int objectCount) =>
-        $"{objectCount} objek dipilih";
+        $"{objectCount} objek grafis dipilih";
     public string AccessibleFlattenPreview => "Pratinjau";
 
     public string ErrorSameAsSource =>

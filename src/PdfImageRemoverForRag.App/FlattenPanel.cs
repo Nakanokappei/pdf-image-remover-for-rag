@@ -97,13 +97,6 @@ internal sealed class FlattenPanel : UserControl
     readonly ToolStripMenuItem _splitSelection = new(L10n.FlattenSplit);
     readonly ToolStripMenuItem _clearSelection = new(L10n.ToolClearSelection);
 
-    readonly Label _description = new()
-    {
-        Dock = DockStyle.Top,
-        AutoSize = false,
-        Text = L10n.FlattenDescription,
-        UseMnemonic = false,
-    };
     // Only ever visible when it has something to say: an always-present strip
     // of empty red would train the eye to skip it.
     readonly Label _wholePageWarning = new()
@@ -283,7 +276,6 @@ internal sealed class FlattenPanel : UserControl
         // fill goes in first and the title bar ends up outermost.
         Controls.Add(_split);
         Controls.Add(_wholePageWarning);
-        Controls.Add(_description);
         Controls.Add(_titleBar);
     }
 
@@ -326,8 +318,7 @@ internal sealed class FlattenPanel : UserControl
         _menuButton.Width = Dip(30);
         _titleBar.Height = Dip(30);
         _titleBar.Padding = new Padding(0, Dip(3), Dip(6), Dip(3));
-        _description.Padding = new Padding(Dip(8), 0, Dip(8), Dip(6));
-        FitDescriptionHeight();
+        FitWarningHeight();
         _split.SplitterWidth = Math.Max(4, Dip(4));
         _split.Panel1MinSize = Dip(120);
         _split.Panel2MinSize = Dip(120);
@@ -357,13 +348,11 @@ internal sealed class FlattenPanel : UserControl
     }
 
     /// <summary>
-    /// The description and the warning both wrap, and this panel is narrow and
-    /// user-resizable, so their heights have to be re-measured whenever the
-    /// width changes.
+    /// The warning wraps, and this panel is narrow and user-resizable, so its
+    /// height has to be re-measured whenever the width changes.
     /// </summary>
-    void FitDescriptionHeight()
+    void FitWarningHeight()
     {
-        _description.Height = WrappedHeight(_description);
         if (_wholePageWarning.Visible) _wholePageWarning.Height = WrappedHeight(_wholePageWarning);
     }
 
@@ -399,7 +388,7 @@ internal sealed class FlattenPanel : UserControl
     protected override void OnResize(EventArgs e)
     {
         base.OnResize(e);
-        if (IsHandleCreated) FitDescriptionHeight();
+        if (IsHandleCreated) FitWarningHeight();
     }
 
     // =======================================================================
@@ -436,13 +425,6 @@ internal sealed class FlattenPanel : UserControl
             }
         }
 
-        // Files can be open with nothing in them to flatten. Say why, or the
-        // panel staying empty on every selection reads as it being broken.
-        _description.Text = _anyDocuments && _units.Count == 0
-            ? L10n.FlattenNoOverlaps
-            : L10n.FlattenDescription;
-        if (IsHandleCreated) FitDescriptionHeight();
-
         // Emptied directly rather than through ShowFor: the workspace changed
         // under a selection that may compare equal to the new one, and that is
         // exactly the case ShowFor's guard is there to skip.
@@ -473,11 +455,14 @@ internal sealed class FlattenPanel : UserControl
         ResetExpansion();
         RebuildRows(resetScroll: true);
 
-        // Point the preview at the first unit so selecting on the left already
-        // shows where on the page this is, without a second click.
+        // Selecting an object on the left selects the unit it sits in here, so
+        // the panel arrives pointing at something: its page is in the preview
+        // and the commands act on it, without a second click. Which object the
+        // left pane named does not narrow that selection — the commands say
+        // "the selected unit", and this is the same rule they follow.
         if (_rows.Count > 0)
         {
-            ShowPreviewFor(_rows[0]);
+            _list.SelectOnly(0);
         }
         else
         {
@@ -531,13 +516,15 @@ internal sealed class FlattenPanel : UserControl
     }
 
     /// <summary>
-    /// What the panel says when it has no rows. Three different silences, and
-    /// only one of them is worth explaining: an object that overlaps nothing is
-    /// the case where the user is entitled to wonder what went wrong.
+    /// What the panel says when it has no rows. Four different silences, and
+    /// two of them are worth explaining: an object that overlaps nothing, and
+    /// files with nothing to combine anywhere in them, are the cases where the
+    /// user is entitled to wonder what went wrong.
     /// </summary>
     string EmptyMessage()
     {
         if (!_anyDocuments) return L10n.StatusOpenPrompt;
+        if (_units.Count == 0) return L10n.FlattenNoOverlaps;
         if (_selectedGroup is null) return string.Empty;
         return L10n.FlattenObjectNotOverlapping;
     }
@@ -954,29 +941,36 @@ internal sealed class FlattenPanel : UserControl
     // =======================================================================
 
     /// <summary>
-    /// The outline answers "what would become a picture", so it follows the
-    /// SELECTION. With nothing selected it follows the first row, which is what
-    /// makes clicking an object on the left already show where it is.
+    /// Show the page the selection is on, and outline the objects picked out BY
+    /// NAME on it — a selected row that IS an object.
+    ///
+    /// A selected unit outlines nothing. The unit is what the preview is already
+    /// showing, so boxing every object on the page marks nothing out; the box is
+    /// worth drawing only when it says "this one of them".
     /// </summary>
     void ShowPreviewForSelection()
     {
         var selected = SelectedByUnit();
         if (selected.Count == 0)
         {
-            if (_rows.Count > 0) ShowPreviewFor(_rows[0]);
+            _preview.Clear();
             return;
         }
 
-        var (unit, members) = selected[0];
-        ShowPreview(unit, members.Select(RectOf).ToArray());
+        var unit = selected[0].Unit;
+        ShowPreview(unit, OutlinedIn(unit).Select(RectOf).ToArray());
     }
 
-    void ShowPreviewFor(Row row)
-    {
-        var unit = _units[row.UnitIndex];
-        var shown = row.Object is null ? unit.Region.Members : new[] { row.Object };
-        ShowPreview(unit, shown.Select(RectOf).ToArray());
-    }
+    /// <summary>
+    /// The objects of one unit the user selected as objects. A selected folder
+    /// contributes none of its members — that is the whole difference between
+    /// this and <see cref="SelectedByUnit"/>, which the commands use.
+    /// </summary>
+    IEnumerable<PlacedObject> OutlinedIn(UnitEntry unit) => _list.SelectedRows
+        .Where(index => index < _rows.Count
+                        && _rows[index].Object is not null
+                        && ReferenceEquals(_units[_rows[index].UnitIndex], unit))
+        .Select(index => _rows[index].Object!);
 
     /// <summary>
     /// Show a page with the selected layers outlined. The page comes from

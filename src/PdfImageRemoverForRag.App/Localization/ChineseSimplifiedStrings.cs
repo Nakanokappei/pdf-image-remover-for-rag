@@ -135,22 +135,22 @@ internal sealed class ChineseSimplifiedStrings : IStrings
     public string AboutLicenseLink => "许可证信息";
     public string ContextMenuUsageLocations => "显示使用位置(&U)…";
 
-    public string FlattenPanelTitle => "对象";
-    public string FlattenMenu => "对象命令";
-    public string FlattenApply => "合并所选单元中的可见对象";
+    public string FlattenPanelTitle => "图形对象";
+    public string FlattenMenu => "图形对象命令";
+    public string FlattenApply => "合并所选单元中的可见图形对象";
     public string FlattenUndo => "撤销拼合";
     public string FlattenMerge => "合并所选";
     public string FlattenSplit => "拆分所选";
 
     public string FlattenDescription =>
-        "将重叠的对象拼合为一张图像。页面外观不变，但其中的文字将不再是文字。";
+        "将重叠的图形对象拼合为一张图像。页面外观不变，但其中的文字将不再是文字。";
 
-    public string FlattenObjectNotOverlapping => "该对象没有与任何内容重叠。";
-    public string FlattenNoOverlaps => "未找到重叠的对象。";
+    public string FlattenObjectNotOverlapping => "该图形对象没有与任何内容重叠。";
+    public string FlattenNoOverlaps => "未找到重叠的图形对象。";
     public string FlattenWholePageWarning =>
         "勾选的范围几乎覆盖整页。合并后本页将变成一张图片，其中的文字将不再是文本。";
     public string StatusFlattenSelection(int objectCount) =>
-        $"已选择 {objectCount} 个对象";
+        $"已选择 {objectCount} 个图形对象";
     public string AccessibleFlattenPreview => "预览";
 
     public string ErrorSameAsSource =>

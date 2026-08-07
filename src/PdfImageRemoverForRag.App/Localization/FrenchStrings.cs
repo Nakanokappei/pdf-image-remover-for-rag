@@ -143,23 +143,23 @@ internal sealed class FrenchStrings : IStrings
     public string AboutLicenseLink => "Informations de licence";
     public string ContextMenuUsageLocations => "Afficher les &emplacements d'utilisation…";
 
-    public string FlattenPanelTitle => "Objets";
-    public string FlattenMenu => "Commandes d'objet";
-    public string FlattenApply => "Fusionner les objets visibles de l'unité sélectionnée";
+    public string FlattenPanelTitle => "Objets graphiques";
+    public string FlattenMenu => "Commandes d'objet graphique";
+    public string FlattenApply => "Fusionner les objets graphiques visibles de l'unité sélectionnée";
     public string FlattenUndo => "Annuler l'aplatissement";
     public string FlattenMerge => "Fusionner";
     public string FlattenSplit => "Séparer";
 
     public string FlattenDescription =>
-        "Fusionne les objets superposés en une seule image. La page garde le même "
+        "Fusionne les objets graphiques superposés en une seule image. La page garde le même "
         + "aspect, mais le texte qu'elle contient n'est plus du texte.";
 
-    public string FlattenObjectNotOverlapping => "Cet objet ne chevauche rien.";
-    public string FlattenNoOverlaps => "Aucun objet superposé n'a été trouvé.";
+    public string FlattenObjectNotOverlapping => "Cet objet graphique ne chevauche rien.";
+    public string FlattenNoOverlaps => "Aucun objet graphique superposé n'a été trouvé.";
     public string FlattenWholePageWarning =>
         "Les objets cochés couvrent presque toute la page. En les aplatissant, la page devient une seule image et plus aucun texte ne reste du texte.";
     public string StatusFlattenSelection(int objectCount) =>
-        $"{objectCount} objet(s) sélectionné(s)";
+        $"{objectCount} objet(s) graphique(s) sélectionné(s)";
     public string AccessibleFlattenPreview => "Aperçu";
 
     public string ErrorSameAsSource =>

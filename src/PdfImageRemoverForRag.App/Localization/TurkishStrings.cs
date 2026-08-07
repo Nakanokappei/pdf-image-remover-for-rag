@@ -147,23 +147,23 @@ internal sealed class TurkishStrings : IStrings
     public string AboutLicenseLink => "Lisans bilgileri";
     public string ContextMenuUsageLocations => "&Kullanım Konumlarını Göster…";
 
-    public string FlattenPanelTitle => "Nesneler";
-    public string FlattenMenu => "Nesne komutları";
-    public string FlattenApply => "Seçili birimdeki görünür nesneleri birleştir";
+    public string FlattenPanelTitle => "Grafik nesneleri";
+    public string FlattenMenu => "Grafik nesnesi komutları";
+    public string FlattenApply => "Seçili birimdeki görünür grafik nesnelerini birleştir";
     public string FlattenUndo => "Birleştirmeyi geri al";
     public string FlattenMerge => "Birleştir";
     public string FlattenSplit => "Ayır";
 
     public string FlattenDescription =>
-        "Üst üste gelen nesneleri tek bir görüntüde birleştirir. Sayfa aynı görünür, "
+        "Üst üste gelen grafik nesnelerini tek bir görüntüde birleştirir. Sayfa aynı görünür, "
         + "ancak içindeki metin artık metin olmaz.";
 
-    public string FlattenObjectNotOverlapping => "Bu nesne hiçbir şeyle üst üste gelmiyor.";
-    public string FlattenNoOverlaps => "Üst üste gelen nesne bulunamadı.";
+    public string FlattenObjectNotOverlapping => "Bu grafik nesnesi hiçbir şeyle üst üste gelmiyor.";
+    public string FlattenNoOverlaps => "Üst üste gelen grafik nesnesi bulunamadı.";
     public string FlattenWholePageWarning =>
         "İşaretlenen nesneler sayfanın neredeyse tamamını kaplıyor. Birleştirildiğinde sayfa tek bir görüntüye dönüşür ve hiçbir metin metin olarak kalmaz.";
     public string StatusFlattenSelection(int objectCount) =>
-        $"{objectCount} nesne seçildi";
+        $"{objectCount} grafik nesnesi seçildi";
     public string AccessibleFlattenPreview => "Önizleme";
 
     public string ErrorSameAsSource =>

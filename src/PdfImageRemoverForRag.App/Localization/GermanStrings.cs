@@ -141,23 +141,23 @@ internal sealed class GermanStrings : IStrings
     public string AboutLicenseLink => "Lizenzinformationen";
     public string ContextMenuUsageLocations => "&Verwendungsorte anzeigen…";
 
-    public string FlattenPanelTitle => "Objekte";
-    public string FlattenMenu => "Objektbefehle";
-    public string FlattenApply => "Sichtbare Objekte der gewählten Einheit zusammenfügen";
+    public string FlattenPanelTitle => "Grafikobjekte";
+    public string FlattenMenu => "Grafikobjektbefehle";
+    public string FlattenApply => "Sichtbare Grafikobjekte der gewählten Einheit zusammenfügen";
     public string FlattenUndo => "Zusammenfügen aufheben";
     public string FlattenMerge => "Zusammenführen";
     public string FlattenSplit => "Trennen";
 
     public string FlattenDescription =>
-        "Fügt überlappende Objekte zu einem einzigen Bild zusammen. Die Seite sieht "
+        "Fügt überlappende Grafikobjekte zu einem einzigen Bild zusammen. Die Seite sieht "
         + "unverändert aus, doch der Text darin ist danach kein Text mehr.";
 
-    public string FlattenObjectNotOverlapping => "Dieses Objekt überlappt mit nichts.";
-    public string FlattenNoOverlaps => "Es wurden keine überlappenden Objekte gefunden.";
+    public string FlattenObjectNotOverlapping => "Dieses Grafikobjekt überlappt mit nichts.";
+    public string FlattenNoOverlaps => "Es wurden keine überlappenden Grafikobjekte gefunden.";
     public string FlattenWholePageWarning =>
         "Die markierten Objekte bedecken fast die ganze Seite. Beim Zusammenfassen wird die Seite zu einem einzigen Bild, und kein Text bleibt Text.";
     public string StatusFlattenSelection(int objectCount) =>
-        $"{objectCount} Objekt(e) ausgewählt";
+        $"{objectCount} Grafikobjekt(e) ausgewählt";
     public string AccessibleFlattenPreview => "Vorschau";
 
     public string ErrorSameAsSource =>

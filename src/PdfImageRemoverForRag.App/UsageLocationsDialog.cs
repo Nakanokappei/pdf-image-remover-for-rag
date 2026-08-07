@@ -17,9 +17,9 @@ internal sealed record UsageRow(
 
 /// <summary>
 /// The window opened from a row/tile's right-click menu: every file and page
-/// where the object is used, each as a full-page thumbnail with the object's
-/// location outlined in light blue, and the file name (no extension) + page
-/// number beside it.
+/// where the object is used, each as a full-page picture with the object's
+/// location outlined in light blue, captioned underneath with the file name
+/// (no extension) and the page number.
 ///
 /// Pages are rasterized on demand by <see cref="PdfPageRenderer"/> as they
 /// scroll into view and disposed as they leave, so a logo used on 200 pages
@@ -44,9 +44,9 @@ internal sealed class UsageLocationsDialog : Form
         }
     }
 
-    // Logical (96-DPI) window size. Width follows the thumbnail: the page is 62
-    // logical px wider than it was, and the file-name column would lose exactly
-    // that much otherwise.
+    // Logical (96-DPI) window size. Kept as it was when the page grew to fill
+    // the row: the window is a comfortable size to open on, and the page is
+    // centred in whatever width it is given.
     static readonly Size LogicalClientSize = new(622, 680);
     static readonly Size LogicalMinimumSize = new(420, 360);
 
@@ -87,12 +87,18 @@ internal sealed class UsageLocationsDialog : Form
     sealed class UsageListPanel : Panel
     {
         // Logical (96-DPI) metrics; everything drawn goes through Dip().
-        // Twice the area of the original 150x200 page (150*200 = 30,000 ->
-        // 212*283 = 59,996): the location outline was too small to notice.
-        const int ThumbWidth = 212;
-        const int ThumbHeight = 283;
+        //
+        // The page fills the row's width and the words go underneath it, as a
+        // caption. It was a two-column row — page on the left, file name and
+        // page number to its right — and the column of text was reserving a
+        // third of the window for two short lines, at the expense of the one
+        // thing the window exists to show. Three times the area (212*283 =
+        // 59,996 -> 367*490 = 179,830), which is the same page and the same
+        // outline at 1.73x.
+        const int ThumbWidth = 367;
+        const int ThumbHeight = 490;
         const int RowPadding = 12;
-        const int TextGap = 16;
+        const int CaptionGap = 8;
 
         readonly IReadOnlyList<UsageRow> _rows;
         readonly PdfPageRenderer _renderer = new();
@@ -113,7 +119,16 @@ internal sealed class UsageLocationsDialog : Form
         }
 
         int Dip(int logical) => LogicalToDeviceUnits(logical);
-        int RowHeight => Dip(ThumbHeight) + (Dip(RowPadding) * 2);
+
+        /// <summary>
+        /// The two caption lines. Measured from the font rather than from a
+        /// constant, because the font is what decides it — and the font is
+        /// already scaled for the monitor, so this must NOT go through Dip().
+        /// </summary>
+        int CaptionHeight => (Font.Height * 2) + Dip(2);
+
+        int RowHeight =>
+            Dip(ThumbHeight) + Dip(CaptionGap) + CaptionHeight + (Dip(RowPadding) * 2);
 
         protected override void OnHandleCreated(EventArgs e)
         {
@@ -163,9 +178,12 @@ internal sealed class UsageLocationsDialog : Form
             var row = _rows[index];
             var bounds = RowBounds(index);
 
+            // Centred, and never wider than the window: the page is the row now,
+            // so a narrow window shrinks it rather than clipping it.
+            int thumbWidth = Math.Min(Dip(ThumbWidth), bounds.Width - (Dip(RowPadding) * 2));
             var thumbBox = new Rectangle(
-                bounds.Left + Dip(RowPadding), bounds.Top + Dip(RowPadding),
-                Dip(ThumbWidth), Dip(ThumbHeight));
+                bounds.Left + ((bounds.Width - thumbWidth) / 2), bounds.Top + Dip(RowPadding),
+                Math.Max(1, thumbWidth), Dip(ThumbHeight));
 
             // Thumbnail (or a placeholder while it renders), with the object's
             // location(s) outlined once the page is available.
@@ -193,25 +211,23 @@ internal sealed class UsageLocationsDialog : Form
                     | TextFormatFlags.WordBreak | TextFormatFlags.EndEllipsis);
             }
 
-            // File name (no extension) and page number, to the right.
-            var textArea = new Rectangle(
-                thumbBox.Right + Dip(TextGap), thumbBox.Top,
-                Math.Max(0, bounds.Right - thumbBox.Right - Dip(TextGap) - Dip(RowPadding)),
-                thumbBox.Height);
+            // The caption: file name (no extension) on top, page number under
+            // it, both centred on the page above them. It spans the whole row
+            // rather than the picture, so a long file name has the width to
+            // show itself before the ellipsis takes over.
+            var nameLine = new Rectangle(
+                bounds.Left + Dip(RowPadding), thumbBox.Bottom + Dip(CaptionGap),
+                Math.Max(0, bounds.Width - (Dip(RowPadding) * 2)), Font.Height);
             using (var nameFont = new Font(Font, FontStyle.Bold))
             {
-                var nameSize = TextRenderer.MeasureText(g, row.FileDisplayName, nameFont,
-                    new Size(textArea.Width, int.MaxValue), TextFormatFlags.WordBreak);
-                var nameRect = new Rectangle(textArea.X, textArea.Y, textArea.Width,
-                    Math.Min(nameSize.Height, textArea.Height));
-                TextRenderer.DrawText(g, row.FileDisplayName, nameFont, nameRect,
+                TextRenderer.DrawText(g, row.FileDisplayName, nameFont, nameLine,
                     SystemColors.WindowText,
-                    TextFormatFlags.WordBreak | TextFormatFlags.EndEllipsis);
-                var pageRect = new Rectangle(textArea.X, nameRect.Bottom + Dip(4),
-                    textArea.Width, Dip(20));
-                TextRenderer.DrawText(g, L10n.UsagePageLabel(row.PageNumber), Font, pageRect,
-                    SystemColors.GrayText, TextFormatFlags.Left);
+                    TextFormatFlags.HorizontalCenter | TextFormatFlags.EndEllipsis);
             }
+            var pageLine = nameLine with { Y = nameLine.Bottom + Dip(2) };
+            TextRenderer.DrawText(g, L10n.UsagePageLabel(row.PageNumber), Font, pageLine,
+                SystemColors.GrayText,
+                TextFormatFlags.HorizontalCenter | TextFormatFlags.EndEllipsis);
 
             // Separator under the row.
             using var line = new Pen(SystemColors.ControlLight);

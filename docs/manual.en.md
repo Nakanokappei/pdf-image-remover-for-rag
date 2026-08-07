@@ -51,7 +51,7 @@ The window is split left and right, and **both halves are visible at once.**
 
 | | Delete | Flatten |
 | --- | --- | --- |
-| Where | The **left** of the window (the object list) | The **right** of the window (the Flatten panel) |
+| Where | The **left** of the window (the object list) | The **right** of the window (the Graphics objects panel) |
 | What it does | Takes the objects you pick out of the file | Bakes overlapping objects into a single image |
 | How the page looks | That much less on it | **Unchanged** |
 | Good for | Logos, headers, watermarks, ruling lines | A chart's axis labels, a caption over a photo — text that **breaks the picture if you delete it, but gets in the way of retrieval if you keep it** |
@@ -117,10 +117,10 @@ To work on several files together, **select them all in one Open action.**
 Below the toolbar the window is split left and right.
 
 - **Left — the object list.** The main thing this app does. It switches between a table and tiles, and the removal ticks go here.
-- **Right — the Flatten panel.** It shows where the object on the **currently selected row** overlaps something else. Drag the divider to change its width; that width survives resizing the window.
+- **Right — the Graphics objects panel.** It shows where the object on the **currently selected row** overlaps something else. It takes a share of the width until you drag the divider; after that the width is yours and resizing the window leaves it alone.
 
-- **The toolbar's Select All and Clear Selection act on the object list only.** Flattening is chosen a unit at a time in the panel — there is no one-click "flatten every overlap in the document", because that would make the target of an irreversible operation impossible to predict. The panel has its own **Clear Selection** at its top right for dropping the flatten ticks.
-- **Remove & Save is available as soon as either side has something ticked.** One save does both.
+- **The toolbar's Select All and Clear Selection act on the object list only.** Merging is done a unit at a time in the panel — there is no one-click "flatten every overlap in the document", because that would make the target of an irreversible operation impossible to predict. The panel's own menu has a **Clear selection** for dropping what it has selected.
+- **Remove & Save is available as soon as there is something to write** — an object ticked for removal, an eye closed, or a place already merged.
 - The status bar reports **both** counts, e.g. `3 object(s) selected for removal / 4 object(s) to flatten`.
 
 ### Toolbar
@@ -128,7 +128,7 @@ Below the toolbar the window is split left and right.
 | Button | What it does |
 | --- | --- |
 | Open PDF | Choose and open PDFs (multi-select allowed) |
-| Remove & Save | Save PDFs with the checked objects removed and the checked overlaps flattened |
+| Remove & Save | Save PDFs with the checked objects removed, along with anything whose eye you closed. Places already merged are written out as they stand |
 | Select All | Check every visible object in the object list |
 | Clear Selection | Uncheck everything in the object list |
 
@@ -181,7 +181,7 @@ At least one kind must stay visible, so the last remaining check cannot be turne
 
 ---
 
-## 5. Flattening an overlap into an image (the Flatten panel)
+## 5. Flattening an overlap into an image (the Graphics objects panel)
 
 ### What it is for
 
@@ -197,7 +197,7 @@ Three things separate it from deleting:
 | How the page looks | That much less on it | Unchanged |
 | Number of images | Fewer | The same, or one more |
 
-> **Deleting first makes flattening impossible** — the material to bake is gone. Within a single save this is handled for you: **flattening runs before removal**, so ticking things on both sides and saving once is fine.
+> **Flattening takes effect when you press it**, not when you save. Ticking things for removal takes effect on the save, so the order does not matter. To take a flatten back, use **Undo Flatten**.
 
 ### What counts as an overlap
 
@@ -213,27 +213,28 @@ Only places where objects of *different* kinds overlap are listed. That gives fo
 
 ### How to use it
 
-![The Flatten panel; ticking a unit ticks the objects under it, and the preview below shows the area that becomes a picture](images/flatten-en.png)
+![The graphics-objects panel: an eye at the left for what is drawn, a click to select a row, and the commands gathered under the menu at the top right](images/flatten-en.png)
 
-1. **Select the row of the object you want to look at, in the list on the left.** The Flatten panel then shows **only the units that object takes part in**.
-   - An object that overlaps nothing gets "This object does not overlap anything." Most objects in a document are like that.
+1. **Select the row of the object you want to look at, in the list on the left.** The Graphics objects panel then shows **only the units that object takes part in**, with the first of them already selected, so it is ready to act on.
+   - An object that overlaps nothing gets "This graphics object does not overlap anything." Most objects in a document are like that.
    - With no row selected the panel is empty.
-2. The panel is laid out **like an image editor's layers panel**: a **unit** is a layer group and the **objects** inside it are its layers, each with a thumbnail, a name and a checkbox. A unit's heading names the file and page it is on, and the triangle at its left folds it away.
-3. **Ticking a unit takes everything under it**; you can also tick objects individually. A unit with only some of its objects ticked shows a **dash in its box** — the in-between state.
-4. **Only what you tick is baked in**, and the area that becomes an image is **the bounding box of what you ticked**. Tick just the text, for example, and the image underneath keeps being drawn with the new picture over it.
-5. The preview underneath shows where you are: **that place keeps its colour and everything else is dimmed.** Select a unit's heading for all its members, or an object's row for just that one.
-6. **Saving is the same as for deleting** (**Remove & Save** on the toolbar, or **File → Remove Selected & Save…**). A save with nothing but flattening ticked works fine.
-
-> **Ticks survive moving to another row.** The panel only shows the units for the object you have selected, but ticks made on other objects are still there — the status bar's count is the total. To drop them all, use **Clear Selection at the top right of the panel**; the toolbar's Clear Selection acts on the object list only.
-
-After a save the panel loses only its ticks. What it describes is the source PDF, and the source PDF has not changed. (The object list does the opposite: removed rows leave the list.)
+2. The panel is laid out **like an image editor's layers panel**: a **folder is a unit** (`Doc:01 P.02 Unit 01` reads "the first file, its second page, the first unit on it") and the **graphics objects** sit under it. The chevron at a folder's left folds it away.
+3. **The eye at the left says whether the object is drawn.** Close it and the object goes from that place on that page — **it leaves the preview as well**, and it will not be in the PDF you save. **Only that one place goes**: the same image on other pages stays. A folder's eye acts on everything inside it.
+4. **Clicking a row selects it** (Ctrl to add or remove, Shift for a range). What is selected says which UNIT the commands act on.
+5. **The commands are under the menu at the top right.**
+   - **Merge visible graphics objects in the selected unit** — makes one picture of them, there and then. **Anything whose eye is closed stays out of it**, since the save is going to take it away. Which objects inside the unit you picked does not narrow it: the whole unit's visible objects are what merges.
+   - **Undo flatten** — with the row of a picture some merge drew selected, puts back what it covered.
+   - **Merge selected** / **Split selected** — correct a unit by hand when what was detected does not match the document. To merge only part of a unit, split it first.
+   - **Clear selection** — drops the panel's selection only; the toolbar's Clear Selection acts on the object list.
+6. **The preview underneath is that page, actually drawn.** Objects whose eye is closed are not in it. **The selected graphics object is outlined in light blue**, and a small or thin one gets **an arrow in the same colour** beside it.
+7. **Saving is the same as for deleting** (**Remove & Save** on the toolbar, or **File → Remove Selected & Save…**). The merging has already happened, so the save writes it out. A save with nothing but flattening works fine.
 
 ### Worth knowing
 
 - **Text in a flattened area can no longer be selected or copied.** That is the point of the feature. Your original PDF is untouched, so you can always open it again.
-- Flattened areas are rendered at 200 dpi, which makes the file larger.
+- **A merged picture is made at the size it will be looked at** — fitted inside 1920 by 1080 pixels. That is enough to read, and pixels past it are file size and nothing else.
 - **A place that cannot be rendered is left exactly as it was.** Deleting the objects and then failing to draw their replacement would punch a hole in the page.
-- **When what you have ticked covers nearly the whole page, the panel says so in red.** Flattening it turns that whole page into one image, and none of its text stays text. It is not forbidden — a scan with a caption typed over it is exactly that case, done knowingly.
+- **When what you have selected covers nearly the whole page, the panel says so in red.** Merging it turns that whole page into one image, and none of its text stays text. It is not forbidden — a scan with a caption typed over it is exactly that case, done knowingly.
 
 ---
 

@@ -10,8 +10,8 @@ namespace PdfImageRemoverForRag.App;
 /// window never opens off-screen or larger than the current display.
 /// </summary>
 /// <param name="FlattenPanelWidth">
-/// Width of the 統合 panel, and <paramref name="FlattenPreviewHeight"/> the
-/// height of the preview inside it — both in LOGICAL (96-DPI) pixels, because a
+/// Width of the graphics objects panel, and <paramref name="FlattenPreviewHeight"/>
+/// the height of the preview inside it — both in LOGICAL (96-DPI) pixels, because a
 /// width dragged on the 200 % VM would be half the panel on a 100 % display if
 /// it were stored in device pixels. Zero means "never recorded", which is what
 /// a window.json written before these existed deserializes to, so the defaults
@@ -20,6 +20,10 @@ namespace PdfImageRemoverForRag.App;
 /// They ride along with the placement but are NOT subject to its
 /// display-arrangement guard: a splitter position cannot put anything
 /// off-screen, so plugging in a second monitor is no reason to forget it.
+///
+/// The names are the keys in window.json, which is why they still say Flatten
+/// after the panel was renamed: changing them would read every existing file
+/// as "never recorded" and forget the width every user had dragged.
 /// </param>
 internal sealed record WindowLayout(
     int X, int Y, int Width, int Height, bool Maximized,

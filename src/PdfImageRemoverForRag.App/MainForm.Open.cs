@@ -37,8 +37,9 @@ internal sealed partial class MainForm
 
         // Work worth offering to save: what is marked for removal, and — more
         // than that — places already flattened, which live in a working copy
-        // that goes with the workspace. The layers panel's selection is not
-        // work; hiding a layer IS, and that is one of the marks counted here.
+        // that goes with the workspace. A selection in the graphics objects
+        // panel is not work; hiding an object IS, and that is one of the marks
+        // counted here.
         if (_selectedHashes.Count > 0
             || _workflow.HasFlattenedPlaces
             || _workflow.HasHiddenPlacements)

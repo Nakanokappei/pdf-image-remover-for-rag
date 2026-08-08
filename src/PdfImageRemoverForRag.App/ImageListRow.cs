@@ -49,10 +49,10 @@ internal static class ImageListRow
 
     /// <summary>
     /// The same rule for an object that has no group row — a string shown once
-    /// is still drawn on the page, and the flatten panel lists it. Split out so
-    /// the quoting of an all-whitespace string is decided in one place: without
-    /// it such a value paints as an empty box, indistinguishable from a
-    /// thumbnail that failed.
+    /// is still drawn on the page, and the graphics objects panel lists it.
+    /// Split out so the quoting of an all-whitespace string is decided in one
+    /// place: without it such a value paints as an empty box,
+    /// indistinguishable from a thumbnail that failed.
     /// </summary>
     public static string? ThumbnailText(RemovableKind kind, string? value)
     {
@@ -66,8 +66,8 @@ internal static class ImageListRow
 
     /// <summary>
     /// The same label from a bare kind, for callers that hold one without a
-    /// group. The App names a kind here and nowhere else — a second copy of
-    /// this switch is how the Flatten panel came to call a drawing an image.
+    /// group. The App names a kind here and nowhere else — a second copy of this
+    /// switch is how the graphics objects panel came to call a drawing an image.
     /// </summary>
     public static string TypeLabel(RemovableKind kind) => kind switch
     {

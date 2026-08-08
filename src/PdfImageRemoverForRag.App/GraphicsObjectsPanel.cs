@@ -20,7 +20,7 @@ internal readonly record struct ObjectThumbnail(
     bool CanEverRender);
 
 /// <summary>
-/// The objects panel, docked to the right of the object list: the flatten units
+/// The graphics objects panel, docked to the right of the object list: the units
 /// the object selected on the left takes part in, laid out the way an image
 /// editor lays out layers, with a preview of the page underneath.
 ///
@@ -157,7 +157,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
     }
 
     /// <summary>
-    /// Raised when an eye is clicked. Whether a layer is drawn is the same fact
+    /// Raised when an eye is clicked. Whether an object is drawn is the same fact
     /// as whether a save keeps it, and that fact lives in the workspace beside
     /// the object list's own ticks — so the panel asks for the change rather
     /// than making it.
@@ -200,7 +200,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
     public Func<PlacedObject, ObjectThumbnail>? ThumbnailFor { get; set; }
 
     /// <summary>
-    /// The file to render a page from: the document with the hidden layers
+    /// The file to render a page from: the document with the hidden objects
     /// actually taken out. Greying them on top of the page was tried first and
     /// was hard to read.
     /// </summary>
@@ -209,8 +209,8 @@ internal sealed class GraphicsObjectsPanel : UserControl
     /// <summary>
     /// Whether this drawing of this object, on this page of this file, is
     /// hidden. Answered by the host, because that is where the mark lives — and
-    /// asked per PLACEMENT, because hiding a layer here hides the one layer, not
-    /// every other showing of the same object.
+    /// asked per PLACEMENT, because hiding an object here hides this one drawing
+    /// of it, not every other showing of the same object.
     /// </summary>
     public Func<string, int, PlacedObject, bool>? IsHidden { get; set; }
 
@@ -218,7 +218,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
     /// Height of the preview under the list, in LOGICAL pixels: set by the host
     /// from the saved layout before the handle exists, updated as the user drags
     /// the splitter, and read back at shutdown. Zero means the user has never
-    /// chosen one, and the three-fifths default applies.
+    /// chosen one, and the golden section applies.
     ///
     /// It is kept here rather than read off <see cref="_split"/> on demand
     /// because a DPI change re-applies it: converting device pixels back at the
@@ -352,11 +352,11 @@ internal sealed class GraphicsObjectsPanel : UserControl
     }
 
     /// <summary>
-    /// Put the splitter where <see cref="PreviewHeight"/> asks for, or three
-    /// fifths to the list when the user has never said — the list is the thing
-    /// being operated, and the preview only has to be big enough to say where on
-    /// the page you are. Re-applied whenever the DPI changes, so a remembered
-    /// height means the same amount of picture at any scale.
+    /// Put the splitter where <see cref="PreviewHeight"/> asks for, or at the
+    /// golden section when the user has never said — the list is the thing being
+    /// operated, and the preview takes the smaller share. Re-applied whenever
+    /// the DPI changes, so a remembered height means the same amount of picture
+    /// at any scale.
     /// </summary>
     void ApplyPreviewHeight()
     {
@@ -488,9 +488,9 @@ internal sealed class GraphicsObjectsPanel : UserControl
 
         // Selecting an object on the left selects the unit it sits in here, so
         // the panel arrives pointing at something: its page is in the preview
-        // and the commands act on it, without a second click. Which object the
-        // left pane named does not narrow that selection — the commands say
-        // "the selected unit", and this is the same rule they follow.
+        // without a second click. Which object the left pane named does not
+        // narrow that selection — a unit is what this panel is a list of, and
+        // the row is where its commands live.
         if (_rows.Count > 0)
         {
             _list.SelectOnly(0);
@@ -1026,8 +1026,8 @@ internal sealed class GraphicsObjectsPanel : UserControl
         .Select(index => _rows[index].Object!);
 
     /// <summary>
-    /// Show a page with the selected layers outlined. The page comes from
-    /// wherever the host says — with hidden layers taken out, that is a copy —
+    /// Show a page with the selected objects outlined. The page comes from
+    /// wherever the host says — with hidden objects taken out, that is a copy —
     /// and asking for it is work, so it is awaited and only the newest answer is
     /// used. Until it arrives the pane keeps showing what it had.
     /// </summary>
@@ -1044,7 +1044,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
             catch (Exception)
             {
                 // The page as it stands is a worse answer than the page without
-                // its hidden layers, and a better one than no page at all.
+                // its hidden objects, and a better one than no page at all.
                 source = unit.FilePath;
             }
         }
@@ -1079,7 +1079,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
         readonly PdfPageRenderer _renderer = new();
         RenderedPage? _page;
         // What is selected, outlined. What is HIDDEN needs no mark here: the
-        // page being rendered is one those layers are already gone from.
+        // page being rendered is one those objects are already gone from.
         IReadOnlyList<RectangleF> _boxesInPoints = Array.Empty<RectangleF>();
         string? _filePath;
         int _pageNumber;

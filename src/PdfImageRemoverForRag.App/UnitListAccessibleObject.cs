@@ -5,7 +5,7 @@ namespace PdfImageRemoverForRag.App;
 /// technology.
 ///
 /// The rows are pixels, not controls, so without this a screen reader sees one
-/// empty pane where the Flatten panel is — the same hole
+/// empty pane where the graphics objects panel is — the same hole
 /// <see cref="TileViewAccessibleObject"/> fills for the tile view, and filled
 /// the same way.
 ///
@@ -39,7 +39,7 @@ internal sealed class UnitListAccessibleObject : Control.ControlAccessibleObject
 /// <summary>
 /// One row as seen by a screen reader: a check button whose name says what the
 /// row is and whose state carries shown, part-shown, selected, and — for a
-/// folder — open or closed. Toggling it hides or shows the layer, exactly as
+/// folder — open or closed. Toggling it hides or shows the object, exactly as
 /// clicking its eye or pressing Space does.
 /// </summary>
 internal sealed class UnitRowAccessibleObject : AccessibleObject

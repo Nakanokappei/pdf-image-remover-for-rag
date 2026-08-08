@@ -84,17 +84,18 @@ internal static class L10n
     // and never reach a translator.
 
     /// <summary>
-    /// The tick mark both panes put in front of their heading. Not translated —
-    /// it is a symbol, and both sides have to use the SAME one or the pairing
-    /// stops being visible.
+    /// The tick mark in front of the object list's Remove heading. Not
+    /// translated — it is a symbol. The panel opposite once carried the same
+    /// glyph, to pair the two; it marks its objects with an eye now, and the
+    /// word beside this one is what says which is which.
     /// </summary>
     public const string CheckGlyph = "☑";
 
     /// <summary>
     /// The object list's tick column: what a save REMOVES. The word matters
-    /// because the flatten panel across the window has ticks of its own that
-    /// mean something else; a bare glyph on both sides left the user to work
-    /// out which was which.
+    /// because the graphics objects panel across the window marks objects too
+    /// — with an eye, and it means something else entirely; a bare glyph on
+    /// this side left the user to work out which was which.
     /// </summary>
     public static string ColumnDeleteHeader => $"{CheckGlyph} {S.ColumnDelete}";
 
@@ -248,7 +249,7 @@ internal static class L10n
     public static string AboutLicenseLink => S.AboutLicenseLink;
     public static string ContextMenuUsageLocations => S.ContextMenuUsageLocations;
 
-    // --- the flatten panel --------------------------------------------------
+    // --- the graphics objects panel ----------------------------------------
 
     public static string GraphicsObjectsTitle => S.GraphicsObjectsTitle;
     public static string FlattenVisible => S.FlattenVisible;

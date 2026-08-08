@@ -209,7 +209,7 @@ internal sealed partial class MainForm
     }
 
     /// <summary>
-    /// Give the flatten panel the width in <see cref="_graphicsObjectsPanelWidth"/>,
+    /// Give the graphics objects panel the width in <see cref="_graphicsObjectsPanelWidth"/>,
     /// which is in logical pixels. This SEEDS the panel — at the size the window
     /// happens to be — and from then on the splitter keeps its share of the
     /// width by itself, so resizing the window never asks the user to drag it
@@ -294,10 +294,10 @@ internal sealed partial class MainForm
         viewHost.Controls.Add(_imageListGrid);
         viewHost.Controls.Add(_tileView);
 
-        // Object list left, flatten tree right — both always visible; see the
-        // comment on the field for why they are not tabs and cannot be one list.
-        // The tree stays put when the view switches to tiles: it describes the
-        // document, not the way the objects happen to be drawn.
+        // Object list left, graphics objects panel right — both always visible;
+        // see the comment on the field for why they are not tabs and cannot be
+        // one list. The panel stays put when the view switches to tiles: it
+        // describes the document, not the way the objects happen to be drawn.
         _workspaceSplit.Panel1.Controls.Add(viewHost);
         _workspaceSplit.Panel2.Controls.Add(_graphicsObjectsPanel);
 

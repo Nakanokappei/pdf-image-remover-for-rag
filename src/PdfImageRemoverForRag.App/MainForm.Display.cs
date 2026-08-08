@@ -22,7 +22,7 @@ internal sealed partial class MainForm
         // Thumbnails are cached for every live group regardless of the type
         // filter, so toggling the filter never re-decodes bitmaps.
         RefreshThumbnailImages(groups);
-        // The flatten panel reads the documents directly (overlap regions are
+        // The graphics objects panel reads the documents directly (overlap regions are
         // per page, not merged across files like the object groups), so it is
         // rebuilt from the same event rather than from the group list.
         //
@@ -62,7 +62,7 @@ internal sealed partial class MainForm
             // the old "rebuild it lazily on first show" state is gone.
             RebuildTiles(_displayGroups);
             UpdateSelectionState();
-            // Re-aim the flatten panel at whatever the cursor ended up on. The
+            // Re-aim the graphics objects panel at whatever the cursor ended up on. The
             // grid's CurrentCellChanged does fire during the rebuild, but on the
             // first row added — before its Tag names a group — so the panel
             // would be left describing nothing until the user moved.
@@ -324,7 +324,7 @@ internal sealed partial class MainForm
     /// </summary>
     IReadOnlyList<CrossFileImageGroup> CurrentViewportWindow()
     {
-        // The flatten panel draws thumbnails too, and its rows are not a slice
+        // The graphics objects panel draws thumbnails too, and its rows are not a slice
         // of the object list — they are whichever objects share a unit with the
         // current row, which can sit anywhere in it. So its visible rows are
         // added to the window rather than assumed to be inside it.

@@ -6,10 +6,10 @@ namespace PdfImageRemoverForRag.App;
 internal sealed partial class MainForm
 {
     // =======================================================================
-    // The 統合 panel
+    // The graphics objects panel
     // =======================================================================
     //
-    // The panel owns its own selection (the objects ticked inside units) and
+    // The panel owns its own selection (the rows picked out inside units) and
     // sits beside the object list rather than behind a tab, so the pieces
     // shared with the delete side — the save button's enablement, the status
     // line — describe both at once.
@@ -27,8 +27,8 @@ internal sealed partial class MainForm
     }
 
     /// <summary>
-    /// Hide or show layers. A hidden layer is one PLACEMENT: this drawing of
-    /// this object, on this page. The object list's tick is the other scope —
+    /// Hide or show objects. A hidden object is one PLACEMENT: this drawing
+    /// of this object, on this page. The object list's tick is the other scope —
     /// the object gone from everywhere it appears — and the two stay separate,
     /// because hiding a caption on page 4 must not take the same caption off the
     /// other thirty pages.

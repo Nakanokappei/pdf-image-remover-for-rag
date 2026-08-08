@@ -9,13 +9,13 @@ using PdfImageRemoverForRag.Core.Models;
 namespace PdfImageRemoverForRag.App;
 
 /// <summary>
-/// The single-window UI: menu bar (ファイル / 表示 / ヘルプ), an icon toolbar,
+/// The single-window UI: menu bar (File / View / Help), an icon toolbar,
 /// a status bar, and between them a workspace split into the object list —
 /// every removable image, text string and shape, switchable between table and
-/// tile views — and the flatten panel beside it. Multiple PDFs can be open at
-/// once; an object that occurs in several of them shows as ONE row/tile, and
-/// the per-file breakdown lives in the 使用箇所を表示 window a row's
-/// right-click menu opens. This class does layout and event
+/// tile views — and the graphics objects panel beside it. Multiple PDFs can be
+/// open at once; an object that occurs in several of them shows as ONE
+/// row/tile, and the per-file breakdown lives in the usage-locations window a
+/// row's right-click menu opens. This class does layout and event
 /// wiring only — analysis, cleaning, and verification live in
 /// <see cref="PdfCleaningWorkflow"/>, display formatting in
 /// <see cref="ImageListRow"/>, and all user-visible strings in
@@ -147,8 +147,8 @@ internal sealed partial class MainForm : Form
     // and a single ☑ column cannot mean both. They used to get a tab each, and
     // that hid flattening: a tab nobody opens is a feature nobody has. They
     // describe the same objects, so both are on screen at once instead — the
-    // object list fills the window and the flatten tree docks to its right,
-    // the way an image editor keeps its layers panel beside the canvas.
+    // object list fills the window and the graphics objects panel docks to its
+    // right, the way an image editor keeps its layers beside the canvas.
     //
     // FixedPanel is Panel2 so a drag holds: the panel stays the width the user
     // put it at. What it is worth when NOBODY has put it anywhere is decided by
@@ -163,7 +163,7 @@ internal sealed partial class MainForm : Form
     };
     readonly GraphicsObjectsPanel _graphicsObjectsPanel = new() { Dock = DockStyle.Fill };
 
-    // Width of the 統合 panel in LOGICAL pixels: seeded from the saved layout,
+    // Width of the graphics objects panel in LOGICAL pixels: seeded from the saved layout,
     // updated as the user drags, re-applied on every DPI change, written back at
     // shutdown. Held here rather than measured off the splitter on demand
     // because re-deriving it at a new scale would move the panel every time the
@@ -311,7 +311,7 @@ internal sealed partial class MainForm : Form
     static Color WarningText => WarningTextColour;
 
     /// <summary>
-    /// The one red in the app. Shared with the Flatten panel so the two places
+    /// The one red in the app. Shared with the graphics objects panel so the two places
     /// that warn about losing a whole page of content look like one warning.
     /// </summary>
     internal static Color WarningTextColour =>
@@ -443,17 +443,17 @@ internal sealed partial class MainForm : Form
 
         _graphicsObjectsPanel.SelectionChanged += OnGraphicsObjectsSelectionChanged;
         _graphicsObjectsPanel.FlattenRequested += OnFlattenRequested;
-        // A layer is not drawn when this one placement of it is hidden, or when
-        // the object it belongs to is ticked for removal everywhere. Two marks
+        // An object is not drawn when this one placement of it is hidden, or
+        // when the object itself is ticked for removal everywhere. Two marks
         // with two scopes, and the eye shows the result of both.
         _graphicsObjectsPanel.IsHidden = (filePath, pageNumber, placed) =>
             _workflow.IsPlacementHidden(filePath, pageNumber, placed)
             || (_workflow.ImageGroups.FirstOrDefault(g => g.Matches(placed)) is { } group
                 && _selectedHashes.Contains(group.Hash));
         _graphicsObjectsPanel.VisibilityChangeRequested += OnObjectVisibilityChangeRequested;
-        // A hidden layer is shown by not being there: the preview renders a copy
-        // of the document with those layers taken out, which the workspace
-        // builds and keeps until they change.
+        // A hidden object is shown by not being there: the preview renders a
+        // copy of the document with those objects taken out, which the
+        // workspace builds and keeps until they change.
         _graphicsObjectsPanel.PreviewSourceFor = filePath => _workflow.PreviewSourceAsync(filePath);
         // A hand-made merge or split goes back to the workspace, and the panel
         // is rebuilt from it — the panel describes the documents, so it must
@@ -490,7 +490,7 @@ internal sealed partial class MainForm : Form
         DragDrop += OnPdfDragDrop;
         // Initial column sizing to the header widths once the grid has a handle.
         Load += (_, _) => AutoSizeContentColumns();
-        // Remember where the user put the 統合 panel's edge. The panel's own
+        // Remember where the user put the panel's edge. The panel's own
         // splitter reports itself; this one is the workspace split.
         _workspaceSplit.SplitterMoving += (_, _) => _workspaceSplitterDragged = true;
         _workspaceSplit.SplitterMoved += OnWorkspaceSplitterMoved;

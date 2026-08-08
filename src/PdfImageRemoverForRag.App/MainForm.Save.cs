@@ -50,10 +50,10 @@ internal sealed partial class MainForm
     /// </summary>
     async Task<bool> SaveSelectedAsync()
     {
-        // Ticks in the object list are what a save removes; the flatten panel's
-        // are not part of it any more, because flattening happens when it is
-        // asked for. What a save writes from that side is what was already
-        // flattened, which the workspace holds.
+        // Ticks in the object list are what a save removes; what is selected in
+        // the graphics objects panel is not part of it any more, because
+        // flattening happens when it is asked for. What a save writes from that
+        // side is what was already flattened, which the workspace holds.
         if (_isBusy
             || (_selectedHashes.Count == 0
                 && !_workflow.HasFlattenedPlaces

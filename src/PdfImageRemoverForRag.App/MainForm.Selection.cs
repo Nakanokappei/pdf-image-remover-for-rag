@@ -308,7 +308,7 @@ internal sealed partial class MainForm
     {
         if (selected) _selectedHashes.Add(hash);
         else _selectedHashes.Remove(hash);
-        // The layers panel draws the same fact as an eye, so it has to be told:
+        // The panel draws the same fact as an eye, so it has to be told:
         // a tick made in the list closes the eye on the other side of the
         // window, and nothing else would keep the two in step.
         _graphicsObjectsPanel.RefreshVisibility();
@@ -366,11 +366,12 @@ internal sealed partial class MainForm
 
     void OnSelectAllClicked(object? sender, EventArgs e)
     {
-        // These act on the object list only, never on the flatten tree. Both are
-        // on screen now, so "everything" would have to mean both — and one click
-        // that marks every overlap on every page for baking is not something to
-        // offer beside a button whose usual job is ticking a list. Flattening is
-        // chosen per unit in the tree, which is the granularity it acts at.
+        // These act on the object list only, never on the graphics objects
+        // panel. Both are on screen now, so "everything" would have to mean
+        // both — and one click that bakes every overlap on every page is not
+        // something to offer beside a button whose usual job is ticking a list.
+        // Flattening is asked for one unit at a time, from that unit's own
+        // menu, which is the granularity it acts at.
         //
         // Select only what the list currently shows: the 表示する種類 filter scopes
         // "select all" so hidden kinds are never silently marked for removal.
@@ -429,7 +430,7 @@ internal sealed partial class MainForm
                        || _workflow.HasFlattenedPlaces
                        || _workflow.HasHiddenPlacements;
         // Select-all / clear act on the object list alone, so their enablement
-        // describes the list and ignores whatever the tree has ticked.
+        // describes the list and ignores whatever the panel has selected.
         bool hasSelectable =
             _workflow.ImageGroups.Any(g => g.IsSafelyRemovable && _visibleKinds.Contains(g.Kind));
         bool hasSelected = _selectedHashes.Count > 0;

@@ -235,12 +235,12 @@ internal interface IStrings
     /// </summary>
     string ContextMenuUsageLocations { get; }
 
-    // --- the flatten panel -------------------------------------------------
+    // --- the graphics objects panel ----------------------------------------
     // Flattening and deleting are opposite operations — one keeps the page's
     // appearance and drops the text layer, the other drops the appearance — but
     // they act on the same objects, so they sit side by side: the object list
-    // fills the window and the flatten tree docks to its right. NO access key
-    // in the title: it labels a panel, not a menu, and "&" would show literally.
+    // fills the window and this panel docks to its right. NO access key in the
+    // title: it labels a panel, not a menu, and "&" would show literally.
 
     /// <summary>
     /// Title over the panel that lists what overlaps, laid out the way an image
@@ -253,9 +253,9 @@ internal interface IStrings
     string GraphicsObjectsTitle { get; }
 
     /// <summary>
-    /// Spoken name of the menu in a unit's own row, which shows a different
-    /// glyph from the panel's hamburger and makes a different promise: it acts
-    /// on that unit, not on whatever is selected.
+    /// Spoken name of the menu in a unit's own row. It says THIS unit because
+    /// that is the promise the menu makes: it acts on the row it was opened
+    /// from, never on whatever happens to be selected elsewhere.
     /// </summary>
     string FlattenUnitMenu { get; }
 
@@ -300,7 +300,7 @@ internal interface IStrings
     string FlattenNoOverlaps { get; }
 
     /// <summary>
-    /// Shown when what the user has ticked would cover essentially the whole
+    /// Shown when what the user has selected would cover essentially the whole
     /// page. Flattening that leaves none of the page's text as text, which is a
     /// reasonable thing to want and a ruinous thing to do by accident — the
     /// preview outline spanning the paper was the only hint before this.
@@ -316,8 +316,8 @@ internal interface IStrings
     string StatusFlattenSelection(int objectCount);
 
     /// <summary>
-    /// Screen-reader name for the preview pane beside the tree. It is drawn, so
-    /// it has no text of its own for UI Automation to read.
+    /// Screen-reader name for the preview pane under the panel's list. It is
+    /// drawn, so it has no text of its own for UI Automation to read.
     /// </summary>
     string AccessibleFlattenPreview { get; }
 
@@ -326,10 +326,10 @@ internal interface IStrings
     string ErrorSameAsSource { get; }
 
     /// <summary>
-    /// Raised when a save run is asked for with neither side ticked. It has to
-    /// name both sides: the run deletes AND flattens, so "no images selected"
-    /// would send a user who had ticked a flatten unit looking in the wrong
-    /// half of the window.
+    /// Raised when a save run is asked for with nothing chosen on either side.
+    /// It has to name both sides: the run deletes AND flattens, so "no images
+    /// selected" would send a user who had flattened a unit looking in the
+    /// wrong half of the window.
     /// </summary>
     string ErrorNoSelection { get; }
 

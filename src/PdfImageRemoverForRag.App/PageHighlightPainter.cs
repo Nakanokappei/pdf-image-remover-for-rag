@@ -10,7 +10,7 @@ namespace PdfImageRemoverForRag.App;
 /// colour and outlined.
 ///
 /// Two windows point at a place on a page — the usage-locations window ("where
-/// is this object drawn?") and the flatten tab's preview ("what would be baked
+/// is this object drawn?") and the objects panel's preview ("what would be baked
 /// into an image?") — and they must not drift into two different visual
 /// languages for the same question. The dimming came out of a specific
 /// complaint, that an outline alone was not noticeable, so it is also the one

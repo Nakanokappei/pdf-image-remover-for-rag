@@ -2,7 +2,7 @@ using System.Drawing.Drawing2D;
 
 namespace PdfImageRemoverForRag.App;
 
-/// <summary>Whether a layer is drawn — and, for a folder, whether all of it is.</summary>
+/// <summary>Whether a row is drawn — and, for a folder, whether all of it is.</summary>
 internal enum RowVisibility
 {
     Visible,
@@ -26,7 +26,7 @@ internal enum RowVisibility
 /// can decode must not be left promising a thumbnail forever.
 /// </param>
 /// <param name="Visibility">
-/// Whether the layer is drawn. A folder answers for everything inside it, and
+/// Whether the object is drawn. A folder answers for everything inside it, and
 /// has a third answer when its objects disagree.
 /// </param>
 internal readonly record struct RowVisual(
@@ -40,14 +40,14 @@ internal readonly record struct RowVisual(
     bool IsExpanded);
 
 /// <summary>
-/// The objects panel's list, laid out like an image editor's layers panel: a
-/// flatten unit is a folder, the objects inside it sit under it, and each row
-/// has an eye that says whether it is drawn.
+/// The graphics objects panel's list, laid out like an image editor's layers
+/// panel: a flatten unit is a folder, the objects inside it sit under it, and
+/// each row has an eye that says whether it is drawn.
 ///
-/// The type is named for the LAYOUT it borrows, which is the only thing here
-/// that is a layer. What the user reads says object throughout, because PDF's
-/// own layers are optional content groups — a feature this application does not
-/// touch — and the list on the other side of the window has always said object.
+/// The type is named for what it lists, which the UI calls a UNIT ("Merge
+/// units", "Unit 03"). Not layer: the layers panel is the layout it borrows,
+/// and PDF's own layers are optional content groups — a feature this
+/// application never touches.
 ///
 /// One scrolling control that paints its rows, for the reason set out on
 /// <see cref="TileView"/>: a control per row is what broke that view on a real
@@ -238,10 +238,9 @@ internal sealed class UnitListView : Panel
         Dip(DisclosureWidth), Dip(DisclosureWidth));
 
     /// <summary>
-    /// The commands for one unit, at the far right of its row. A different
-    /// glyph from the panel's own menu on purpose: that one acts on whatever is
-    /// selected, this one acts on the row it sits in, and two menus that look
-    /// alike would be read as the same menu.
+    /// The commands for one unit, at the far right of its row. The panel has no
+    /// menu of its own to be confused with: what it kept at that level is one
+    /// command, and one command is a button.
     /// </summary>
     Rectangle MenuRect(Rectangle bounds) => new(
         bounds.Right - Dip(RowInset) - Dip(MenuWidth),
@@ -320,7 +319,7 @@ internal sealed class UnitListView : Panel
             DrawThumbnail(g, icon, visual, muted);
         }
 
-        // A hidden layer is greyed, the way an image editor greys one out: the
+        // A hidden object is greyed, the way an image editor greys one out: the
         // eye alone is a small mark to read a whole list by.
         if (visual.Visibility == RowVisibility.Hidden && !selected) text = SystemColors.GrayText;
 
@@ -357,7 +356,7 @@ internal sealed class UnitListView : Panel
             if (visual.IsGroup) titleFont.Dispose();
         }
 
-        // Hairline between rows, so a run of objects reads as separate layers.
+        // Hairline between rows, so a run of objects reads as separate objects.
         using (var line = new Pen(SystemColors.ControlLight))
         {
             g.DrawLine(line, bounds.Left, bounds.Bottom - 1, bounds.Right, bounds.Bottom - 1);
@@ -419,7 +418,7 @@ internal sealed class UnitListView : Panel
 
     /// <summary>
     /// The eye: shown, struck through when hidden, and greyed when a folder's
-    /// layers disagree — which is a state the objects themselves never have.
+    /// objects disagree — which is a state the objects themselves never have.
     /// </summary>
     void DrawEye(Graphics g, Rectangle box, RowVisibility visibility, Color color)
     {
@@ -643,7 +642,7 @@ internal sealed class UnitListView : Panel
             case Keys.End: MoveTo(_rowCount - 1, e.Modifiers); break;
             case Keys.PageUp: MoveTo(row - page, e.Modifiers); break;
             case Keys.PageDown: MoveTo(row + page, e.Modifiers); break;
-            // Space is the eye, on everything selected: hiding six layers is a
+            // Space is the eye, on everything selected: hiding six objects is a
             // thing a user does, and doing it one row at a time is not.
             case Keys.Space: ToggleVisibilityOfSelection(row); break;
             // Left and Right fold a folder, mirroring every tree control. On an
@@ -779,7 +778,7 @@ internal sealed class UnitListView : Panel
     }
 
     /// <summary>
-    /// Hide or show the row's layer — the same path the mouse takes, so the two
+    /// Hide or show what the row stands for — the same path the mouse takes, so the two
     /// input routes can never drift apart.
     /// </summary>
     internal void ToggleVisibility(int row)

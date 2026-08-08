@@ -162,10 +162,10 @@ public static class OverlapDetector
             if (r > right) right = r;
             if (t > top) top = t;
         }
-        // Members in reading order — the order the Flatten panel lists them in,
-        // and the order a user checks them off against the page. It was by kind
-        // and identity before, which is stable but tells the reader nothing:
-        // every image first, then every string, wherever they sit.
+        // Members in reading order — the order the graphics objects panel lists
+        // them in, and the order a user checks them off against the page. It was
+        // by kind and identity before, which is stable but tells the reader
+        // nothing: every image first, then every string, wherever they sit.
         //
         // Still independent of the order the analyzer walked the content stream
         // in, which is what "stable" had to mean: position decides, and objects

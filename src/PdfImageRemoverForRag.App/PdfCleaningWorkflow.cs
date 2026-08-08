@@ -684,19 +684,13 @@ internal sealed class PdfCleaningWorkflow
         var tempPath = destinationPath + ".part";
         try
         {
-            // Nothing left to do to the bytes: the places the user flattened are
-            // already in the working copy this reads from, and nothing is ticked
-            // for removal. So the save is a copy. The cleaner refuses a run with
-            // nothing in it, and rightly — being asked to change nothing is a
-            // caller's mistake everywhere else.
-            if (selections.Count == 0 && hiddenPlacements.Count == 0)
-            {
-                File.Copy(sourcePath, tempPath, overwrite: true);
-                File.Move(tempPath, destinationPath, overwrite: true);
-                _logger.LogInformation("saved: copied the working copy, nothing further to change");
-                return new SavedFile(document.FilePath, destinationPath, 0, 0);
-            }
-
+            // Nothing may be ticked and nothing hidden — a run that only
+            // flattened, which the working copy this reads from already holds.
+            // The cleaner is still asked to do it, because ONE thing is always
+            // owed to the file the user keeps: its images at the size they will
+            // be looked at. This used to copy the bytes instead, and a
+            // flatten-only save was the one save that never fitted anything.
+            //
             // This is the file the user keeps, so it is the one whose images are
             // redrawn at the size they will be looked at.
             var result = await _cleaner

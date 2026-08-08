@@ -1,4 +1,5 @@
 using PdfImageRemoverForRag.Core.Abstractions;
+using PdfImageRemoverForRag.Core.Errors;
 using PdfImageRemoverForRag.Core.Models;
 using PdfImageRemoverForRag.Infrastructure;
 using PdfImageRemoverForRag.Infrastructure.Internal;
@@ -124,6 +125,39 @@ public class ScreenFitTests : IClassFixture<SamplePdfFixture>
 
         Assert.Empty(resampler.Asked);
         Assert.Contains((800, 1100), ImageSizesIn(destination));
+    }
+
+    [Fact]
+    public async Task ARunThatOnlyFitsIsAccepted()
+    {
+        // A save that only flattened has nothing ticked and nothing hidden: the
+        // flattening is already in the working copy it reads from, and the one
+        // thing still owed to the file the user keeps is the fitting. Refusing
+        // this run is what made the App copy the bytes instead — on a customer
+        // document (2026-08-08) two 2513x1270 JPEGs reached the output
+        // untouched, and the log said "copied the working copy".
+        var resampler = new SizeOnlyResampler();
+        var destination = Path.Combine(_samples.TempDirectory, "screen-fit-only.pdf");
+        await new PdfSharpDocumentCleaner(resampler: resampler).CleanAsync(
+            _samples.ScannedPagePath, destination,
+            Array.Empty<ObjectRemovalSelection>(),
+            regionsToFlatten: null, fitImagesToScreen: true);
+
+        Assert.Single(resampler.Asked);
+        Assert.Contains((785, 1080), ImageSizesIn(destination));
+    }
+
+    [Fact]
+    public async Task ARunWithNothingToDoAtAllIsStillRefused()
+    {
+        // Fitting is the only thing that makes an empty run meaningful. Without
+        // it, being asked to change nothing is a caller's mistake and saying so
+        // is how it gets found.
+        var destination = Path.Combine(_samples.TempDirectory, "screen-fit-nothing.pdf");
+        await Assert.ThrowsAsync<PdfCleanerException>(() =>
+            new PdfSharpDocumentCleaner().CleanAsync(
+                _samples.ScannedPagePath, destination,
+                Array.Empty<ObjectRemovalSelection>()));
     }
 
     [Fact]

@@ -86,7 +86,14 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
             throw new PdfCleanerException(PdfCleanerErrorKind.DestinationNotWritable,
                 "元 PDF と同じパスへの保存はできません。別名を指定してください。");
         }
-        if (selections.Count == 0 && regions.Count == 0 && cleared.Count == 0)
+        // Being asked to change nothing is a caller's mistake — EXCEPT when the
+        // fitting is the job. A save that only flattened has nothing left to
+        // remove, and the flattening is already in the file this reads from; the
+        // one thing still owed to the file the user keeps is its images at the
+        // size they will be looked at. Refusing that run is what silently
+        // skipped the fitting on every flatten-only save.
+        if (selections.Count == 0 && regions.Count == 0 && cleared.Count == 0
+            && !fitImagesToScreen)
         {
             throw new PdfCleanerException(PdfCleanerErrorKind.Unexpected,
                 "削除対象の画像が指定されていません。");

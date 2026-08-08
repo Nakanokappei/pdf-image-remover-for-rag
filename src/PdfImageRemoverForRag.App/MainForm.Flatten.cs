@@ -147,6 +147,7 @@ internal sealed partial class MainForm
     {
         if (_isTileView)
         {
+            _tileView.Focus();
             _tileView.FocusGroup(group);
             return;
         }
@@ -154,6 +155,11 @@ internal sealed partial class MainForm
         {
             if (!ReferenceEquals(row.Tag, group)) continue;
 
+            // The keyboard comes too. The command was given in the panel across
+            // the window, so without this the cursor lands on the new picture
+            // while the keyboard is still in the list it was given from.
+            _imageListGrid.Focus();
+            _imageListGrid.ClearSelection();
             row.Selected = true;
             var cell = row.Cells[_objectIdColumn.Index];
             if (cell.Visible) _imageListGrid.CurrentCell = cell;

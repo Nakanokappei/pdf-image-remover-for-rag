@@ -666,22 +666,21 @@ internal sealed class LayerListView : Panel
 
     /// <summary>
     /// The Menu key and Shift+F10, which is how Windows asks for a context menu
-    /// from the keyboard. Taken here rather than from KeyDown because that is
-    /// where the message arrives: the Menu key raises this AFTER its key-down,
-    /// and Shift+F10 raises nothing else at all — which is why an earlier
-    /// attempt in KeyDown never opened anything.
+    /// from the keyboard.
+    ///
+    /// Taken here, in ProcessCmdKey, and not in KeyDown or WndProc. F10 never
+    /// reaches either: the window has a menu bar, and a form hands F10 to its
+    /// MenuStrip. ProcessCmdKey runs from the focused control outwards, so this
+    /// control sees it first — which is the only place it can be caught.
     /// </summary>
-    protected override void WndProc(ref Message m)
+    protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
     {
-        const int WmContextMenu = 0x007B;
-        // The low word is -1 when the request came from the keyboard rather
-        // than from a right-click, and a right-click is already handled.
-        if (m.Msg == WmContextMenu && (m.LParam.ToInt64() & 0xFFFFFFFF) == 0xFFFFFFFF)
+        if (keyData == Keys.Apps || keyData == (Keys.Shift | Keys.F10))
         {
             OpenUnitMenu(_focusedRow < 0 ? VisibleRange().First : _focusedRow);
-            return;
+            return true;
         }
-        base.WndProc(ref m);
+        return base.ProcessCmdKey(ref msg, keyData);
     }
 
     /// <summary>

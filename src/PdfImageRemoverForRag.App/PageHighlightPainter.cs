@@ -231,7 +231,9 @@ internal static class PageHighlightPainter
         // to be found. The edge is paper-white rather than a theme colour
         // because what it is drawn on is the PAGE, not the application.
         float thickness = Math.Max(1.5f, length / 12f);
-        float halo = Math.Max(2f, thickness * 0.9f);
+        // One pixel. Its job is to stop the blue meeting a colour like
+        // itself, and anything wider starts drawing a white arrow.
+        const float halo = 1f;
 
         using (var edge = new Pen(Color.White, thickness + (halo * 2))
         {

@@ -210,52 +210,48 @@ internal static class PageHighlightPainter
         var tip = Aim(page, box, length, small);
         var tail = new PointF(tip.X + (dx * length), tip.Y + (dy * length));
 
-        // The head, pointing the way the shaft runs: back towards the box. The
-        // shaft is a diagonal or an axis depending on how the box is thin, so
-        // the direction is normalised rather than assumed.
+        // The arrow is ONE closed shape — a shaft and a head described as a
+        // single outline — and that is what makes the white edge possible.
+        //
+        // Drawn as a line plus a triangle it needed two pens, and each seam
+        // between them showed: the head wore the shaft's whole width as a
+        // collar, and the shaft's round cap peeped past the tip as a bead. The
+        // classic answer to an outline is to stamp the silhouette eight times
+        // around the shape and draw over it, which is a bitmap-era trick; with
+        // a path there is a boundary to stroke, so it is stroked once.
+        float thickness = Math.Max(1.5f, length / 12f);
         float head = length * 0.4f;
         float norm = MathF.Sqrt((dx * dx) + (dy * dy));
+
+        // Along the shaft towards the box, and across it.
         var along = new PointF(-dx / norm, -dy / norm);
         var across = new PointF(-along.Y, along.X);
         var baseCentre = new PointF(tip.X - (along.X * head), tip.Y - (along.Y * head));
-        float halfWidth = head * 0.45f;
-        var headPoints = new[]
+
+        float shaft = thickness / 2;
+        float barb = head * 0.45f;
+        PointF At(PointF from, float sideways) =>
+            new(from.X + (across.X * sideways), from.Y + (across.Y * sideways));
+
+        using var arrow = new GraphicsPath();
+        arrow.AddPolygon(new[]
         {
+            At(tail, shaft), At(baseCentre, shaft), At(baseCentre, barb),
             tip,
-            new PointF(baseCentre.X + (across.X * halfWidth), baseCentre.Y + (across.Y * halfWidth)),
-            new PointF(baseCentre.X - (across.X * halfWidth), baseCentre.Y - (across.Y * halfWidth)),
-        };
+            At(baseCentre, -barb), At(baseCentre, -shaft), At(tail, -shaft),
+        });
 
-        // Twice over: a white arrow, wider, and then the blue one on top of it.
-        // Light blue over a light photograph disappears, and this arrow exists
-        // to be found. The edge is paper-white rather than a theme colour
-        // because what it is drawn on is the PAGE, not the application.
-        float thickness = Math.Max(1.5f, length / 12f);
-        // One pixel. Its job is to stop the blue meeting a colour like
-        // itself, and anything wider starts drawing a white arrow.
+        // One pixel of white, centred on the boundary, so half of it lies
+        // outside the arrow. Its job is to stop the blue meeting a colour like
+        // itself — anything wider draws a second, white arrow.
         const float halo = 1f;
-
-        using (var edge = new Pen(Color.White, thickness + (halo * 2))
+        using (var edge = new Pen(Color.White, halo * 2) { LineJoin = LineJoin.Round })
         {
-            StartCap = LineCap.Round,
-            EndCap = LineCap.Round,
-            LineJoin = LineJoin.Round,
-        })
-        {
-            // Both parts before either is filled, or the head's own edge would
-            // cut a white notch across the shaft where they meet.
-            g.DrawLine(edge, tail, tip);
-            g.DrawPolygon(edge, headPoints);
-            g.FillPolygon(Brushes.White, headPoints);
-        }
-
-        using (var pen = new Pen(colour, thickness))
-        {
-            g.DrawLine(pen, tail, tip);
+            g.DrawPath(edge, arrow);
         }
         using (var brush = new SolidBrush(colour))
         {
-            g.FillPolygon(brush, headPoints);
+            g.FillPath(brush, arrow);
         }
     }
 

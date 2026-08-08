@@ -675,7 +675,12 @@ internal sealed class LayerListView : Panel
     /// </summary>
     protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
     {
-        if (keyData == Keys.Apps || keyData == (Keys.Shift | Keys.F10))
+        // Enter as well as the two Windows keys, because neither of those is
+        // reachable on every keyboard: a Mac keyboard has no Menu key at all,
+        // and macOS keeps F10 for itself unless the function keys are set to
+        // behave as function keys. Enter is free here — the list has no default
+        // action other than this.
+        if (keyData == Keys.Apps || keyData == (Keys.Shift | Keys.F10) || keyData == Keys.Enter)
         {
             OpenUnitMenu(_focusedRow < 0 ? VisibleRange().First : _focusedRow);
             return true;

@@ -19,13 +19,13 @@ public class PdfSharpDocumentVerifierTests : IClassFixture<SamplePdfFixture>
         // Analyze → clean → verify — the golden path.
         var analyzer = new PdfSharpDocumentAnalyzer(new PdfPigThumbnailProvider());
         var info = await analyzer.AnalyzeAsync(_samples.MultipleImagesPath);
-        var target = info.ImageGroups[0];
-        var retained = info.ImageGroups.Skip(1).Select(g => g.Hash).ToArray();
+        var target = info.ObjectGroups[0];
+        var retained = info.ObjectGroups.Skip(1).Select(g => g.Hash).ToArray();
         var dest = Path.Combine(_samples.TempDirectory, "verify-good_cleaned.pdf");
 
         var cleaner = new PdfSharpDocumentCleaner();
         var result = await cleaner.CleanAsync(_samples.MultipleImagesPath, dest,
-            new[] { new ImageRemovalSelection(target.GroupId, target.Occurrences, Hash: target.Hash) });
+            new[] { new ObjectRemovalSelection(target.GroupId, target.Occurrences, Hash: target.Hash) });
 
         var verifier = new PdfSharpDocumentVerifier();
         var report = await verifier.VerifyAsync(_samples.MultipleImagesPath, dest,

@@ -20,7 +20,7 @@ namespace PdfImageRemoverForRag.Infrastructure;
 ///
 /// Keys are SHA-256 of the raw filtered stream bytes — the same hash the
 /// analyzer computes — so the dictionary joins cleanly against
-/// <c>ImageDiscovery.StreamHash</c>. Formats neither branch handles
+/// <c>ObjectDiscovery.StreamHash</c>. Formats neither branch handles
 /// (JPEG2000, CCITT, JBIG2) are simply absent from the result and fall back
 /// to the placeholder icon in the UI (§12).
 /// </summary>

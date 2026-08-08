@@ -156,7 +156,7 @@ internal sealed class ThumbnailStore : IDisposable
     /// Safe to call off the UI thread: GDI+ bitmaps are not thread-affine, and
     /// nothing here touches a control.
     /// </summary>
-    public bool Render(CrossFileImageGroup group, Kind kind, Size size)
+    public bool Render(CrossFileObjectGroup group, Kind kind, Size size)
     {
         try
         {
@@ -193,29 +193,29 @@ internal sealed class ThumbnailStore : IDisposable
     /// lives in memory because it is numbers; images are decoded from the
     /// source file this store wrote during analysis.
     /// </summary>
-    Image? RenderCore(CrossFileImageGroup group, Size size)
+    Image? RenderCore(CrossFileObjectGroup group, Size size)
     {
         if (group.Kind == RemovableKind.Text) return null;
 
         if (group.Kind == RemovableKind.Shape)
         {
             return group.ShapeGeometry is { } geometry
-                ? ImageListRow.CreateShapeThumbnail(geometry, size.Width, size.Height)
+                ? ObjectDisplay.CreateShapeThumbnail(geometry, size.Width, size.Height)
                 : null;
         }
 
         if (group.Kind == RemovableKind.Drawing)
         {
             return group.DrawingGeometry is { } drawing
-                ? ImageListRow.CreateDrawingThumbnail(drawing, size.Width, size.Height)
+                ? ObjectDisplay.CreateDrawingThumbnail(drawing, size.Width, size.Height)
                 : null;
         }
 
         var sourcePath = SourcePath(group.Hash);
         if (!File.Exists(sourcePath)) return null;
 
-        using var decoded = ImageListRow.DecodeThumbnail(File.ReadAllBytes(sourcePath));
-        return decoded is null ? null : ImageListRow.CreateScaledCopy(decoded, size.Width, size.Height);
+        using var decoded = ObjectDisplay.DecodeThumbnail(File.ReadAllBytes(sourcePath));
+        return decoded is null ? null : ObjectDisplay.CreateScaledCopy(decoded, size.Width, size.Height);
     }
 
     /// <summary>

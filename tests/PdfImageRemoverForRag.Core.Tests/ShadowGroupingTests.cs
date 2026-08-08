@@ -11,7 +11,7 @@ namespace PdfImageRemoverForRag.Core.Tests;
 // the kind is that a user can pick the shadows out of a list of pictures.
 public class ShadowGroupingTests
 {
-    static ImageGroupBuilder NewBuilder() => Discoveries.NewBuilder();
+    static ObjectGroupBuilder NewBuilder() => Discoveries.NewBuilder();
 
     [Fact]
     public void TheSameShadowOnTwoPages_IsOneObjectWithTwoPlacements()
@@ -62,9 +62,9 @@ public class ShadowGroupingTests
         // signature, so a kind missing from the stream-hash list would hand the
         // cleaner an empty key and remove nothing at all — silently, since the
         // save itself would still succeed.
-        var groups = CrossFileImageGroupBuilder.Build(new[]
+        var groups = CrossFileObjectGroupBuilder.Build(new[]
         {
-            ("a.pdf", (IReadOnlyList<PdfImageGroup>)NewBuilder()
+            ("a.pdf", (IReadOnlyList<ObjectGroup>)NewBuilder()
                 .Build(new[] { Discoveries.Shadow("HASH_SHADOW") }).ToArray()),
         });
 

@@ -5,13 +5,13 @@ using Xunit;
 namespace PdfImageRemoverForRag.Core.Tests;
 
 // Spec §24: "同一画像のグループ化", "使用ページ一覧生成", "ページ全体画像候補判定".
-public class ImageGroupBuilderTests
+public class ObjectGroupBuilderTests
 {
-    static ImageDiscovery MakeDiscovery(string objectId, string streamHash,
+    static ObjectDiscovery MakeDiscovery(string objectId, string streamHash,
         int width = 100, int height = 60, bool isSafelyRemovable = true, string? unsafeReason = null,
-        params PdfImageOccurrence[] occurrences)
+        params ObjectOccurrence[] occurrences)
     {
-        return new ImageDiscovery(
+        return new ObjectDiscovery(
             ObjectId: objectId,
             StreamHash: streamHash,
             PixelWidth: width,
@@ -27,10 +27,10 @@ public class ImageGroupBuilderTests
             Occurrences: occurrences);
     }
 
-    static PdfImageOccurrence MakeOccurrence(int page, double w = 100, double h = 60,
+    static ObjectOccurrence MakeOccurrence(int page, double w = 100, double h = 60,
         double x = 0, double y = 0, string name = "/Im1", string objectId = "1 0 R")
     {
-        return new PdfImageOccurrence(page, objectId, name, x, y, w, h);
+        return new ObjectOccurrence(page, objectId, name, x, y, w, h);
     }
 
     static FullPageImageDetector Detector(params (int page, double w, double h)[] pages) =>
@@ -43,7 +43,7 @@ public class ImageGroupBuilderTests
         // their occurrences must be unioned — this is the "logo on every page"
         // case that motivates grouping in the first place.
         var pages = Detector((1, 595, 842), (2, 595, 842));
-        var builder = new ImageGroupBuilder(pages);
+        var builder = new ObjectGroupBuilder(pages);
 
         var groups = builder.Build(new[]
         {
@@ -61,7 +61,7 @@ public class ImageGroupBuilderTests
     public void DifferentStreamHashes_ProduceSeparateGroups()
     {
         var pages = Detector((1, 595, 842));
-        var builder = new ImageGroupBuilder(pages);
+        var builder = new ObjectGroupBuilder(pages);
 
         var groups = builder.Build(new[]
         {
@@ -78,7 +78,7 @@ public class ImageGroupBuilderTests
     {
         // Group with more usages must sort first and receive IMG_001.
         var pages = Detector((1, 595, 842), (2, 595, 842), (3, 595, 842));
-        var builder = new ImageGroupBuilder(pages);
+        var builder = new ObjectGroupBuilder(pages);
 
         var groups = builder.Build(new[]
         {
@@ -98,7 +98,7 @@ public class ImageGroupBuilderTests
     {
         // 90 %-in-both-dimensions rule — a 600x800 image on a 595x842 page.
         var pages = Detector((1, 595, 842));
-        var builder = new ImageGroupBuilder(pages);
+        var builder = new ObjectGroupBuilder(pages);
 
         var groups = builder.Build(new[]
         {
@@ -112,7 +112,7 @@ public class ImageGroupBuilderTests
     public void SmallImage_IsNotFlaggedAsFullPage()
     {
         var pages = Detector((1, 595, 842));
-        var builder = new ImageGroupBuilder(pages);
+        var builder = new ObjectGroupBuilder(pages);
 
         var groups = builder.Build(new[]
         {
@@ -128,7 +128,7 @@ public class ImageGroupBuilderTests
         // Grouping "OR"s occurrences but "AND"s safety — if one placement is
         // inside a shared Form XObject, we cannot remove the group at all.
         var pages = Detector((1, 595, 842), (2, 595, 842));
-        var builder = new ImageGroupBuilder(pages);
+        var builder = new ObjectGroupBuilder(pages);
 
         var groups = builder.Build(new[]
         {

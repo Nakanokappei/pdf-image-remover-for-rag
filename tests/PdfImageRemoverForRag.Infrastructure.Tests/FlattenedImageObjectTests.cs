@@ -58,7 +58,7 @@ public class FlattenedImageObjectTests : IClassFixture<SamplePdfFixture>
 
         var dest = Destination("image-and-text_flattened_object.pdf");
         await new PdfSharpDocumentCleaner(new FlatColourRasterizer())
-            .CleanAsync(_samples.ImageAndTextPath, dest, Array.Empty<ImageRemovalSelection>(),
+            .CleanAsync(_samples.ImageAndTextPath, dest, Array.Empty<ObjectRemovalSelection>(),
                 new[] { region });
 
         // The picture that replaced it is there; the original is not, and
@@ -80,7 +80,7 @@ public class FlattenedImageObjectTests : IClassFixture<SamplePdfFixture>
         // logo, five pages: flattening it on page 1 must take it off page 1 and
         // leave the other four untouched, object included.
         var info = await NewAnalyzer().AnalyzeAsync(_samples.RepeatedLogoPath);
-        var logo = Assert.Single(info.ImageGroups, g => g.Kind == RemovableKind.Image);
+        var logo = Assert.Single(info.ObjectGroups, g => g.Kind == RemovableKind.Image);
         Assert.Equal(5, logo.UsageCount);
 
         var firstPlacement = logo.Occurrences.First(o => o.PageNumber == 1);
@@ -96,13 +96,13 @@ public class FlattenedImageObjectTests : IClassFixture<SamplePdfFixture>
 
         var dest = Destination("repeated-logo_flattened_page1.pdf");
         await new PdfSharpDocumentCleaner(new FlatColourRasterizer())
-            .CleanAsync(_samples.RepeatedLogoPath, dest, Array.Empty<ImageRemovalSelection>(),
+            .CleanAsync(_samples.RepeatedLogoPath, dest, Array.Empty<ObjectRemovalSelection>(),
                 new[] { region });
 
         Assert.Contains(logo.Hash, ImageHashesInFile(dest));
 
         var reanalyzed = await NewAnalyzer().AnalyzeAsync(dest);
-        var afterLogo = Assert.Single(reanalyzed.ImageGroups, g => g.Hash == logo.Hash);
+        var afterLogo = Assert.Single(reanalyzed.ObjectGroups, g => g.Hash == logo.Hash);
         Assert.Equal(new[] { 2, 3, 4, 5 }, afterLogo.UsagePages);
     }
 }

@@ -37,7 +37,7 @@ public sealed class FullPageImageDetector
     /// True when the occurrence covers at least <see cref="CoverageThreshold"/>
     /// of the referenced page in both dimensions.
     /// </summary>
-    public bool IsPossibleFullPage(PdfImageOccurrence occurrence)
+    public bool IsPossibleFullPage(ObjectOccurrence occurrence)
     {
         if (!_pagesByNumber.TryGetValue(occurrence.PageNumber, out var page))
         {
@@ -53,6 +53,6 @@ public sealed class FullPageImageDetector
     }
 
     /// <summary>True when at least one occurrence in the collection is full-page.</summary>
-    public bool AnyIsPossibleFullPage(IEnumerable<PdfImageOccurrence> occurrences) =>
+    public bool AnyIsPossibleFullPage(IEnumerable<ObjectOccurrence> occurrences) =>
         occurrences.Any(IsPossibleFullPage);
 }

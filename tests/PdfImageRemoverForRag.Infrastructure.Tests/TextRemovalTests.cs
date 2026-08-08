@@ -24,7 +24,7 @@ public class TextRemovalTests : IClassFixture<SamplePdfFixture>
     public async Task RepeatedHeaderAndFooter_AreDetectedAsTextGroups()
     {
         var info = await NewAnalyzer().AnalyzeAsync(_samples.RepeatedTextPath);
-        var textGroups = info.ImageGroups.Where(g => g.Kind == RemovableKind.Text).ToArray();
+        var textGroups = info.ObjectGroups.Where(g => g.Kind == RemovableKind.Text).ToArray();
 
         // "CONFIDENTIAL" (3x) and "Company Footer 2026" (3x) repeat; the
         // per-page unique body line appears once and must NOT be listed.
@@ -38,14 +38,14 @@ public class TextRemovalTests : IClassFixture<SamplePdfFixture>
     {
         var analyzer = NewAnalyzer();
         var info = await analyzer.AnalyzeAsync(_samples.RepeatedTextPath);
-        var header = info.ImageGroups.Single(
+        var header = info.ObjectGroups.Single(
             g => g.Kind == RemovableKind.Text && g.TextValue == "CONFIDENTIAL");
 
         var dest = Path.Combine(_samples.TempDirectory, "repeated-text_cleaned.pdf");
         var cleaner = new PdfSharpDocumentCleaner();
         var result = await cleaner.CleanAsync(_samples.RepeatedTextPath, dest, new[]
         {
-            new ImageRemovalSelection(header.GroupId, header.Occurrences,
+            new ObjectRemovalSelection(header.GroupId, header.Occurrences,
                 RemovableKind.Text, header.TextValue),
         });
 
@@ -65,18 +65,18 @@ public class TextRemovalTests : IClassFixture<SamplePdfFixture>
     {
         var analyzer = NewAnalyzer();
         var info = await analyzer.AnalyzeAsync(_samples.RepeatedTextPath);
-        var footer = info.ImageGroups.Single(
+        var footer = info.ObjectGroups.Single(
             g => g.Kind == RemovableKind.Text && g.TextValue == "Company Footer 2026");
 
         var dest = Path.Combine(_samples.TempDirectory, "repeated-text_footer_cleaned.pdf");
         await new PdfSharpDocumentCleaner().CleanAsync(_samples.RepeatedTextPath, dest, new[]
         {
-            new ImageRemovalSelection(footer.GroupId, footer.Occurrences,
+            new ObjectRemovalSelection(footer.GroupId, footer.Occurrences,
                 RemovableKind.Text, footer.TextValue),
         });
 
         var reanalyzed = await analyzer.AnalyzeAsync(dest);
-        Assert.DoesNotContain(reanalyzed.ImageGroups,
+        Assert.DoesNotContain(reanalyzed.ObjectGroups,
             g => g.Kind == RemovableKind.Text && g.TextValue == "Company Footer 2026");
     }
 }

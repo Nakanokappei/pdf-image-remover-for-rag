@@ -70,7 +70,7 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
     public async Task<CleaningResult> CleanAsync(
         string sourcePath,
         string destinationPath,
-        IReadOnlyList<ImageRemovalSelection> selections,
+        IReadOnlyList<ObjectRemovalSelection> selections,
         IReadOnlyList<OverlapRegion>? regionsToFlatten = null,
         IReadOnlyList<OverlapRegion>? regionsToClear = null,
         bool fitImagesToScreen = false,
@@ -179,7 +179,7 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
     }
 
     static CleaningResult CleanSync(string sourcePath, string destinationPath,
-        IReadOnlyList<ImageRemovalSelection> selections,
+        IReadOnlyList<ObjectRemovalSelection> selections,
         IReadOnlyList<FlattenImage> flattenImages,
         IImageResampler? resampler, CancellationToken ct)
     {

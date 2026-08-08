@@ -21,8 +21,8 @@ public class PdfSharpDocumentCleanerTests : IClassFixture<SamplePdfFixture>
         // clean → assert the destination exists and reports coherent metrics.
         var analyzer = new PdfSharpDocumentAnalyzer(new PdfPigThumbnailProvider());
         var info = await analyzer.AnalyzeAsync(_samples.OneImagePath);
-        var group = info.ImageGroups.Single();
-        var selection = new ImageRemovalSelection(
+        var group = info.ObjectGroups.Single();
+        var selection = new ObjectRemovalSelection(
             group.GroupId, group.Occurrences, Hash: group.Hash);
 
         var dest = Path.Combine(_samples.TempDirectory, "one-image_cleaned.pdf");
@@ -44,19 +44,19 @@ public class PdfSharpDocumentCleanerTests : IClassFixture<SamplePdfFixture>
         var analyzer = new PdfSharpDocumentAnalyzer(new PdfPigThumbnailProvider());
         var info = await analyzer.AnalyzeAsync(_samples.RepeatedLogoPath);
         // The sample also has repeated body text; select only the logo image.
-        var group = info.ImageGroups.Single(g => g.Kind == RemovableKind.Image);
+        var group = info.ObjectGroups.Single(g => g.Kind == RemovableKind.Image);
         var dest = Path.Combine(_samples.TempDirectory, "repeated-logo_cleaned.pdf");
         var cleaner = new PdfSharpDocumentCleaner();
 
         var result = await cleaner.CleanAsync(_samples.RepeatedLogoPath, dest,
-            new[] { new ImageRemovalSelection(group.GroupId, group.Occurrences, Hash: group.Hash) });
+            new[] { new ObjectRemovalSelection(group.GroupId, group.Occurrences, Hash: group.Hash) });
 
         Assert.Equal(5, result.PagesModified);
         Assert.Equal(5, result.DrawCallsRemoved);
 
         // Re-analyze the cleaned PDF: no image groups should remain (text stays).
         var reanalyzed = await analyzer.AnalyzeAsync(dest);
-        Assert.DoesNotContain(reanalyzed.ImageGroups, g => g.Kind == RemovableKind.Image);
+        Assert.DoesNotContain(reanalyzed.ObjectGroups, g => g.Kind == RemovableKind.Image);
     }
 
     [Fact]
@@ -65,17 +65,17 @@ public class PdfSharpDocumentCleanerTests : IClassFixture<SamplePdfFixture>
         // A per-image removal — the other two images must remain intact.
         var analyzer = new PdfSharpDocumentAnalyzer(new PdfPigThumbnailProvider());
         var info = await analyzer.AnalyzeAsync(_samples.MultipleImagesPath);
-        Assert.Equal(3, info.ImageGroups.Count);
-        var target = info.ImageGroups[0];
+        Assert.Equal(3, info.ObjectGroups.Count);
+        var target = info.ObjectGroups[0];
         var dest = Path.Combine(_samples.TempDirectory, "multi_cleaned.pdf");
         var cleaner = new PdfSharpDocumentCleaner();
 
         await cleaner.CleanAsync(_samples.MultipleImagesPath, dest,
-            new[] { new ImageRemovalSelection(target.GroupId, target.Occurrences, Hash: target.Hash) });
+            new[] { new ObjectRemovalSelection(target.GroupId, target.Occurrences, Hash: target.Hash) });
 
         var reanalyzed = await analyzer.AnalyzeAsync(dest);
-        Assert.Equal(2, reanalyzed.ImageGroups.Count);
-        Assert.DoesNotContain(reanalyzed.ImageGroups, g => g.Hash == target.Hash);
+        Assert.Equal(2, reanalyzed.ObjectGroups.Count);
+        Assert.DoesNotContain(reanalyzed.ObjectGroups, g => g.Hash == target.Hash);
     }
 
     [Fact]
@@ -93,7 +93,7 @@ public class PdfSharpDocumentCleanerTests : IClassFixture<SamplePdfFixture>
         // complete, because the hash still identifies the image.
         var analyzer = new PdfSharpDocumentAnalyzer(new PdfPigThumbnailProvider());
         var info = await analyzer.AnalyzeAsync(_samples.RepeatedLogoPath);
-        var group = info.ImageGroups.Single(g => g.Kind == RemovableKind.Image);
+        var group = info.ObjectGroups.Single(g => g.Kind == RemovableKind.Image);
 
         var occurrencesWithUnusableIds = group.Occurrences
             .Select(o => o with { ObjectId = "not-an-object-id" })
@@ -102,14 +102,14 @@ public class PdfSharpDocumentCleanerTests : IClassFixture<SamplePdfFixture>
         var dest = Path.Combine(_samples.TempDirectory, "hash-match_cleaned.pdf");
         var result = await new PdfSharpDocumentCleaner().CleanAsync(
             _samples.RepeatedLogoPath, dest,
-            new[] { new ImageRemovalSelection(
+            new[] { new ObjectRemovalSelection(
                 group.GroupId, occurrencesWithUnusableIds, Hash: group.Hash) });
 
         Assert.Equal(5, result.PagesModified);
         Assert.Equal(5, result.DrawCallsRemoved);
 
         var reanalyzed = await analyzer.AnalyzeAsync(dest);
-        Assert.DoesNotContain(reanalyzed.ImageGroups, g => g.Hash == group.Hash);
+        Assert.DoesNotContain(reanalyzed.ObjectGroups, g => g.Hash == group.Hash);
     }
 
     [Fact]
@@ -117,8 +117,8 @@ public class PdfSharpDocumentCleanerTests : IClassFixture<SamplePdfFixture>
     {
         // Spec §15 hard rule — never overwrite the source PDF.
         var cleaner = new PdfSharpDocumentCleaner();
-        var occurrences = Array.Empty<PdfImageOccurrence>();
-        var selection = new ImageRemovalSelection("IMG_001", occurrences);
+        var occurrences = Array.Empty<ObjectOccurrence>();
+        var selection = new ObjectRemovalSelection("IMG_001", occurrences);
         var ex = await Assert.ThrowsAsync<PdfCleanerException>(() =>
             cleaner.CleanAsync(_samples.OneImagePath, _samples.OneImagePath,
                 new[] { selection }));
@@ -132,6 +132,6 @@ public class PdfSharpDocumentCleanerTests : IClassFixture<SamplePdfFixture>
         var dest = Path.Combine(_samples.TempDirectory, "unused.pdf");
         await Assert.ThrowsAsync<PdfCleanerException>(() =>
             cleaner.CleanAsync(_samples.OneImagePath, dest,
-                Array.Empty<ImageRemovalSelection>()));
+                Array.Empty<ObjectRemovalSelection>()));
     }
 }

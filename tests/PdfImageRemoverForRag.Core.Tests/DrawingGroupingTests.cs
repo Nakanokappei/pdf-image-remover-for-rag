@@ -13,9 +13,9 @@ public class DrawingGroupingTests
 {
     // The discovery factories live in Discoveries; only the geometry below is
     // specific to drawings.
-    static ImageDiscovery Drawing(string formHash, int page, DrawingGeometry? geometry = null) =>
+    static ObjectDiscovery Drawing(string formHash, int page, DrawingGeometry? geometry = null) =>
         Discoveries.Drawing(formHash, page, geometry);
-    static ImageGroupBuilder NewBuilder() => Discoveries.NewBuilder();
+    static ObjectGroupBuilder NewBuilder() => Discoveries.NewBuilder();
 
     // A head, a body and a speech bubble: three paths, two paint operators, all
     // in the drawing's own 120x120 box rather than each in its own.
@@ -96,9 +96,9 @@ public class DrawingGroupingTests
         // key. A drawing has no shown string and no path signature, so getting
         // this wrong would hand the cleaner an empty key and silently remove
         // nothing.
-        var groups = CrossFileImageGroupBuilder.Build(new[]
+        var groups = CrossFileObjectGroupBuilder.Build(new[]
         {
-            ("a.pdf", (IReadOnlyList<PdfImageGroup>)NewBuilder()
+            ("a.pdf", (IReadOnlyList<ObjectGroup>)NewBuilder()
                 .Build(new[] { Drawing("HASH_ICON", page: 1) }).ToArray()),
         });
 

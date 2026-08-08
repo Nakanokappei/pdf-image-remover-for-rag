@@ -86,7 +86,7 @@ public class ScreenFitTests : IClassFixture<SamplePdfFixture>
         var destination = Path.Combine(_samples.TempDirectory, "screen-fit.pdf");
         await new PdfSharpDocumentCleaner(resampler: resampler).CleanAsync(
             _samples.ScannedPagePath, destination,
-            new[] { new ImageRemovalSelection("IMG_999", Array.Empty<PdfImageOccurrence>()) },
+            new[] { new ObjectRemovalSelection("IMG_999", Array.Empty<ObjectOccurrence>()) },
             regionsToFlatten: null, fitImagesToScreen: true);
 
         var asked = Assert.Single(resampler.Asked);
@@ -104,7 +104,7 @@ public class ScreenFitTests : IClassFixture<SamplePdfFixture>
         var destination = Path.Combine(_samples.TempDirectory, "screen-fit-small.pdf");
         await new PdfSharpDocumentCleaner(resampler: resampler).CleanAsync(
             _samples.OneImagePath, destination,
-            new[] { new ImageRemovalSelection("IMG_999", Array.Empty<PdfImageOccurrence>()) },
+            new[] { new ObjectRemovalSelection("IMG_999", Array.Empty<ObjectOccurrence>()) },
             regionsToFlatten: null, fitImagesToScreen: true);
 
         Assert.Empty(resampler.Asked);
@@ -120,7 +120,7 @@ public class ScreenFitTests : IClassFixture<SamplePdfFixture>
         var destination = Path.Combine(_samples.TempDirectory, "screen-fit-off.pdf");
         await new PdfSharpDocumentCleaner(resampler: resampler).CleanAsync(
             _samples.ScannedPagePath, destination,
-            new[] { new ImageRemovalSelection("IMG_999", Array.Empty<PdfImageOccurrence>()) });
+            new[] { new ObjectRemovalSelection("IMG_999", Array.Empty<ObjectOccurrence>()) });
 
         Assert.Empty(resampler.Asked);
         Assert.Contains((800, 1100), ImageSizesIn(destination));
@@ -135,7 +135,7 @@ public class ScreenFitTests : IClassFixture<SamplePdfFixture>
         var destination = Path.Combine(_samples.TempDirectory, "screen-fit-grew.pdf");
         var result = await new PdfSharpDocumentCleaner(resampler: new NoiseResampler()).CleanAsync(
             _samples.ScannedPagePath, destination,
-            new[] { new ImageRemovalSelection("IMG_999", Array.Empty<PdfImageOccurrence>()) },
+            new[] { new ObjectRemovalSelection("IMG_999", Array.Empty<ObjectOccurrence>()) },
             regionsToFlatten: null, fitImagesToScreen: true);
 
         Assert.Empty(result.ResizedImageHashes!);
@@ -260,7 +260,7 @@ public class ScreenFitTests : IClassFixture<SamplePdfFixture>
         var destination = Path.Combine(_samples.TempDirectory, "screen-fit-hashes.pdf");
         var result = await new PdfSharpDocumentCleaner(resampler: resampler).CleanAsync(
             _samples.ScannedPagePath, destination,
-            new[] { new ImageRemovalSelection("IMG_999", Array.Empty<PdfImageOccurrence>()) },
+            new[] { new ObjectRemovalSelection("IMG_999", Array.Empty<ObjectOccurrence>()) },
             regionsToFlatten: null, fitImagesToScreen: true);
 
         Assert.NotNull(result.ResizedImageHashes);

@@ -29,14 +29,14 @@ public class DrawingRemovalTests : IClassFixture<SamplePdfFixture>
     async Task<(string Destination, CleaningResult Result)> RemoveTheDrawingAsync(string name)
     {
         var info = await NewAnalyzer().AnalyzeAsync(_samples.FormDrawnShapesPath);
-        var drawing = info.ImageGroups.Single(g => g.Kind == RemovableKind.Drawing);
+        var drawing = info.ObjectGroups.Single(g => g.Kind == RemovableKind.Drawing);
 
         var destination = Path.Combine(_samples.TempDirectory, $"{name}.pdf");
         var result = await new PdfSharpDocumentCleaner().CleanAsync(
             _samples.FormDrawnShapesPath, destination,
             new[]
             {
-                new ImageRemovalSelection(
+                new ObjectRemovalSelection(
                     drawing.GroupId, drawing.Occurrences, drawing.Kind, drawing.TextValue, drawing.Hash),
             });
         return (destination, result);
@@ -70,10 +70,10 @@ public class DrawingRemovalTests : IClassFixture<SamplePdfFixture>
         var (destination, _) = await RemoveTheDrawingAsync("drawing-removed-shape-alone");
 
         var after = await NewAnalyzer().AnalyzeAsync(destination);
-        var border = Assert.Single(after.ImageGroups, g => g.Kind == RemovableKind.Shape);
+        var border = Assert.Single(after.ObjectGroups, g => g.Kind == RemovableKind.Shape);
         Assert.Equal(2, border.UsageCount);
         // And the drawing is not merely undrawn — it is gone from the list.
-        Assert.DoesNotContain(after.ImageGroups, g => g.Kind == RemovableKind.Drawing);
+        Assert.DoesNotContain(after.ObjectGroups, g => g.Kind == RemovableKind.Drawing);
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public class DrawingRemovalTests : IClassFixture<SamplePdfFixture>
         // The post-save check has to cover drawings too, or a save that left a
         // form behind would still be reported as verified.
         var info = await NewAnalyzer().AnalyzeAsync(_samples.FormDrawnShapesPath);
-        var drawing = info.ImageGroups.Single(g => g.Kind == RemovableKind.Drawing);
+        var drawing = info.ObjectGroups.Single(g => g.Kind == RemovableKind.Drawing);
         var (destination, _) = await RemoveTheDrawingAsync("drawing-removed-verified");
 
         var verification = await new PdfSharpDocumentVerifier().VerifyAsync(

@@ -1,9 +1,10 @@
 namespace PdfImageRemoverForRag.Core.Models;
 
 /// <summary>
-/// A set of identical image placements — same underlying image bytes drawn
-/// one or more times across a PDF. The user acts on groups, not on individual
-/// occurrences: checking a group removes every placement of that image.
+/// One graphics object as the user acts on it: every placement of the same
+/// thing — the same stream bytes, the same string, the same path — drawn one
+/// or more times across a PDF. The user acts on groups, not on individual
+/// occurrences: ticking a group removes every placement of that object.
 /// </summary>
 /// <remarks>
 /// The base fields (GroupId … Occurrences) match spec §9 exactly. The tool
@@ -14,7 +15,7 @@ namespace PdfImageRemoverForRag.Core.Models;
 /// during analysis and is left <c>null</c> when generation fails; the UI must
 /// fall back to a placeholder icon in that case (§12).
 /// </remarks>
-public sealed record PdfImageGroup(
+public sealed record ObjectGroup(
     string GroupId,
     string Hash,
     int PixelWidth,
@@ -28,7 +29,7 @@ public sealed record PdfImageGroup(
     bool IsSafelyRemovable,
     string? WarningMessage,
     byte[]? ThumbnailBytes,
-    IReadOnlyList<PdfImageOccurrence> Occurrences,
+    IReadOnlyList<ObjectOccurrence> Occurrences,
     RemovableKind Kind = RemovableKind.Image,
     string? TextValue = null,
     ShapeGeometry? ShapeGeometry = null,

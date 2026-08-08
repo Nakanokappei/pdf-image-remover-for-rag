@@ -63,7 +63,7 @@ async Task<bool> RunChecklistAsync(string pdfPath)
     // This harness verifies the IMAGE pipeline (spec §8.1); pick an image
     // group as the removal target. Prefer a non-full-page one so the cleaned
     // PDF keeps visible content.
-    var imageGroups = info.ImageGroups.Where(g => g.Kind == RemovableKind.Image).ToArray();
+    var imageGroups = info.ObjectGroups.Where(g => g.Kind == RemovableKind.Image).ToArray();
     var target = imageGroups.FirstOrDefault(g => g.IsSafelyRemovable && !g.IsPossibleFullPageImage)
               ?? imageGroups.FirstOrDefault(g => g.IsSafelyRemovable);
     if (target is null)
@@ -78,7 +78,7 @@ async Task<bool> RunChecklistAsync(string pdfPath)
     var cleanedPath = Path.Combine(outDir,
         Path.GetFileNameWithoutExtension(pdfPath) + "_cleaned.pdf");
 
-    var selection = new ImageRemovalSelection(
+    var selection = new ObjectRemovalSelection(
         target.GroupId, target.Occurrences, Hash: target.Hash);
     var result = await cleaner.CleanAsync(pdfPath, cleanedPath, new[] { selection });
     Console.WriteLine($"[REMOVE] {target.GroupId} hash={target.Hash[..12]}… " +
@@ -88,7 +88,7 @@ async Task<bool> RunChecklistAsync(string pdfPath)
     // Steps 12–15: verification through the production verifier. Only image
     // hashes are meaningful to it (it resolves hashes against Image XObjects),
     // so exclude text groups — matching the app's PdfCleaningWorkflow.
-    var retained = info.ImageGroups
+    var retained = info.ObjectGroups
         .Where(g => g.Kind == RemovableKind.Image && g.Hash != target.Hash)
         .Select(g => g.Hash)
         .ToArray();
@@ -140,9 +140,9 @@ static void PrintAnalysis(PdfDocumentInfo info)
     Console.WriteLine($"size        : {info.FileSize} bytes");
     Console.WriteLine($"pages       : {info.PageCount}");
     Console.WriteLine($"encrypted   : {info.IsEncrypted}");
-    Console.WriteLine($"image groups: {info.ImageKindCount}");
+    Console.WriteLine($"object groups: {info.ObjectGroupCount}");
     Console.WriteLine($"occurrences : {info.TotalUsageCount}");
-    foreach (var g in info.ImageGroups)
+    foreach (var g in info.ObjectGroups)
     {
         var flags = (g.IsPossibleFullPageImage ? " [FULL-PAGE?]" : "")
                   + (g.IsSafelyRemovable ? "" : " [UNSAFE]")

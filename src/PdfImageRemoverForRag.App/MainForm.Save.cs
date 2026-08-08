@@ -31,15 +31,15 @@ internal sealed partial class MainForm
     /// <summary>Move the grid's focus/selection to the first row after a rebuild.</summary>
     void FocusFirstRow()
     {
-        _imageListGrid.ClearSelection();
-        if (_imageListGrid.Rows.Count == 0) return;
-        var firstRow = _imageListGrid.Rows[0];
+        _objectListGrid.ClearSelection();
+        if (_objectListGrid.Rows.Count == 0) return;
+        var firstRow = _objectListGrid.Rows[0];
         firstRow.Selected = true;
         // Land the current cell on a non-checkbox column so focus doesn't sit
         // on the ☑ cell (which would toggle on a stray space press).
         var focusCell = firstRow.Cells[_objectIdColumn.Index];
-        if (focusCell.Visible) _imageListGrid.CurrentCell = focusCell;
-        _imageListGrid.FirstDisplayedScrollingRowIndex = 0;
+        if (focusCell.Visible) _objectListGrid.CurrentCell = focusCell;
+        _objectListGrid.FirstDisplayedScrollingRowIndex = 0;
     }
 
     /// <summary>

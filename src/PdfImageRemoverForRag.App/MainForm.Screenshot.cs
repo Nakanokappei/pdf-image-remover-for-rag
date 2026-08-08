@@ -142,7 +142,7 @@ internal sealed partial class MainForm
             .SelectMany(r => r.Members);
         foreach (var member in members)
         {
-            if (_workflow.ImageGroups.FirstOrDefault(g => g.Matches(member)) is not { } group) continue;
+            if (_workflow.ObjectGroups.FirstOrDefault(g => g.Matches(member)) is not { } group) continue;
             if (!_displayGroups.Contains(group)) continue;
 
             FocusRowFor(group);

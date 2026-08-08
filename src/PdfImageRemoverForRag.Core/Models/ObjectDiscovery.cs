@@ -2,9 +2,9 @@ namespace PdfImageRemoverForRag.Core.Models;
 
 /// <summary>
 /// Raw analysis output for a single Image XObject, produced by the
-/// Infrastructure layer and fed into <c>ImageGroupBuilder</c>. Two discoveries
+/// Infrastructure layer and fed into <c>ObjectGroupBuilder</c>. Two discoveries
 /// with the same <see cref="StreamHash"/> collapse into one
-/// <see cref="PdfImageGroup"/>; their occurrences are unioned.
+/// <see cref="ObjectGroup"/>; their occurrences are unioned.
 /// </summary>
 /// <param name="ObjectId">PDF indirect-object identifier for logs and diagnostics.</param>
 /// <param name="StreamHash">
@@ -51,7 +51,7 @@ namespace PdfImageRemoverForRag.Core.Models;
 /// Every path a <see cref="RemovableKind.Drawing"/>'s form paints, for the
 /// thumbnail. Null for every other kind.
 /// </param>
-public sealed record ImageDiscovery(
+public sealed record ObjectDiscovery(
     string ObjectId,
     string StreamHash,
     int PixelWidth,
@@ -64,7 +64,7 @@ public sealed record ImageDiscovery(
     bool IsSafelyRemovable,
     string? UnsafeReason,
     byte[]? ThumbnailBytes,
-    IReadOnlyList<PdfImageOccurrence> Occurrences,
+    IReadOnlyList<ObjectOccurrence> Occurrences,
     RemovableKind Kind = RemovableKind.Image,
     string? TextValue = null,
     ShapeGeometry? ShapeGeometry = null,

@@ -24,7 +24,7 @@ public class ShapeRemovalTests : IClassFixture<SamplePdfFixture>
     public async Task AllShapes_AreDetected_IncludingSingleOccurrence()
     {
         var info = await NewAnalyzer().AnalyzeAsync(_samples.RepeatedShapesPath);
-        var shapeGroups = info.ImageGroups.Where(g => g.Kind == RemovableKind.Shape).ToArray();
+        var shapeGroups = info.ObjectGroups.Where(g => g.Kind == RemovableKind.Shape).ToArray();
 
         // Groups (position-independent, by shape + width + color):
         //   header rule (3x), border (3x), blue square at 3 positions (3x),
@@ -40,7 +40,7 @@ public class ShapeRemovalTests : IClassFixture<SamplePdfFixture>
         // The 30x30 blue square is drawn at a different x on each page but is
         // the same shape/width/color — position must not split it into three.
         var info = await NewAnalyzer().AnalyzeAsync(_samples.RepeatedShapesPath);
-        var square = info.ImageGroups.Single(g =>
+        var square = info.ObjectGroups.Single(g =>
             g.Kind == RemovableKind.Shape && g.PixelWidth == 30 && g.PixelHeight == 30);
         Assert.Equal(3, square.UsageCount);
         Assert.Equal(new[] { 1, 2, 3 }, square.UsagePages);
@@ -57,13 +57,13 @@ public class ShapeRemovalTests : IClassFixture<SamplePdfFixture>
     {
         var analyzer = NewAnalyzer();
         var info = await analyzer.AnalyzeAsync(_samples.RepeatedShapesPath);
-        var shape = info.ImageGroups.First(g => g.Kind == RemovableKind.Shape);
+        var shape = info.ObjectGroups.First(g => g.Kind == RemovableKind.Shape);
 
         var dest = Path.Combine(_samples.TempDirectory, "repeated-shapes_cleaned.pdf");
         var cleaner = new PdfSharpDocumentCleaner();
         var result = await cleaner.CleanAsync(_samples.RepeatedShapesPath, dest, new[]
         {
-            new ImageRemovalSelection(shape.GroupId, shape.Occurrences,
+            new ObjectRemovalSelection(shape.GroupId, shape.Occurrences,
                 RemovableKind.Shape, shape.TextValue),
         });
 
@@ -73,9 +73,9 @@ public class ShapeRemovalTests : IClassFixture<SamplePdfFixture>
         // Re-analyze: the removed shape is gone; the other repeated shape and
         // the unique diagonals remain untouched.
         var reanalyzed = await analyzer.AnalyzeAsync(dest);
-        Assert.DoesNotContain(reanalyzed.ImageGroups,
+        Assert.DoesNotContain(reanalyzed.ObjectGroups,
             g => g.Kind == RemovableKind.Shape && g.TextValue == shape.TextValue);
-        Assert.Contains(reanalyzed.ImageGroups, g => g.Kind == RemovableKind.Shape);
+        Assert.Contains(reanalyzed.ObjectGroups, g => g.Kind == RemovableKind.Shape);
     }
 
     [Fact]
@@ -83,12 +83,12 @@ public class ShapeRemovalTests : IClassFixture<SamplePdfFixture>
     {
         var analyzer = NewAnalyzer();
         var info = await analyzer.AnalyzeAsync(_samples.RepeatedShapesPath);
-        var shape = info.ImageGroups.First(g => g.Kind == RemovableKind.Shape);
+        var shape = info.ObjectGroups.First(g => g.Kind == RemovableKind.Shape);
         var dest = Path.Combine(_samples.TempDirectory, "repeated-shapes_kept_cleaned.pdf");
 
         await new PdfSharpDocumentCleaner().CleanAsync(_samples.RepeatedShapesPath, dest, new[]
         {
-            new ImageRemovalSelection(shape.GroupId, shape.Occurrences,
+            new ObjectRemovalSelection(shape.GroupId, shape.Occurrences,
                 RemovableKind.Shape, shape.TextValue),
         });
 

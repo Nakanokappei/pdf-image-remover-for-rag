@@ -8,7 +8,7 @@ namespace PdfImageRemoverForRag.Core.Tests;
 // including the boundary and the "coverage in only one dimension" case.
 public class FullPageImageDetectorTests
 {
-    static PdfImageOccurrence Occ(int page, double w, double h) =>
+    static ObjectOccurrence Occ(int page, double w, double h) =>
         new(page, "1 0 R", "/Im1", 0, 0, w, h);
 
     [Fact]

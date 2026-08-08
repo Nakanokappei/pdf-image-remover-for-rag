@@ -46,7 +46,7 @@ internal sealed partial class MainForm
                 e.FilePath, e.Page.PageNumber, e.Page, placed, e.Hide);
 
             if (e.Hide) continue;
-            if (_workflow.ImageGroups.FirstOrDefault(g => g.Matches(placed)) is { } group)
+            if (_workflow.ObjectGroups.FirstOrDefault(g => g.Matches(placed)) is { } group)
             {
                 SetSelected(group.Hash, false);
             }
@@ -143,7 +143,7 @@ internal sealed partial class MainForm
     /// whichever view is showing. Silent when the object has no row — a filter
     /// can be hiding its kind.
     /// </summary>
-    void FocusRowFor(CrossFileImageGroup group)
+    void FocusRowFor(CrossFileObjectGroup group)
     {
         if (_isTileView)
         {
@@ -151,19 +151,19 @@ internal sealed partial class MainForm
             _tileView.FocusGroup(group);
             return;
         }
-        foreach (DataGridViewRow row in _imageListGrid.Rows)
+        foreach (DataGridViewRow row in _objectListGrid.Rows)
         {
             if (!ReferenceEquals(row.Tag, group)) continue;
 
             // The keyboard comes too. The command was given in the panel across
             // the window, so without this the cursor lands on the new picture
             // while the keyboard is still in the list it was given from.
-            _imageListGrid.Focus();
-            _imageListGrid.ClearSelection();
+            _objectListGrid.Focus();
+            _objectListGrid.ClearSelection();
             row.Selected = true;
             var cell = row.Cells[_objectIdColumn.Index];
-            if (cell.Visible) _imageListGrid.CurrentCell = cell;
-            _imageListGrid.FirstDisplayedScrollingRowIndex = row.Index;
+            if (cell.Visible) _objectListGrid.CurrentCell = cell;
+            _objectListGrid.FirstDisplayedScrollingRowIndex = row.Index;
             return;
         }
     }
@@ -210,11 +210,11 @@ internal sealed partial class MainForm
     void RebuildAfterWorkspaceChanged(string status, bool keepSelection = false)
     {
         var kept = keepSelection
-            ? _workflow.ImageGroups.Select(g => g.Hash).Where(_selectedHashes.Contains).ToArray()
+            ? _workflow.ObjectGroups.Select(g => g.Hash).Where(_selectedHashes.Contains).ToArray()
             : Array.Empty<string>();
         _selectedHashes.Clear();
         foreach (var hash in kept) _selectedHashes.Add(hash);
-        RefreshThumbnailImages(_workflow.ImageGroups);
+        RefreshThumbnailImages(_workflow.ObjectGroups);
         RebuildDisplay();
         AutoSizeContentColumns();
         FocusFirstRow();
@@ -226,10 +226,10 @@ internal sealed partial class MainForm
     /// The group the user is currently on: the grid's current row, or the tile
     /// view's focused tile. Null when neither has landed anywhere.
     /// </summary>
-    CrossFileImageGroup? CurrentDisplayGroup()
+    CrossFileObjectGroup? CurrentDisplayGroup()
     {
         if (_isTileView) return _tileView.FocusedGroup;
-        return _imageListGrid.CurrentRow?.Tag as CrossFileImageGroup;
+        return _objectListGrid.CurrentRow?.Tag as CrossFileObjectGroup;
     }
 
     /// <summary>
@@ -246,7 +246,7 @@ internal sealed partial class MainForm
     /// </summary>
     ObjectThumbnail ObjectThumbnailFor(PlacedObject placed)
     {
-        var group = _workflow.ImageGroups.FirstOrDefault(g => g.Matches(placed));
+        var group = _workflow.ObjectGroups.FirstOrDefault(g => g.Matches(placed));
         if (group is null) return default;
 
         var bitmap = _thumbnails.Grid(group.Hash);

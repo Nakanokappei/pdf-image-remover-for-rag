@@ -69,7 +69,7 @@ public class RotatedPageTests : IClassFixture<SamplePdfFixture>
 
         await new PdfSharpDocumentCleaner(rasterizer).CleanAsync(
             _samples.RotatedPagePath, Destination("rotated_render_request.pdf"),
-            Array.Empty<ImageRemovalSelection>(), new[] { region });
+            Array.Empty<ObjectRemovalSelection>(), new[] { region });
 
         var request = Assert.Single(rasterizer.Requests);
         Assert.Equal(region.X, request.Region.X, 3);
@@ -91,11 +91,11 @@ public class RotatedPageTests : IClassFixture<SamplePdfFixture>
         var dest = Destination("rotated_flattened.pdf");
         var result = await new PdfSharpDocumentCleaner(new FlatColourRasterizer()).CleanAsync(
             _samples.RotatedPagePath, dest,
-            Array.Empty<ImageRemovalSelection>(), new[] { region });
+            Array.Empty<ObjectRemovalSelection>(), new[] { region });
         Assert.Equal(1, result.RegionsFlattened);
 
         var reanalyzed = await NewAnalyzer().AnalyzeAsync(dest);
-        var image = Assert.Single(reanalyzed.ImageGroups, g => g.Kind == RemovableKind.Image);
+        var image = Assert.Single(reanalyzed.ObjectGroups, g => g.Kind == RemovableKind.Image);
         var placement = Assert.Single(image.Occurrences);
         Assert.Equal(region.X, placement.X, 1);
         Assert.Equal(region.Y, placement.Y, 1);
@@ -114,7 +114,7 @@ public class RotatedPageTests : IClassFixture<SamplePdfFixture>
         var dest = Destination("rotated_keeps_rotation.pdf");
         await new PdfSharpDocumentCleaner(new FlatColourRasterizer()).CleanAsync(
             _samples.RotatedPagePath, dest,
-            Array.Empty<ImageRemovalSelection>(), new[] { region });
+            Array.Empty<ObjectRemovalSelection>(), new[] { region });
 
         using var doc = PdfReader.Open(dest, PdfDocumentOpenMode.Import);
         Assert.Equal(90, doc.Pages[0].Rotate);
@@ -126,12 +126,12 @@ public class RotatedPageTests : IClassFixture<SamplePdfFixture>
         // The removal path never touches the page dictionary either, and it is
         // the path most documents take.
         var info = await NewAnalyzer().AnalyzeAsync(_samples.RotatedPagePath);
-        var image = info.ImageGroups.Single(g => g.Kind == RemovableKind.Image);
+        var image = info.ObjectGroups.Single(g => g.Kind == RemovableKind.Image);
 
         var dest = Destination("rotated_removed.pdf");
         await new PdfSharpDocumentCleaner().CleanAsync(
             _samples.RotatedPagePath, dest,
-            new[] { new ImageRemovalSelection(image.GroupId, image.Occurrences, Hash: image.Hash) });
+            new[] { new ObjectRemovalSelection(image.GroupId, image.Occurrences, Hash: image.Hash) });
 
         using var doc = PdfReader.Open(dest, PdfDocumentOpenMode.Import);
         Assert.Equal(90, doc.Pages[0].Rotate);

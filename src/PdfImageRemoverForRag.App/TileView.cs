@@ -24,8 +24,8 @@ namespace PdfImageRemoverForRag.App;
 /// </summary>
 internal sealed class TileView : Panel
 {
-    IReadOnlyList<CrossFileImageGroup> _items = Array.Empty<CrossFileImageGroup>();
-    readonly Func<CrossFileImageGroup, TileVisual> _visualFor;
+    IReadOnlyList<CrossFileObjectGroup> _items = Array.Empty<CrossFileObjectGroup>();
+    readonly Func<CrossFileObjectGroup, TileVisual> _visualFor;
     int _hoveredIndex = -1;
 
     // The keyboard/accessibility cursor: which tile has focus. -1 when none.
@@ -36,20 +36,20 @@ internal sealed class TileView : Panel
     int _selectionAnchorIndex = -1;
 
     /// <summary>Raised when a tile is clicked, with the group it represents.</summary>
-    public event EventHandler<CrossFileImageGroup>? TileToggled;
+    public event EventHandler<CrossFileObjectGroup>? TileToggled;
 
     /// <summary>
     /// Raised on a Shift+click range selection: every safely-removable group
     /// between the anchor and the clicked tile is set to <c>Select</c>
     /// (checked) or cleared. Mirrors the table's Shift+click behaviour.
     /// </summary>
-    public event Action<IReadOnlyList<CrossFileImageGroup>, bool>? RangeToggleRequested;
+    public event Action<IReadOnlyList<CrossFileObjectGroup>, bool>? RangeToggleRequested;
 
     /// <summary>
     /// Raised when a tile is right-clicked, with its group and the client-space
     /// point, so the host can show the row context menu (使用箇所を表示…).
     /// </summary>
-    public event Action<CrossFileImageGroup, Point>? TileContextRequested;
+    public event Action<CrossFileObjectGroup, Point>? TileContextRequested;
 
     /// <summary>
     /// Raised whenever the visible range may have changed. The wheel does not
@@ -66,18 +66,18 @@ internal sealed class TileView : Panel
     public event EventHandler? FocusedGroupChanged;
 
     /// <summary>Supplies the tooltip for a group, or null for none.</summary>
-    public Func<CrossFileImageGroup, string?>? ToolTipFor { get; set; }
+    public Func<CrossFileObjectGroup, string?>? ToolTipFor { get; set; }
 
     /// <summary>
     /// Supplies the screen-reader name for a group (type + usage, plus the
     /// string for text tiles). The checked / not-removable state is reported
     /// separately as UIA state flags, so it is not part of this text.
     /// </summary>
-    public Func<CrossFileImageGroup, string>? AccessibleNameFor { get; set; }
+    public Func<CrossFileObjectGroup, string>? AccessibleNameFor { get; set; }
 
     readonly ToolTip _toolTip = new();
 
-    public TileView(Func<CrossFileImageGroup, TileVisual> visualFor)
+    public TileView(Func<CrossFileObjectGroup, TileVisual> visualFor)
     {
         _visualFor = visualFor;
         AutoScroll = true;
@@ -104,7 +104,7 @@ internal sealed class TileView : Panel
         (ClientSize.Width - (Dip(TileMetrics.PanelPadding) * 2)) / Math.Max(1, TilePitchX));
 
     /// <summary>Replace the contents and scroll back to the top.</summary>
-    public void SetItems(IReadOnlyList<CrossFileImageGroup> items)
+    public void SetItems(IReadOnlyList<CrossFileObjectGroup> items)
     {
         _items = items;
         _hoveredIndex = -1;
@@ -233,7 +233,7 @@ internal sealed class TileView : Panel
             bool newState = !TileIsChecked(index);
             int from = Math.Min(_selectionAnchorIndex, index);
             int to = Math.Max(_selectionAnchorIndex, index);
-            var range = new List<CrossFileImageGroup>();
+            var range = new List<CrossFileObjectGroup>();
             for (int i = from; i <= to; i++)
             {
                 if (_items[i].IsSafelyRemovable) range.Add(_items[i]);
@@ -362,7 +362,7 @@ internal sealed class TileView : Panel
     /// Put the cursor on a particular group, if it is here. Answers whether it
     /// was found, so a caller pointing at something new can tell.
     /// </summary>
-    public bool FocusGroup(CrossFileImageGroup group)
+    public bool FocusGroup(CrossFileObjectGroup group)
     {
         int index = _items.ToList().FindIndex(item => ReferenceEquals(item, group));
         if (index < 0) return false;
@@ -375,7 +375,7 @@ internal sealed class TileView : Panel
     /// This view's equivalent of the grid's current row — what the flatten
     /// panel describes while the tiles are showing.
     /// </summary>
-    public CrossFileImageGroup? FocusedGroup =>
+    public CrossFileObjectGroup? FocusedGroup =>
         _focusedTileIndex >= 0 && _focusedTileIndex < _items.Count
             ? _items[_focusedTileIndex]
             : null;

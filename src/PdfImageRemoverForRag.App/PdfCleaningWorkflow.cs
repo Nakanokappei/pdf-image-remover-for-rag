@@ -22,7 +22,7 @@ internal sealed record BatchSaveResult(
 
 /// <summary>
 /// UI-free orchestration of the multi-document workspace: open PDFs are
-/// analyzed once, their image groups merged across files by stream hash, and
+/// analyzed once, their object groups merged across files by stream hash, and
 /// a single save run cleans every affected file with the §15 sequence.
 ///
 /// Memory policy (per the "not on-memory" requirement): after analysis only
@@ -67,8 +67,8 @@ internal sealed class PdfCleaningWorkflow
     public IReadOnlyList<PdfDocumentInfo> OpenDocuments => _documents;
 
     /// <summary>Image groups merged across every open file.</summary>
-    public IReadOnlyList<CrossFileImageGroup> ImageGroups { get; private set; } =
-        Array.Empty<CrossFileImageGroup>();
+    public IReadOnlyList<CrossFileObjectGroup> ObjectGroups { get; private set; } =
+        Array.Empty<CrossFileObjectGroup>();
 
     public PdfCleaningWorkflow(
         IPdfDocumentAnalyzer analyzer,
@@ -107,11 +107,11 @@ internal sealed class PdfCleaningWorkflow
 
         _logger.LogInformation(
             "analyzed: fileSize={FileSize} pages={Pages} encrypted={Encrypted} " +
-            "imageGroups={Groups} occurrences={Occurrences} openFiles={OpenFiles} " +
+            "objectGroups={Groups} occurrences={Occurrences} openFiles={OpenFiles} " +
             "crossFileGroups={CrossGroups} elapsedMs={ElapsedMs}",
             info.FileSize, info.PageCount, info.IsEncrypted,
-            info.ImageKindCount, info.TotalUsageCount,
-            _documents.Count, ImageGroups.Count, stopwatch.ElapsedMilliseconds);
+            info.ObjectGroupCount, info.TotalUsageCount,
+            _documents.Count, ObjectGroups.Count, stopwatch.ElapsedMilliseconds);
         return true;
     }
 
@@ -131,7 +131,7 @@ internal sealed class PdfCleaningWorkflow
             .AnalyzeAsync(pdfFilePath, progress: progress, ct: ct)
             .ConfigureAwait(false);
 
-        foreach (var group in info.ImageGroups)
+        foreach (var group in info.ObjectGroups)
         {
             if (group.ThumbnailBytes is { Length: > 0 } bytes)
             {
@@ -141,7 +141,7 @@ internal sealed class PdfCleaningWorkflow
 
         return info with
         {
-            ImageGroups = info.ImageGroups.Select(g => g with { ThumbnailBytes = null }).ToArray(),
+            ObjectGroups = info.ObjectGroups.Select(g => g with { ThumbnailBytes = null }).ToArray(),
         };
     }
 
@@ -155,7 +155,7 @@ internal sealed class PdfCleaningWorkflow
         _flattenedPlaces.Clear();
         _hiddenPlacements.Clear();
         _documents.Clear();
-        ImageGroups = Array.Empty<CrossFileImageGroup>();
+        ObjectGroups = Array.Empty<CrossFileObjectGroup>();
     }
 
     /// <summary>
@@ -254,7 +254,7 @@ internal sealed class PdfCleaningWorkflow
         try
         {
             await _cleaner.CleanAsync(
-                    ReadPathOf(filePath), next, Array.Empty<ImageRemovalSelection>(),
+                    ReadPathOf(filePath), next, Array.Empty<ObjectRemovalSelection>(),
                     regionsToFlatten: null, regionsToClear: hidden,
                     fitImagesToScreen: false, ct)
                 .ConfigureAwait(false);
@@ -349,9 +349,9 @@ internal sealed class PdfCleaningWorkflow
     /// The picture a flatten drew, as the object list now holds it. Found by
     /// geometry, the same way <see cref="FlattenBehind"/> works in reverse.
     /// </summary>
-    public CrossFileImageGroup? PictureDrawnFor(string filePath, OverlapRegion place)
+    public CrossFileObjectGroup? PictureDrawnFor(string filePath, OverlapRegion place)
     {
-        foreach (var group in ImageGroups.Where(g => g.Kind == RemovableKind.Image))
+        foreach (var group in ObjectGroups.Where(g => g.Kind == RemovableKind.Image))
         {
             foreach (var file in group.FileOccurrences)
             {
@@ -418,7 +418,7 @@ internal sealed class PdfCleaningWorkflow
     /// The place a flatten drew this occurrence for, or null when it is an
     /// ordinary image. What makes the undo button live, and what it acts on.
     /// </summary>
-    public OverlapRegion? FlattenBehind(string filePath, PdfImageOccurrence occurrence)
+    public OverlapRegion? FlattenBehind(string filePath, ObjectOccurrence occurrence)
     {
         int index = IndexOfDocument(filePath);
         if (index < 0 || !_flattenedPlaces.TryGetValue(_documents[index].FilePath, out var places))
@@ -476,7 +476,7 @@ internal sealed class PdfCleaningWorkflow
             // never keeps, and re-encoding its pictures here would only mean
             // encoding them again on the next rebuild.
             var result = await _cleaner.CleanAsync(
-                    document.FilePath, nextCopy, Array.Empty<ImageRemovalSelection>(), places,
+                    document.FilePath, nextCopy, Array.Empty<ObjectRemovalSelection>(), places,
                     regionsToClear: null, fitImagesToScreen: false, ct)
                 .ConfigureAwait(false);
             _logger.LogInformation(
@@ -518,8 +518,8 @@ internal sealed class PdfCleaningWorkflow
     {
         // Merge in Core. ThumbnailBytes stays null throughout the workspace —
         // the views load what they need from the store, by hash.
-        ImageGroups = CrossFileImageGroupBuilder.Build(
-            _documents.Select(d => (d.FilePath, d.ImageGroups))).ToArray();
+        ObjectGroups = CrossFileObjectGroupBuilder.Build(
+            _documents.Select(d => (d.FilePath, d.ObjectGroups))).ToArray();
     }
 
     /// <summary>
@@ -532,7 +532,7 @@ internal sealed class PdfCleaningWorkflow
         IReadOnlyCollection<string>? filesToFlatten = null)
     {
         return _documents
-            .Where(d => d.ImageGroups.Any(g => selectedHashes.Contains(g.Hash))
+            .Where(d => d.ObjectGroups.Any(g => selectedHashes.Contains(g.Hash))
                         || filesToFlatten?.Any(f => CleanedFileNamer.WouldOverwriteSource(f, d.FilePath)) == true
                         // A file whose places were flattened, or whose layers
                         // were hidden, already has something to write — even
@@ -568,7 +568,7 @@ internal sealed class PdfCleaningWorkflow
 
         // Defense in depth: the UI disables unsafe checkboxes, but re-check
         // here so a UI bug can never remove a group flagged unsafe (§14.3).
-        var groupsByHash = ImageGroups.ToDictionary(g => g.Hash, StringComparer.Ordinal);
+        var groupsByHash = ObjectGroups.ToDictionary(g => g.Hash, StringComparer.Ordinal);
         foreach (var hash in selectedHashes)
         {
             if (!groupsByHash.TryGetValue(hash, out var group) || !group.IsSafelyRemovable)
@@ -594,7 +594,7 @@ internal sealed class PdfCleaningWorkflow
                 .Select(group => (group, fileOccurrences: group.FileOccurrences
                     .FirstOrDefault(f => CleanedFileNamer.WouldOverwriteSource(f.FilePath, document.FilePath))))
                 .Where(x => x.fileOccurrences is { Occurrences.Count: > 0 })
-                .Select(x => new ImageRemovalSelection(
+                .Select(x => new ObjectRemovalSelection(
                     x.group.GroupId, x.fileOccurrences!.Occurrences, x.group.Kind,
                     x.group.TextValue, x.group.Hash))
                 .ToList();
@@ -663,7 +663,7 @@ internal sealed class PdfCleaningWorkflow
     async Task<SavedFile> CleanVerifyCommitAsync(
         PdfDocumentInfo document,
         string destinationPath,
-        IReadOnlyList<ImageRemovalSelection> selections,
+        IReadOnlyList<ObjectRemovalSelection> selections,
         IReadOnlyList<OverlapRegion> hiddenPlacements,
         IReadOnlyCollection<string> selectedHashes,
         CancellationToken ct)
@@ -725,7 +725,7 @@ internal sealed class PdfCleaningWorkflow
             // and can be found again by hash. Text and shapes live as operators
             // inside a content stream with no hash to resolve, and their removal
             // is checked by tests rather than here.
-            var verifiableHashes = document.ImageGroups
+            var verifiableHashes = document.ObjectGroups
                 .Where(g => g.Kind.IsIdentifiedByStreamHash())
                 .Select(g => g.Hash)
                 .ToArray();

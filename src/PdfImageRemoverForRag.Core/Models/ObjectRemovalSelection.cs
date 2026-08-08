@@ -1,21 +1,21 @@
 namespace PdfImageRemoverForRag.Core.Models;
 
 /// <summary>
-/// A user's decision to remove every placement of one image group. The UI
-/// produces one <see cref="ImageRemovalSelection"/> per checked row; the
+/// A user's decision to remove every placement of one object group. The UI
+/// produces one <see cref="ObjectRemovalSelection"/> per checked row; the
 /// cleaner consumes the whole list. Storing every occurrence up-front (rather
 /// than re-deriving from the group) keeps this record self-describing so it
 /// can be logged, replayed, and diffed without re-parsing the PDF.
 /// </summary>
-public sealed record ImageRemovalSelection(
+public sealed record ObjectRemovalSelection(
     string GroupId,
-    IReadOnlyList<PdfImageOccurrence> Occurrences,
+    IReadOnlyList<ObjectOccurrence> Occurrences,
     RemovableKind Kind = RemovableKind.Image,
     string? TextValue = null,
     string? Hash = null)
 {
     /// <summary>
-    /// The stream hash of the image to remove — the same identity the grouping
+    /// The stream hash of the object to remove — the same identity the grouping
     /// and the post-save verification use.
     ///
     /// Images used to be matched by the indirect-object id carried on each

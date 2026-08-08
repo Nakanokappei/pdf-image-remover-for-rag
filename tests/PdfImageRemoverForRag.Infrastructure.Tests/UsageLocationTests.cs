@@ -23,7 +23,7 @@ public class UsageLocationTests : IClassFixture<SamplePdfFixture>
     public async Task EveryTextOccurrence_CarriesARectangleOnItsPage()
     {
         var info = await NewAnalyzer().AnalyzeAsync(_samples.RepeatedTextPath);
-        var header = info.ImageGroups.Single(
+        var header = info.ObjectGroups.Single(
             g => g.Kind == RemovableKind.Text && g.TextValue == "CONFIDENTIAL");
 
         Assert.All(header.Occurrences, occurrence =>
@@ -43,7 +43,7 @@ public class UsageLocationTests : IClassFixture<SamplePdfFixture>
         // should agree, which is what shows the outline is derived from the
         // text matrix and not from the order things were found in.
         var info = await NewAnalyzer().AnalyzeAsync(_samples.RepeatedTextPath);
-        var header = info.ImageGroups.Single(
+        var header = info.ObjectGroups.Single(
             g => g.Kind == RemovableKind.Text && g.TextValue == "CONFIDENTIAL");
 
         var first = header.Occurrences[0];
@@ -60,7 +60,7 @@ public class UsageLocationTests : IClassFixture<SamplePdfFixture>
     public async Task EveryShapeOccurrence_CarriesItsOwnRectangle()
     {
         var info = await NewAnalyzer().AnalyzeAsync(_samples.RepeatedShapesPath);
-        var shapes = info.ImageGroups.Where(g => g.Kind == RemovableKind.Shape).ToArray();
+        var shapes = info.ObjectGroups.Where(g => g.Kind == RemovableKind.Shape).ToArray();
 
         Assert.NotEmpty(shapes);
         foreach (var shape in shapes)
@@ -78,7 +78,7 @@ public class UsageLocationTests : IClassFixture<SamplePdfFixture>
         // places is one row. Its occurrences must still say where each one is,
         // or the window would outline one square three times.
         var info = await NewAnalyzer().AnalyzeAsync(_samples.RepeatedShapesPath);
-        var repeated = info.ImageGroups
+        var repeated = info.ObjectGroups
             .Where(g => g.Kind == RemovableKind.Shape && g.UsageCount > 1)
             .ToArray();
 
@@ -96,7 +96,7 @@ public class UsageLocationTests : IClassFixture<SamplePdfFixture>
         // rule or background must not inherit it.
         var info = await NewAnalyzer().AnalyzeAsync(_samples.RepeatedShapesPath);
 
-        Assert.All(info.ImageGroups.Where(g => g.Kind != RemovableKind.Image),
+        Assert.All(info.ObjectGroups.Where(g => g.Kind != RemovableKind.Image),
             group => Assert.False(group.IsPossibleFullPageImage));
     }
 
@@ -106,7 +106,7 @@ public class UsageLocationTests : IClassFixture<SamplePdfFixture>
         // Guard against the text/shape work disturbing the path that already
         // worked.
         var info = await NewAnalyzer().AnalyzeAsync(_samples.RepeatedLogoPath);
-        var image = info.ImageGroups.First(g => g.Kind == RemovableKind.Image);
+        var image = info.ObjectGroups.First(g => g.Kind == RemovableKind.Image);
 
         Assert.All(image.Occurrences, occurrence =>
         {

@@ -59,7 +59,7 @@ public class OverlapAnalysisTests : IClassFixture<SamplePdfFixture>
             .Select(m => m.Identity)
             .ToArray();
         Assert.NotEmpty(texts);
-        Assert.All(texts, value => Assert.DoesNotContain(info.ImageGroups,
+        Assert.All(texts, value => Assert.DoesNotContain(info.ObjectGroups,
             g => g.Kind == RemovableKind.Text && g.TextValue == value));
     }
 
@@ -102,7 +102,7 @@ public class OverlapAnalysisTests : IClassFixture<SamplePdfFixture>
         var region = Assert.Single(info.OverlapRegions);
 
         var imageMember = region.Members.First(m => m.Kind == RemovableKind.Image);
-        Assert.Contains(info.ImageGroups,
+        Assert.Contains(info.ObjectGroups,
             g => g.Kind == RemovableKind.Image && g.Hash == imageMember.Identity);
 
         var textMember = region.Members.First(m => m.Kind == RemovableKind.Text);

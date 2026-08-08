@@ -25,7 +25,7 @@ public interface IThumbnailProvider
     /// <summary>
     /// Produce thumbnail bytes for every Image XObject in the file. Keys are
     /// the same SHA-256 hex string the analyzer computes for
-    /// <see cref="Models.ImageDiscovery.StreamHash"/>. The size hints are
+    /// <see cref="Models.ObjectDiscovery.StreamHash"/>. The size hints are
     /// advisory — callers scale for display.
     /// </summary>
     /// <param name="wantedHashes">

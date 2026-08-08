@@ -74,13 +74,13 @@ public class FormDrawnShapeTests : IClassFixture<SamplePdfFixture>
 
         // The page-level border rectangle stays a Shape — the new kind must not
         // swallow the paths that were already found.
-        var shapes = info.ImageGroups.Where(g => g.Kind == RemovableKind.Shape).ToArray();
+        var shapes = info.ObjectGroups.Where(g => g.Kind == RemovableKind.Shape).ToArray();
         var border = Assert.Single(shapes);
         Assert.Equal(2, border.UsageCount);
 
         // The form's head, body and bubble are ONE object, not three, drawn on
         // both pages.
-        var drawings = info.ImageGroups.Where(g => g.Kind == RemovableKind.Drawing).ToArray();
+        var drawings = info.ObjectGroups.Where(g => g.Kind == RemovableKind.Drawing).ToArray();
         var drawing = Assert.Single(drawings);
         Assert.Equal("DRW_001", drawing.GroupId);
         Assert.Equal(2, drawing.UsageCount);
@@ -107,7 +107,7 @@ public class FormDrawnShapeTests : IClassFixture<SamplePdfFixture>
         // form is placed at (60,600) from the top of an 842-point page, so its
         // origin sits at y 122 and the artwork covers (80,144) to (175,232).
         var info = await NewAnalyzer().AnalyzeAsync(_samples.FormDrawnShapesPath);
-        var drawing = info.ImageGroups.Single(g => g.Kind == RemovableKind.Drawing);
+        var drawing = info.ObjectGroups.Single(g => g.Kind == RemovableKind.Drawing);
 
         var first = drawing.Occurrences.First(o => o.PageNumber == 1);
         Assert.Equal(80, first.X, precision: 0);

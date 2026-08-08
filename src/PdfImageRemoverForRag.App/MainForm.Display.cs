@@ -13,7 +13,7 @@ internal sealed partial class MainForm
 
     void RefreshWorkspace()
     {
-        var groups = _workflow.ImageGroups;
+        var groups = _workflow.ObjectGroups;
 
         // Selection survives rebuilds via hashes; drop entries whose object
         // is no longer present (e.g. after close-all or a save that removed it).
@@ -41,7 +41,7 @@ internal sealed partial class MainForm
     void RebuildDisplay()
     {
         _displayGroups = SortForDisplay(
-            _workflow.ImageGroups.Where(g => _visibleKinds.Contains(g.Kind))).ToArray();
+            _workflow.ObjectGroups.Where(g => _visibleKinds.Contains(g.Kind))).ToArray();
 
         // Show the hourglass and block column resizing for the duration of the
         // rebuild so a header drag can't fight the sort/refresh in progress.
@@ -49,7 +49,7 @@ internal sealed partial class MainForm
         // block — UseWaitCursor only updates on the next message-pump cycle.
         var previousCursor = Cursor.Current;
         Cursor.Current = Cursors.WaitCursor;
-        _imageListGrid.AllowUserToResizeColumns = false;
+        _objectListGrid.AllowUserToResizeColumns = false;
         try
         {
             // The grid is always rebuilt — it's cheap and is the source of truth
@@ -77,7 +77,7 @@ internal sealed partial class MainForm
         }
         finally
         {
-            _imageListGrid.AllowUserToResizeColumns = true;
+            _objectListGrid.AllowUserToResizeColumns = true;
             Cursor.Current = previousCursor;
         }
     }
@@ -87,7 +87,7 @@ internal sealed partial class MainForm
     /// secondary key (usage descending, then hash) keeps ties in a sensible,
     /// repeatable order.
     /// </summary>
-    IEnumerable<CrossFileImageGroup> SortForDisplay(IEnumerable<CrossFileImageGroup> groups)
+    IEnumerable<CrossFileObjectGroup> SortForDisplay(IEnumerable<CrossFileObjectGroup> groups)
     {
         var ordered = _sortAscending
             ? groups.OrderBy(SortKey)
@@ -98,14 +98,14 @@ internal sealed partial class MainForm
     }
 
     /// <summary>Sort key for the active column — matches what the cell shows.</summary>
-    IComparable SortKey(CrossFileImageGroup group)
+    IComparable SortKey(CrossFileObjectGroup group)
     {
         if (_sortColumn == _deleteColumn) return _selectedHashes.Contains(group.Hash) ? 0 : 1;
         if (_sortColumn == _objectIdColumn) return group.GroupId;
         if (_sortColumn == _typeColumn) return (int)group.Kind;
         if (_sortColumn == _sizeColumn) return SizeSortValue(group);
         if (_sortColumn == _usageCountColumn) return group.UsageCount;
-        if (_sortColumn == _compressionColumn) return ImageListRow.CompressionLabel(group);
+        if (_sortColumn == _compressionColumn) return ObjectDisplay.CompressionLabel(group);
         if (_sortColumn == _estimatedSizeColumn) return group.EstimatedSize;
         if (_sortColumn == _warningColumn) return WarningSortValue(group);
         return group.UsageCount; // thumbnail column and any fallback
@@ -113,12 +113,12 @@ internal sealed partial class MainForm
 
     // サイズ compares by pixel area for images/shapes and character count for
     // text — the same magnitude the cell conveys.
-    static double SizeSortValue(CrossFileImageGroup group) => group.Kind == RemovableKind.Text
+    static double SizeSortValue(CrossFileObjectGroup group) => group.Kind == RemovableKind.Text
         ? group.TextValue?.Length ?? 0
         : (double)group.PixelWidth * group.PixelHeight;
 
     // 警告 ordering: not-removable first, then possible full-page, then clear.
-    static int WarningSortValue(CrossFileImageGroup group)
+    static int WarningSortValue(CrossFileObjectGroup group)
     {
         if (!group.IsSafelyRemovable) return 0;
         if (group.IsPossibleFullPageImage) return 1;
@@ -134,7 +134,7 @@ internal sealed partial class MainForm
     void OnColumnHeaderClicked(object? sender, DataGridViewCellMouseEventArgs e)
     {
         if (e.ColumnIndex < 0) return;
-        var column = _imageListGrid.Columns[e.ColumnIndex];
+        var column = _objectListGrid.Columns[e.ColumnIndex];
         // The thumbnail column has no meaningful ordering.
         if (column == _thumbnailColumn) return;
 
@@ -162,8 +162,8 @@ internal sealed partial class MainForm
         if (e.ColumnIndex < 0) return;
         // The Fill column sizes itself to the remaining width; auto-fitting it
         // to content would just be undone by the fill layout.
-        if (_imageListGrid.Columns[e.ColumnIndex].AutoSizeMode == DataGridViewAutoSizeColumnMode.Fill) return;
-        _imageListGrid.AutoResizeColumn(e.ColumnIndex, DataGridViewAutoSizeColumnMode.AllCells);
+        if (_objectListGrid.Columns[e.ColumnIndex].AutoSizeMode == DataGridViewAutoSizeColumnMode.Fill) return;
+        _objectListGrid.AutoResizeColumn(e.ColumnIndex, DataGridViewAutoSizeColumnMode.AllCells);
         e.Handled = true;
     }
 
@@ -224,7 +224,7 @@ internal sealed partial class MainForm
         }
     }
 
-    void RefreshThumbnailImages(IReadOnlyList<CrossFileImageGroup> groups)
+    void RefreshThumbnailImages(IReadOnlyList<CrossFileObjectGroup> groups)
     {
         // Eviction disposes bitmaps, so no load pass may be mid-flight.
         CancelThumbnailLoad();
@@ -322,7 +322,7 @@ internal sealed partial class MainForm
     /// length on each side (so "visible x2" in total, as specified), clamped
     /// to the list.
     /// </summary>
-    IReadOnlyList<CrossFileImageGroup> CurrentViewportWindow()
+    IReadOnlyList<CrossFileObjectGroup> CurrentViewportWindow()
     {
         // The graphics objects panel draws thumbnails too, and its rows are not a slice
         // of the object list — they are whichever objects share a unit with the
@@ -338,7 +338,7 @@ internal sealed partial class MainForm
         int end = Math.Min(_displayGroups.Length, first + count + margin);
         if (alsoNeeded.Count == 0) return _displayGroups[start..end];
 
-        var window = new List<CrossFileImageGroup>(end - start + alsoNeeded.Count);
+        var window = new List<CrossFileObjectGroup>(end - start + alsoNeeded.Count);
         window.AddRange(_displayGroups[start..end]);
         window.AddRange(alsoNeeded);
         return window;
@@ -347,11 +347,11 @@ internal sealed partial class MainForm
     /// <summary>First visible row and how many rows are showing.</summary>
     (int First, int Count) VisibleRowRange()
     {
-        if (_imageListGrid.Rows.Count == 0) return (0, 0);
+        if (_objectListGrid.Rows.Count == 0) return (0, 0);
 
-        int first = Math.Max(0, _imageListGrid.FirstDisplayedScrollingRowIndex);
+        int first = Math.Max(0, _objectListGrid.FirstDisplayedScrollingRowIndex);
         // Partially visible rows count: their thumbnails are on screen too.
-        int count = Math.Max(1, _imageListGrid.DisplayedRowCount(includePartialRow: true));
+        int count = Math.Max(1, _objectListGrid.DisplayedRowCount(includePartialRow: true));
         return (first, count);
     }
 
@@ -383,17 +383,17 @@ internal sealed partial class MainForm
     void ApplyLoadedRowThumbnails()
     {
         var (first, count) = VisibleRowRange();
-        int last = Math.Min(_imageListGrid.Rows.Count, first + count);
+        int last = Math.Min(_objectListGrid.Rows.Count, first + count);
         for (int i = Math.Max(0, first); i < last; i++)
         {
-            _imageListGrid.InvalidateCell(_thumbnailColumn.Index, i);
+            _objectListGrid.InvalidateCell(_thumbnailColumn.Index, i);
         }
     }
 
-    void RebuildGridRows(IReadOnlyList<CrossFileImageGroup> groups)
+    void RebuildGridRows(IReadOnlyList<CrossFileObjectGroup> groups)
     {
         _syncingSelection = true;
-        SuspendDrawing(_imageListGrid);
+        SuspendDrawing(_objectListGrid);
         // Temporarily drop the Fill column so it does not recompute its width on
         // every single Rows.Add — that recompute is O(rows) per add, i.e. the
         // dominant cost when adding hundreds of rows.
@@ -401,7 +401,7 @@ internal sealed partial class MainForm
         _warningColumn.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
         try
         {
-            _imageListGrid.Rows.Clear();
+            _objectListGrid.Rows.Clear();
             foreach (var group in groups)
             {
                 // Text rows carry no image (null); their thumbnail cell is drawn
@@ -412,18 +412,18 @@ internal sealed partial class MainForm
                 // bitmap it would otherwise be holding.
                 object? thumbnailCell = null;
 
-                int rowIndex = _imageListGrid.Rows.Add(
+                int rowIndex = _objectListGrid.Rows.Add(
                     _selectedHashes.Contains(group.Hash),
                     thumbnailCell,
                     group.GroupId,
-                    ImageListRow.TypeLabel(group),
-                    ImageListRow.SizeLabel(group),
+                    ObjectDisplay.TypeLabel(group),
+                    ObjectDisplay.SizeLabel(group),
                     group.UsageCount,
-                    ImageListRow.CompressionLabel(group),
+                    ObjectDisplay.CompressionLabel(group),
                     ByteSizeFormatter.Format(group.EstimatedSize),
-                    ImageListRow.WarningLabel(group));
+                    ObjectDisplay.WarningLabel(group));
 
-                var row = _imageListGrid.Rows[rowIndex];
+                var row = _objectListGrid.Rows[rowIndex];
                 row.Tag = group;
                 // 表側 row number = display position (1-based), reassigned every
                 // rebuild so it stays sequential top-to-bottom under any sort.
@@ -435,10 +435,10 @@ internal sealed partial class MainForm
                 }
                 else if (group.Kind is RemovableKind.Shape or RemovableKind.Drawing)
                 {
-                    row.Cells[_thumbnailColumn.Index].ToolTipText = ImageListRow.SizeLabel(group);
+                    row.Cells[_thumbnailColumn.Index].ToolTipText = ObjectDisplay.SizeLabel(group);
                 }
 
-                var warningToolTip = ImageListRow.WarningToolTip(group);
+                var warningToolTip = ObjectDisplay.WarningToolTip(group);
                 if (warningToolTip.Length > 0)
                 {
                     row.Cells[_warningColumn.Index].ToolTipText = warningToolTip;
@@ -476,7 +476,7 @@ internal sealed partial class MainForm
         {
             _warningColumn.AutoSizeMode = savedWarningMode;
             FitRowHeaderWidth();
-            ResumeDrawing(_imageListGrid);
+            ResumeDrawing(_objectListGrid);
             _syncingSelection = false;
         }
     }
@@ -490,11 +490,11 @@ internal sealed partial class MainForm
     /// </summary>
     void FitRowHeaderWidth()
     {
-        int digits = Math.Max(2, _imageListGrid.Rows.Count.ToString().Length);
+        int digits = Math.Max(2, _objectListGrid.Rows.Count.ToString().Length);
         int text = TextRenderer.MeasureText(
-            new string('0', digits), _imageListGrid.RowHeadersDefaultCellStyle.Font
-                                     ?? _imageListGrid.Font).Width;
-        _imageListGrid.RowHeadersWidth = Math.Max(Dip(24), text + Dip(12));
+            new string('0', digits), _objectListGrid.RowHeadersDefaultCellStyle.Font
+                                     ?? _objectListGrid.Font).Width;
+        _objectListGrid.RowHeadersWidth = Math.Max(Dip(24), text + Dip(12));
     }
 
     /// <summary>
@@ -502,19 +502,19 @@ internal sealed partial class MainForm
     /// create any more, so this is O(1) work regardless of the document size —
     /// the old version built one control per object and could not cope.
     /// </summary>
-    void RebuildTiles(IReadOnlyList<CrossFileImageGroup> groups)
+    void RebuildTiles(IReadOnlyList<CrossFileObjectGroup> groups)
     {
         _tileView.SetItems(groups);
         ScheduleThumbnailLoad();
     }
 
     /// <summary>How one group is drawn in the tile view, asked at paint time.</summary>
-    TileVisual TileVisualFor(CrossFileImageGroup group)
+    TileVisual TileVisualFor(CrossFileObjectGroup group)
     {
         // Text draws its string; everything else draws a bitmap when one is
         // resident, the placeholder when it can never be produced, and says so
         // in words while it is still on its way.
-        var text = ImageListRow.ThumbnailText(group);
+        var text = ObjectDisplay.ThumbnailText(group);
         var bitmap = text is null ? _thumbnails.Tile(group.Hash) : null;
         bool unrenderable = text is null && bitmap is null
                             && _thumbnails.IsUnrenderable(group.Hash);
@@ -530,11 +530,11 @@ internal sealed partial class MainForm
     }
 
     /// <summary>Tooltip text for one tile: the full string, size, or warning.</summary>
-    string? TileToolTipFor(CrossFileImageGroup group)
+    string? TileToolTipFor(CrossFileObjectGroup group)
     {
         if (group.Kind == RemovableKind.Text) return group.TextValue ?? string.Empty;
-        if (group.Kind is RemovableKind.Shape or RemovableKind.Drawing) return ImageListRow.SizeLabel(group);
-        var warning = ImageListRow.WarningToolTip(group);
+        if (group.Kind is RemovableKind.Shape or RemovableKind.Drawing) return ObjectDisplay.SizeLabel(group);
+        var warning = ObjectDisplay.WarningToolTip(group);
         return warning.Length > 0 ? warning : null;
     }
 
@@ -545,9 +545,9 @@ internal sealed partial class MainForm
     /// checked / not-removable state is reported separately as a UIA state flag,
     /// which the screen reader voices in the user's language on its own.
     /// </summary>
-    string TileAccessibleNameFor(CrossFileImageGroup group)
+    string TileAccessibleNameFor(CrossFileObjectGroup group)
     {
-        var type = ImageListRow.TypeLabel(group);
+        var type = ObjectDisplay.TypeLabel(group);
         var usage = $"{L10n.ColumnUsageCount} {group.UsageCount}";
         // A text tile's string is its most useful identity, so include it.
         return group.Kind == RemovableKind.Text
@@ -566,7 +566,7 @@ internal sealed partial class MainForm
     /// occurrences — no document is re-opened here (the window renders pages
     /// itself, on demand).
     /// </summary>
-    void OpenUsageLocations(CrossFileImageGroup group)
+    void OpenUsageLocations(CrossFileObjectGroup group)
     {
         using var dialog = new UsageLocationsDialog(UsageWindowTitle(group), BuildUsageRows(group));
         dialog.ShowDialog(this);
@@ -578,7 +578,7 @@ internal sealed partial class MainForm
     /// coordinates, so a string shown three times on a page outlines three
     /// places, the same as an image drawn three times.
     /// </summary>
-    static IReadOnlyList<UsageRow> BuildUsageRows(CrossFileImageGroup group)
+    static IReadOnlyList<UsageRow> BuildUsageRows(CrossFileObjectGroup group)
     {
         var rows = new List<UsageRow>();
         foreach (var file in group.FileOccurrences)
@@ -601,12 +601,12 @@ internal sealed partial class MainForm
     }
 
     /// <summary>Window title: the clean menu caption plus a short object label.</summary>
-    static string UsageWindowTitle(CrossFileImageGroup group)
+    static string UsageWindowTitle(CrossFileObjectGroup group)
     {
         var caption = L10n.ContextMenuUsageLocations.Replace("&", string.Empty).TrimEnd('…', '.');
         var label = group.Kind == RemovableKind.Text
-            ? ImageListRow.ThumbnailText(group) ?? group.GroupId
-            : $"{ImageListRow.TypeLabel(group)} {group.GroupId}";
+            ? ObjectDisplay.ThumbnailText(group) ?? group.GroupId
+            : $"{ObjectDisplay.TypeLabel(group)} {group.GroupId}";
         return $"{caption} — {label}";
     }
 
@@ -639,7 +639,7 @@ internal sealed partial class MainForm
     {
         _tableViewMenuItem.Checked = !_isTileView;
         _tileViewMenuItem.Checked = _isTileView;
-        _imageListGrid.Visible = !_isTileView;
+        _objectListGrid.Visible = !_isTileView;
         _tileView.Visible = _isTileView;
     }
 }

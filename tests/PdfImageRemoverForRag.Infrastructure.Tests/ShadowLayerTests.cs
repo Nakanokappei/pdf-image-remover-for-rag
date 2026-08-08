@@ -31,23 +31,23 @@ public class ShadowLayerTests : IClassFixture<SamplePdfFixture>
         // One of the three drawn images is a shadow. The other two are what
         // the rule must NOT catch: a picture that happens to carry a mask,
         // and a flat colour with no mask at all.
-        var shadow = Assert.Single(info.ImageGroups, g => g.Kind == RemovableKind.Shadow);
+        var shadow = Assert.Single(info.ObjectGroups, g => g.Kind == RemovableKind.Shadow);
         Assert.Equal("SHD_001", shadow.GroupId);
-        Assert.Equal(2, info.ImageGroups.Count(g => g.Kind == RemovableKind.Image));
+        Assert.Equal(2, info.ObjectGroups.Count(g => g.Kind == RemovableKind.Image));
     }
 
     [Fact]
     public async Task AShadow_IsRemovedLikeAnImage()
     {
         var info = await NewAnalyzer().AnalyzeAsync(_samples.ShadowLayerPath);
-        var shadow = info.ImageGroups.Single(g => g.Kind == RemovableKind.Shadow);
+        var shadow = info.ObjectGroups.Single(g => g.Kind == RemovableKind.Shadow);
 
         var destination = Path.Combine(_samples.TempDirectory, "shadow-removed.pdf");
         var result = await new PdfSharpDocumentCleaner().CleanAsync(
             _samples.ShadowLayerPath, destination,
             new[]
             {
-                new ImageRemovalSelection(
+                new ObjectRemovalSelection(
                     shadow.GroupId, shadow.Occurrences, shadow.Kind, shadow.TextValue, shadow.Hash),
             });
 
@@ -64,29 +64,29 @@ public class ShadowLayerTests : IClassFixture<SamplePdfFixture>
 
         // And the two images it sat beside are untouched.
         var after = await NewAnalyzer().AnalyzeAsync(destination);
-        Assert.Equal(2, after.ImageGroups.Count(g => g.Kind == RemovableKind.Image));
-        Assert.DoesNotContain(after.ImageGroups, g => g.Kind == RemovableKind.Shadow);
+        Assert.Equal(2, after.ObjectGroups.Count(g => g.Kind == RemovableKind.Image));
+        Assert.DoesNotContain(after.ObjectGroups, g => g.Kind == RemovableKind.Shadow);
     }
 
     [Fact]
     public async Task TheSavedFile_PassesVerificationForARemovedShadow()
     {
         var info = await NewAnalyzer().AnalyzeAsync(_samples.ShadowLayerPath);
-        var shadow = info.ImageGroups.Single(g => g.Kind == RemovableKind.Shadow);
+        var shadow = info.ObjectGroups.Single(g => g.Kind == RemovableKind.Shadow);
 
         var destination = Path.Combine(_samples.TempDirectory, "shadow-removed-verified.pdf");
         await new PdfSharpDocumentCleaner().CleanAsync(
             _samples.ShadowLayerPath, destination,
             new[]
             {
-                new ImageRemovalSelection(
+                new ObjectRemovalSelection(
                     shadow.GroupId, shadow.Occurrences, shadow.Kind, shadow.TextValue, shadow.Hash),
             });
 
         var verification = await new PdfSharpDocumentVerifier().VerifyAsync(
             _samples.ShadowLayerPath, destination,
             removedGroupHashes: new[] { shadow.Hash },
-            retainedGroupHashes: info.ImageGroups
+            retainedGroupHashes: info.ObjectGroups
                 .Where(g => g.Kind == RemovableKind.Image)
                 .Select(g => g.Hash)
                 .ToArray());
@@ -105,8 +105,8 @@ public class ShadowLayerTests : IClassFixture<SamplePdfFixture>
         // is still a picture. What decides is the colour count.
         var info = await NewAnalyzer().AnalyzeAsync(_samples.SoftMaskedImagePath);
 
-        var image = Assert.Single(info.ImageGroups, g => g.Kind == RemovableKind.Image);
+        var image = Assert.Single(info.ObjectGroups, g => g.Kind == RemovableKind.Image);
         Assert.Equal("IMG_001", image.GroupId);
-        Assert.DoesNotContain(info.ImageGroups, g => g.Kind == RemovableKind.Shadow);
+        Assert.DoesNotContain(info.ObjectGroups, g => g.Kind == RemovableKind.Shadow);
     }
 }

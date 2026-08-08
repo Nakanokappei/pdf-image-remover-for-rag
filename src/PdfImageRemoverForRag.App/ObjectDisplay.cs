@@ -5,18 +5,20 @@ using PdfImageRemoverForRag.Core.Validation;
 namespace PdfImageRemoverForRag.App;
 
 /// <summary>
-/// Display formatting for the 画像一覧 (image list) — everything that turns a
-/// <see cref="CrossFileImageGroup"/> into cell text, tooltips, or images
-/// lives here so MainForm stays layout-and-events only. All strings come
-/// from <see cref="L10n"/>.
+/// How an object is displayed — everything that turns a
+/// <see cref="CrossFileObjectGroup"/> into cell text, tooltips, or a
+/// thumbnail. It lives here, not in MainForm, because all three views ask it:
+/// the object list, the tiles and the graphics objects panel, which is what
+/// makes one object look the same in all of them. All strings come from
+/// <see cref="L10n"/>.
 /// </summary>
-internal static class ImageListRow
+internal static class ObjectDisplay
 {
     /// <summary>
     /// Short text for the 警告 column. Unsafe wins over full-page because it
     /// changes what the user can do (the checkbox is disabled).
     /// </summary>
-    public static string WarningLabel(CrossFileImageGroup group)
+    public static string WarningLabel(CrossFileObjectGroup group)
     {
         if (!group.IsSafelyRemovable) return L10n.WarningNotRemovable;
         if (group.IsPossibleFullPageImage) return L10n.WarningFullPage;
@@ -24,7 +26,7 @@ internal static class ImageListRow
     }
 
     /// <summary>Hover text for the 警告 column; both §7 and §14.3 texts can apply.</summary>
-    public static string WarningToolTip(CrossFileImageGroup group)
+    public static string WarningToolTip(CrossFileObjectGroup group)
     {
         var parts = new List<string>(2);
         if (!group.IsSafelyRemovable) parts.Add(L10n.TooltipUnsafe);
@@ -41,10 +43,10 @@ internal static class ImageListRow
     /// spaces — would paint as an empty cell/tile, making the row look blank
     /// and impossible to tell apart from a rendering failure. Such a value is
     /// wrapped in quotes so the whitespace is visible as content. The group's
-    /// real <see cref="CrossFileImageGroup.TextValue"/> (the removal key and
+    /// real <see cref="CrossFileObjectGroup.TextValue"/> (the removal key and
     /// the tooltip) is unchanged — only what is drawn.
     /// </summary>
-    public static string? ThumbnailText(CrossFileImageGroup group) =>
+    public static string? ThumbnailText(CrossFileObjectGroup group) =>
         ThumbnailText(group.Kind, group.TextValue);
 
     /// <summary>
@@ -62,7 +64,7 @@ internal static class ImageListRow
     }
 
     /// <summary>タイプ cell: image / text / shape / drawing, localized.</summary>
-    public static string TypeLabel(CrossFileImageGroup group) => TypeLabel(group.Kind);
+    public static string TypeLabel(CrossFileObjectGroup group) => TypeLabel(group.Kind);
 
     /// <summary>
     /// The same label from a bare kind, for callers that hold one without a
@@ -79,7 +81,7 @@ internal static class ImageListRow
     };
 
     /// <summary>サイズ cell: "W×H" px (image), char count (text), or "W×H pt" (shape).</summary>
-    public static string SizeLabel(CrossFileImageGroup group) => group.Kind switch
+    public static string SizeLabel(CrossFileObjectGroup group) => group.Kind switch
     {
         RemovableKind.Text => L10n.TextSize(group.TextValue?.Length ?? 0),
         // A drawing is measured on the page like a shape is, in points.
@@ -91,7 +93,7 @@ internal static class ImageListRow
     /// <summary>圧縮 cell: filter label for images, "N/A" for text and shapes
     /// (compression is an image-only attribute). A shadow is an image, and its
     /// stream is filtered like any other, so it gets the filter label too.</summary>
-    public static string CompressionLabel(CrossFileImageGroup group) => group.Kind.IsImageXObject()
+    public static string CompressionLabel(CrossFileObjectGroup group) => group.Kind.IsImageXObject()
         ? CompressionLabel(group.Compression)
         : L10n.CompressionNotApplicable;
 

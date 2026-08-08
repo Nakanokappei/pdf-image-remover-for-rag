@@ -75,7 +75,7 @@ internal sealed class ThumbnailCache : IDisposable
     /// how many objects were rendered this pass.
     /// </summary>
     public async Task<LoadResult> LoadWindowAsync(
-        IReadOnlyList<CrossFileImageGroup> window,
+        IReadOnlyList<CrossFileObjectGroup> window,
         CancellationToken ct)
     {
         // Text draws its string; it never has a bitmap.

@@ -44,7 +44,7 @@ public class HiddenPlacementTests : IClassFixture<SamplePdfFixture>
     {
         // The sample draws one logo on all five pages. Hide the one on page 2.
         var info = await NewAnalyzer().AnalyzeAsync(_samples.RepeatedLogoPath);
-        var logo = info.ImageGroups.Single(g => g.Kind == RemovableKind.Image);
+        var logo = info.ObjectGroups.Single(g => g.Kind == RemovableKind.Image);
         var onPageTwo = logo.Occurrences.Single(o => o.PageNumber == 2);
 
         var place = OverlapDetector.RegionCovering(
@@ -59,7 +59,7 @@ public class HiddenPlacementTests : IClassFixture<SamplePdfFixture>
         var destination = Path.Combine(_samples.TempDirectory, "hidden-placement.pdf");
         var result = await new PdfSharpDocumentCleaner().CleanAsync(
             _samples.RepeatedLogoPath, destination,
-            Array.Empty<ImageRemovalSelection>(), regionsToFlatten: null,
+            Array.Empty<ObjectRemovalSelection>(), regionsToFlatten: null,
             regionsToClear: new[] { place });
 
         Assert.Equal(new[] { 1, 3, 4, 5 }, PagesDrawing(destination, logo.Hash));
@@ -79,13 +79,13 @@ public class HiddenPlacementTests : IClassFixture<SamplePdfFixture>
         var destination = Path.Combine(_samples.TempDirectory, "hidden-no-renderer.pdf");
         var result = await new PdfSharpDocumentCleaner().CleanAsync(
             _samples.ImageAndTextPath, destination,
-            Array.Empty<ImageRemovalSelection>(), regionsToFlatten: null,
+            Array.Empty<ObjectRemovalSelection>(), regionsToFlatten: null,
             regionsToClear: new[] { region });
 
         Assert.True(result.DrawCallsRemoved >= region.Members.Count);
 
         // And what it took out is gone from the file, not merely unpainted.
         var after = await NewAnalyzer().AnalyzeAsync(destination);
-        Assert.DoesNotContain(after.ImageGroups, g => g.Kind == RemovableKind.Image);
+        Assert.DoesNotContain(after.ObjectGroups, g => g.Kind == RemovableKind.Image);
     }
 }

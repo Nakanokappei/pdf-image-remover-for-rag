@@ -21,7 +21,7 @@ internal sealed partial class MainForm
         _openMenuItem.Enabled = !busy;
         _openToolButton.Enabled = !busy;
         AllowDrop = !busy;
-        _imageListGrid.Enabled = !busy;
+        _objectListGrid.Enabled = !busy;
         _tileView.Enabled = !busy;
         _graphicsObjectsPanel.Enabled = !busy;
         _progressIndicator.Visible = busy;

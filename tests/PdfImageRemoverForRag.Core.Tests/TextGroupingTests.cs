@@ -9,10 +9,10 @@ namespace PdfImageRemoverForRag.Core.Tests;
 public class TextGroupingTests
 {
     // The discovery factories live in Discoveries so a change to the
-    // ImageDiscovery record lands in one place.
-    static ImageDiscovery Image(string hash, int usage = 1) => Discoveries.Image(hash, usage);
-    static ImageDiscovery Text(string value, int usage = 2) => Discoveries.Text(value, usage);
-    static ImageGroupBuilder NewBuilder() => Discoveries.NewBuilder();
+    // ObjectDiscovery record lands in one place.
+    static ObjectDiscovery Image(string hash, int usage = 1) => Discoveries.Image(hash, usage);
+    static ObjectDiscovery Text(string value, int usage = 2) => Discoveries.Text(value, usage);
+    static ObjectGroupBuilder NewBuilder() => Discoveries.NewBuilder();
 
     [Fact]
     public void TextDiscoveries_GroupByValue_AndCarryKindAndValue()
@@ -45,10 +45,10 @@ public class TextGroupingTests
     {
         var perFile = new[]
         {
-            ("a.pdf", (IReadOnlyList<PdfImageGroup>)NewBuilder().Build(new[] { Text("CONFIDENTIAL", 2) })),
+            ("a.pdf", (IReadOnlyList<ObjectGroup>)NewBuilder().Build(new[] { Text("CONFIDENTIAL", 2) })),
             ("b.pdf", NewBuilder().Build(new[] { Text("CONFIDENTIAL", 3) })),
         };
-        var merged = CrossFileImageGroupBuilder.Build(perFile);
+        var merged = CrossFileObjectGroupBuilder.Build(perFile);
         var group = Assert.Single(merged);
         Assert.Equal(RemovableKind.Text, group.Kind);
         Assert.Equal("CONFIDENTIAL", group.TextValue);

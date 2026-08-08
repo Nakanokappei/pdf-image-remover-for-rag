@@ -6,16 +6,16 @@ namespace PdfImageRemoverForRag.Core.Tests;
 
 // Cross-file grouping: the same image (same stream hash) opened in several
 // PDFs must collapse into one selectable row.
-public class CrossFileImageGroupBuilderTests
+public class CrossFileObjectGroupBuilderTests
 {
-    static PdfImageGroup MakeGroup(string hash, int usageCount = 1,
+    static ObjectGroup MakeGroup(string hash, int usageCount = 1,
         bool isSafelyRemovable = true, string? warningMessage = null,
         bool isPossibleFullPage = false, byte[]? thumbnailBytes = null)
     {
         var occurrences = Enumerable.Range(1, usageCount)
-            .Select(page => new PdfImageOccurrence(page, "1 0 R", "/Im1", 0, 0, 100, 60))
+            .Select(page => new ObjectOccurrence(page, "1 0 R", "/Im1", 0, 0, 100, 60))
             .ToArray();
-        return new PdfImageGroup(
+        return new ObjectGroup(
             GroupId: "IMG_001", Hash: hash,
             PixelWidth: 100, PixelHeight: 60,
             ColorSpace: "/DeviceRGB", BitsPerComponent: 8,
@@ -31,9 +31,9 @@ public class CrossFileImageGroupBuilderTests
     [Fact]
     public void SameHashInTwoFiles_MergesIntoOneGroup_AndSumsUsage()
     {
-        var groups = CrossFileImageGroupBuilder.Build(new[]
+        var groups = CrossFileObjectGroupBuilder.Build(new[]
         {
-            ("a.pdf", (IReadOnlyList<PdfImageGroup>)new[] { MakeGroup("HASH_LOGO", usageCount: 5) }),
+            ("a.pdf", (IReadOnlyList<ObjectGroup>)new[] { MakeGroup("HASH_LOGO", usageCount: 5) }),
             ("b.pdf", new[] { MakeGroup("HASH_LOGO", usageCount: 3) }),
         });
 
@@ -48,9 +48,9 @@ public class CrossFileImageGroupBuilderTests
     [Fact]
     public void DifferentHashes_StaySeparate()
     {
-        var groups = CrossFileImageGroupBuilder.Build(new[]
+        var groups = CrossFileObjectGroupBuilder.Build(new[]
         {
-            ("a.pdf", (IReadOnlyList<PdfImageGroup>)new[] { MakeGroup("HASH_A") }),
+            ("a.pdf", (IReadOnlyList<ObjectGroup>)new[] { MakeGroup("HASH_A") }),
             ("b.pdf", new[] { MakeGroup("HASH_B") }),
         });
 
@@ -63,9 +63,9 @@ public class CrossFileImageGroupBuilderTests
     {
         // Same rationale as the single-file AND rule (§14.3): one checkbox
         // must never remove only the "safe half" of an image's placements.
-        var groups = CrossFileImageGroupBuilder.Build(new[]
+        var groups = CrossFileObjectGroupBuilder.Build(new[]
         {
-            ("a.pdf", (IReadOnlyList<PdfImageGroup>)new[] { MakeGroup("HASH_X", isSafelyRemovable: true) }),
+            ("a.pdf", (IReadOnlyList<ObjectGroup>)new[] { MakeGroup("HASH_X", isSafelyRemovable: true) }),
             ("b.pdf", new[] { MakeGroup("HASH_X", isSafelyRemovable: false, warningMessage: "unsafe in b") }),
         });
 
@@ -77,9 +77,9 @@ public class CrossFileImageGroupBuilderTests
     [Fact]
     public void FullPageInAnyFile_FlagsTheMergedGroup()
     {
-        var groups = CrossFileImageGroupBuilder.Build(new[]
+        var groups = CrossFileObjectGroupBuilder.Build(new[]
         {
-            ("a.pdf", (IReadOnlyList<PdfImageGroup>)new[] { MakeGroup("HASH_X", isPossibleFullPage: false) }),
+            ("a.pdf", (IReadOnlyList<ObjectGroup>)new[] { MakeGroup("HASH_X", isPossibleFullPage: false) }),
             ("b.pdf", new[] { MakeGroup("HASH_X", isPossibleFullPage: true) }),
         });
 
@@ -90,9 +90,9 @@ public class CrossFileImageGroupBuilderTests
     public void Thumbnail_ComesFromFirstFileThatHasOne()
     {
         var png = new byte[] { 1, 2, 3 };
-        var groups = CrossFileImageGroupBuilder.Build(new[]
+        var groups = CrossFileObjectGroupBuilder.Build(new[]
         {
-            ("a.pdf", (IReadOnlyList<PdfImageGroup>)new[] { MakeGroup("HASH_X", thumbnailBytes: null) }),
+            ("a.pdf", (IReadOnlyList<ObjectGroup>)new[] { MakeGroup("HASH_X", thumbnailBytes: null) }),
             ("b.pdf", new[] { MakeGroup("HASH_X", thumbnailBytes: png) }),
         });
 
@@ -102,9 +102,9 @@ public class CrossFileImageGroupBuilderTests
     [Fact]
     public void GroupsSortedByTotalUsage_GetSequentialIds()
     {
-        var groups = CrossFileImageGroupBuilder.Build(new[]
+        var groups = CrossFileObjectGroupBuilder.Build(new[]
         {
-            ("a.pdf", (IReadOnlyList<PdfImageGroup>)new[]
+            ("a.pdf", (IReadOnlyList<ObjectGroup>)new[]
             {
                 MakeGroup("HASH_RARE", usageCount: 1),
                 MakeGroup("HASH_COMMON", usageCount: 2),

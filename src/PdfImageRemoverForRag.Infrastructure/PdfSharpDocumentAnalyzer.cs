@@ -16,7 +16,7 @@ namespace PdfImageRemoverForRag.Infrastructure;
 /// Walks every page, collects direct Image XObjects and Form XObjects,
 /// resolves Form-embedded images (marking them unsafe to delete per §14.3),
 /// merges thumbnails from <see cref="IThumbnailProvider"/>, then hands the
-/// results to <see cref="ImageGroupBuilder"/> in Core for grouping.
+/// results to <see cref="ObjectGroupBuilder"/> in Core for grouping.
 /// </summary>
 public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
 {
@@ -69,7 +69,7 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
         }
 
         // Splice thumbnails back into the discoveries.
-        var withThumbs = new List<ImageDiscovery>(discoveries.Count);
+        var withThumbs = new List<ObjectDiscovery>(discoveries.Count);
         foreach (var d in discoveries)
         {
             var thumb = thumbnails.TryGetValue(d.StreamHash, out var png) ? png : null;
@@ -79,7 +79,7 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
         // Group in Core so grouping stays PDF-library-agnostic.
         progress?.Report(new AnalysisProgress(AnalysisPhase.Grouping, 0, 0));
         var detector = new FullPageImageDetector(pageDimensions);
-        var builder = new ImageGroupBuilder(detector);
+        var builder = new ObjectGroupBuilder(detector);
         var groups = builder.Build(withThumbs);
 
         return new PdfDocumentInfo(
@@ -87,11 +87,11 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
             FileSize: new FileInfo(pdfFilePath).Length,
             PageCount: pageCount,
             IsEncrypted: isEncrypted,
-            ImageGroups: groups,
+            ObjectGroups: groups,
             OverlapRegions: overlapRegions);
     }
 
-    static (List<ImageDiscovery> Discoveries,
+    static (List<ObjectDiscovery> Discoveries,
             List<PageDimensions> PageDimensions,
             bool IsEncrypted,
             int PageCount,
@@ -174,7 +174,7 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
                     foreach (var call in drawCalls)
                     {
                         if (call.ResourceName != img.ResourceName) continue;
-                        accumulator.Occurrences.Add(new PdfImageOccurrence(
+                        accumulator.Occurrences.Add(new ObjectOccurrence(
                             pageNumber, img.ObjectId, img.ResourceName,
                             call.X, call.Y, call.Width, call.Height));
                     }
@@ -211,7 +211,7 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
                             "複雑なPDF構造のため、この画像は安全に削除できません。");
                         foreach (var call in formCalls)
                         {
-                            accumulator.Occurrences.Add(new PdfImageOccurrence(
+                            accumulator.Occurrences.Add(new ObjectOccurrence(
                                 pageNumber, image.ObjectId, image.ResourceName,
                                 call.X, call.Y, call.Width, call.Height));
                         }
@@ -304,7 +304,7 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
     /// wrong in that direction costs a decode that fails, while being wrong the
     /// other way silently loses a thumbnail.
     /// </summary>
-    static IReadOnlyCollection<string> RenderableImageHashes(IReadOnlyList<ImageDiscovery> discoveries)
+    static IReadOnlyCollection<string> RenderableImageHashes(IReadOnlyList<ObjectDiscovery> discoveries)
     {
         var hashes = new HashSet<string>(StringComparer.Ordinal);
         foreach (var discovery in discoveries)
@@ -460,11 +460,11 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
     /// It is safely removable: what gets deleted is the page's own Do call, not
     /// the shared form, so removing it from one page cannot disturb another.
     /// </summary>
-    static ImageDiscovery BuildDrawingDiscovery(string hash, DrawingAccumulator acc)
+    static ObjectDiscovery BuildDrawingDiscovery(string hash, DrawingAccumulator acc)
     {
         var occurrences = acc.Placements.Select(ToOccurrence).ToArray();
         var first = acc.Placements[0];
-        return new ImageDiscovery(
+        return new ObjectDiscovery(
             ObjectId: acc.ObjectId,
             StreamHash: hash,
             PixelWidth: (int)Math.Round(first.Width),
@@ -490,10 +490,10 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
     /// size in points. The signature is stored in <c>TextValue</c> as the
     /// cleaner's match key.
     /// </summary>
-    static ImageDiscovery BuildShapeDiscovery(string signature, ShapeAccumulator acc)
+    static ObjectDiscovery BuildShapeDiscovery(string signature, ShapeAccumulator acc)
     {
         var occurrences = acc.Placements.Select(ToOccurrence).ToArray();
-        return new ImageDiscovery(
+        return new ObjectDiscovery(
             ObjectId: string.Empty,
             StreamHash: "SHAPE:" + StreamHasher.Sha256Hex(System.Text.Encoding.UTF8.GetBytes(signature)),
             PixelWidth: (int)Math.Round(acc.Width),
@@ -517,7 +517,7 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
     /// resource name — those identify an Image XObject — so the id and name are
     /// empty and the rectangle carries the information.
     /// </summary>
-    static PdfImageOccurrence ToOccurrence(Placement p) =>
+    static ObjectOccurrence ToOccurrence(Placement p) =>
         new(p.PageNumber, string.Empty, string.Empty, p.X, p.Y, p.Width, p.Height);
 
     /// <summary>
@@ -525,10 +525,10 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
     /// it groups by value and never collides with an image's raw-stream hash;
     /// each occurrence carries the rectangle that showing covers.
     /// </summary>
-    static ImageDiscovery BuildTextDiscovery(string value, IReadOnlyList<Placement> placements)
+    static ObjectDiscovery BuildTextDiscovery(string value, IReadOnlyList<Placement> placements)
     {
         var occurrences = placements.Select(ToOccurrence).ToArray();
-        return new ImageDiscovery(
+        return new ObjectDiscovery(
             ObjectId: string.Empty,
             StreamHash: "TEXT:" + StreamHasher.Sha256Hex(System.Text.Encoding.UTF8.GetBytes(value)),
             PixelWidth: 0,
@@ -559,7 +559,7 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
 
     /// <summary>
     /// Mutable staging record — collected during the PDFsharp sweep and
-    /// baked into an immutable <see cref="ImageDiscovery"/> at the end.
+    /// baked into an immutable <see cref="ObjectDiscovery"/> at the end.
     /// </summary>
     sealed class DiscoveryAccumulator
     {
@@ -572,7 +572,7 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
         readonly string _compression;
         readonly long _streamByteCount;
         readonly bool _isImageMask;
-        public List<PdfImageOccurrence> Occurrences { get; } = new();
+        public List<ObjectOccurrence> Occurrences { get; } = new();
 
         /// <summary>Image or shadow — decided once, from the object's bytes.</summary>
         public RemovableKind Kind { get; }
@@ -607,7 +607,7 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
             _unsafeReason ??= reason;
         }
 
-        public ImageDiscovery ToDiscovery() => new(
+        public ObjectDiscovery ToDiscovery() => new(
             ObjectId: _objectId,
             StreamHash: _streamHash,
             PixelWidth: _pixelWidth,

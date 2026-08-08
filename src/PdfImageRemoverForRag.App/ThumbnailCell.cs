@@ -32,13 +32,13 @@ internal sealed class ThumbnailCell : DataGridViewImageCell
         {
             get
             {
-                if (Owner?.OwningRow?.Tag is not CrossFileImageGroup group)
+                if (Owner?.OwningRow?.Tag is not CrossFileObjectGroup group)
                 {
                     return base.Name ?? string.Empty;
                 }
                 return group.Kind == RemovableKind.Text
-                    ? $"{ImageListRow.TypeLabel(group)}: {group.TextValue}"
-                    : $"{ImageListRow.TypeLabel(group)} {group.GroupId}";
+                    ? $"{ObjectDisplay.TypeLabel(group)}: {group.TextValue}"
+                    : $"{ObjectDisplay.TypeLabel(group)} {group.GroupId}";
             }
             set { /* fixed name; ignore assignment */ }
         }

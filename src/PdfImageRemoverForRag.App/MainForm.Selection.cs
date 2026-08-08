@@ -11,9 +11,9 @@ internal sealed partial class MainForm
     void OnGridCellDirtyStateChanged(object? sender, EventArgs e)
     {
         // Commit checkbox edits immediately so CellValueChanged fires per click.
-        if (_imageListGrid.IsCurrentCellDirty)
+        if (_objectListGrid.IsCurrentCellDirty)
         {
-            _imageListGrid.CommitEdit(DataGridViewDataErrorContexts.Commit);
+            _objectListGrid.CommitEdit(DataGridViewDataErrorContexts.Commit);
         }
     }
 
@@ -37,10 +37,10 @@ internal sealed partial class MainForm
         // a reference to one would be drawing a disposed image the moment it
         // scrolled out of the window.
         if (e.RowIndex < 0 || e.ColumnIndex != _thumbnailColumn.Index) return;
-        if (_imageListGrid.Rows[e.RowIndex].Tag is not CrossFileImageGroup group) return;
+        if (_objectListGrid.Rows[e.RowIndex].Tag is not CrossFileObjectGroup group) return;
 
         bool selected = (e.State & DataGridViewElementStates.Selected) != 0;
-        var text = ImageListRow.ThumbnailText(group);
+        var text = ObjectDisplay.ThumbnailText(group);
         if (text is null)
         {
             PaintThumbnailCell(e, group, selected);
@@ -64,7 +64,7 @@ internal sealed partial class MainForm
     /// placeholder icon, so "not ready" and "cannot be shown" never look alike.
     /// </summary>
     void PaintThumbnailCell(
-        DataGridViewCellPaintingEventArgs e, CrossFileImageGroup group, bool selected)
+        DataGridViewCellPaintingEventArgs e, CrossFileObjectGroup group, bool selected)
     {
         e.PaintBackground(e.CellBounds, selected);
 
@@ -109,14 +109,14 @@ internal sealed partial class MainForm
             // Column header: caption drawn inside the area LEFT of the reserved
             // sort-glyph zone. The zone is reserved ALWAYS (sorted or not) so the
             // caption's position never shifts when the column becomes the sort key.
-            var column = _imageListGrid.Columns[e.ColumnIndex];
+            var column = _objectListGrid.Columns[e.ColumnIndex];
             bool sorted = column == _sortColumn && column != _thumbnailColumn;
             var textBounds = Rectangle.Inflate(bounds, -Dip(6), -Dip(2));
             textBounds.Width -= Dip(SortGlyphWidth);
 
             var font = column.HeaderCell.Style.Font
-                       ?? _imageListGrid.ColumnHeadersDefaultCellStyle.Font
-                       ?? _imageListGrid.Font;
+                       ?? _objectListGrid.ColumnHeadersDefaultCellStyle.Font
+                       ?? _objectListGrid.Font;
             var flags = ToTextFlags(column.HeaderCell.Style.Alignment) | TextFormatFlags.EndEllipsis;
             TextRenderer.DrawText(g, column.HeaderText, font, textBounds, HeaderText, flags);
             if (sorted) DrawSortGlyph(g, bounds);
@@ -126,10 +126,10 @@ internal sealed partial class MainForm
             // Row-number gutter: the number, centered; no current-row marker.
             // NoPadding so the built-in left glyph padding does not push the
             // digits right (which made multi-digit numbers look right-aligned).
-            var value = _imageListGrid.Rows[e.RowIndex].HeaderCell.Value?.ToString();
+            var value = _objectListGrid.Rows[e.RowIndex].HeaderCell.Value?.ToString();
             if (!string.IsNullOrEmpty(value))
             {
-                TextRenderer.DrawText(g, value, _imageListGrid.Font, bounds, HeaderText,
+                TextRenderer.DrawText(g, value, _objectListGrid.Font, bounds, HeaderText,
                     TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter
                     | TextFormatFlags.NoPadding);
             }
@@ -188,14 +188,14 @@ internal sealed partial class MainForm
         // anchor row to the clicked row.
         if (e.Button != MouseButtons.Left) return;
         if (e.RowIndex < 0 || e.ColumnIndex != _deleteColumn.Index) return;
-        if (_imageListGrid.Rows[e.RowIndex].Cells[_deleteColumn.Index].Value is not { } current) return;
+        if (_objectListGrid.Rows[e.RowIndex].Cells[_deleteColumn.Index].Value is not { } current) return;
 
         // New state is the opposite of the clicked cell's current state; the whole
         // range (for Shift) or just this row (otherwise) is set to it.
         bool newState = current is not true;
         bool shift = (ModifierKeys & Keys.Shift) != 0
                      && _checkAnchorRowIndex >= 0
-                     && _checkAnchorRowIndex < _imageListGrid.Rows.Count;
+                     && _checkAnchorRowIndex < _objectListGrid.Rows.Count;
         ToggleDeleteRange(shift ? _checkAnchorRowIndex : e.RowIndex, e.RowIndex, newState);
     }
 
@@ -218,16 +218,16 @@ internal sealed partial class MainForm
     {
         if (e.KeyCode != Keys.Space || e.Control || e.Alt) return;
 
-        int rowIndex = _imageListGrid.CurrentCell?.RowIndex ?? -1;
-        if (rowIndex < 0 || rowIndex >= _imageListGrid.Rows.Count) return;
-        if (_imageListGrid.Rows[rowIndex].Cells[_deleteColumn.Index].Value is not { } current) return;
+        int rowIndex = _objectListGrid.CurrentCell?.RowIndex ?? -1;
+        if (rowIndex < 0 || rowIndex >= _objectListGrid.Rows.Count) return;
+        if (_objectListGrid.Rows[rowIndex].Cells[_deleteColumn.Index].Value is not { } current) return;
 
         // Plain Space is also what sets the anchor, mirroring a click without
         // Shift — so Shift+Space always extends from the last row deliberately
         // toggled, whether that was done with the mouse or the keyboard.
         bool shift = e.Shift
                      && _checkAnchorRowIndex >= 0
-                     && _checkAnchorRowIndex < _imageListGrid.Rows.Count;
+                     && _checkAnchorRowIndex < _objectListGrid.Rows.Count;
         if (!shift) _checkAnchorRowIndex = rowIndex;
 
         ToggleDeleteRange(shift ? _checkAnchorRowIndex : rowIndex, rowIndex, current is not true);
@@ -252,9 +252,9 @@ internal sealed partial class MainForm
         {
             for (int r = from; r <= to; r++)
             {
-                var row = _imageListGrid.Rows[r];
+                var row = _objectListGrid.Rows[r];
                 // Only safely-removable rows can be checked (§14.3).
-                if (row.Tag is not CrossFileImageGroup group || !group.IsSafelyRemovable) continue;
+                if (row.Tag is not CrossFileObjectGroup group || !group.IsSafelyRemovable) continue;
                 SetSelected(group.Hash, newState);
                 row.Cells[_deleteColumn.Index].Value = newState;
             }
@@ -270,8 +270,8 @@ internal sealed partial class MainForm
     void OnGridCellValueChanged(object? sender, DataGridViewCellEventArgs e)
     {
         if (_syncingSelection || e.RowIndex < 0 || e.ColumnIndex != _deleteColumn.Index) return;
-        var row = _imageListGrid.Rows[e.RowIndex];
-        if (row.Tag is not CrossFileImageGroup group) return;
+        var row = _objectListGrid.Rows[e.RowIndex];
+        if (row.Tag is not CrossFileObjectGroup group) return;
 
         bool isChecked = row.Cells[_deleteColumn.Index].Value is true;
         SetSelected(group.Hash, isChecked);
@@ -280,7 +280,7 @@ internal sealed partial class MainForm
         RefreshSelectionStatus();
     }
 
-    void OnTileToggled(object? sender, CrossFileImageGroup group)
+    void OnTileToggled(object? sender, CrossFileObjectGroup group)
     {
         if (_syncingSelection) return;
         bool isChecked = !_selectedHashes.Contains(group.Hash);
@@ -295,7 +295,7 @@ internal sealed partial class MainForm
     /// requested state. Mirrors the grid's Shift+click; both views are synced
     /// from <see cref="_selectedHashes"/> afterwards.
     /// </summary>
-    void OnTileRangeToggled(IReadOnlyList<CrossFileImageGroup> groups, bool select)
+    void OnTileRangeToggled(IReadOnlyList<CrossFileObjectGroup> groups, bool select)
     {
         if (_syncingSelection) return;
         foreach (var group in groups) SetSelected(group.Hash, select);
@@ -327,13 +327,13 @@ internal sealed partial class MainForm
     /// </summary>
     void ShowRowContextMenu(int rowIndex)
     {
-        if (_imageListGrid.Rows[rowIndex].Tag is not CrossFileImageGroup group) return;
+        if (_objectListGrid.Rows[rowIndex].Tag is not CrossFileObjectGroup group) return;
         _contextGroup = group;
-        _rowContextMenu.Show(_imageListGrid, _imageListGrid.PointToClient(Cursor.Position));
+        _rowContextMenu.Show(_objectListGrid, _objectListGrid.PointToClient(Cursor.Position));
     }
 
     /// <summary>Capture the right-clicked tile's group and show the menu there.</summary>
-    void OnTileContextRequested(CrossFileImageGroup group, Point location)
+    void OnTileContextRequested(CrossFileObjectGroup group, Point location)
     {
         _contextGroup = group;
         _rowContextMenu.Show(_tileView, location);
@@ -349,9 +349,9 @@ internal sealed partial class MainForm
         _syncingSelection = true;
         try
         {
-            foreach (DataGridViewRow row in _imageListGrid.Rows)
+            foreach (DataGridViewRow row in _objectListGrid.Rows)
             {
-                if (row.Tag is CrossFileImageGroup g && g.Hash == hash)
+                if (row.Tag is CrossFileObjectGroup g && g.Hash == hash)
                 {
                     row.Cells[_deleteColumn.Index].Value = isChecked;
                     break;
@@ -375,7 +375,7 @@ internal sealed partial class MainForm
         //
         // Select only what the list currently shows: the 表示する種類 filter scopes
         // "select all" so hidden kinds are never silently marked for removal.
-        foreach (var group in _workflow.ImageGroups
+        foreach (var group in _workflow.ObjectGroups
                      .Where(g => g.IsSafelyRemovable && _visibleKinds.Contains(g.Kind)))
         {
             _selectedHashes.Add(group.Hash);
@@ -398,9 +398,9 @@ internal sealed partial class MainForm
         _syncingSelection = true;
         try
         {
-            foreach (DataGridViewRow row in _imageListGrid.Rows)
+            foreach (DataGridViewRow row in _objectListGrid.Rows)
             {
-                if (row.Tag is CrossFileImageGroup group)
+                if (row.Tag is CrossFileObjectGroup group)
                 {
                     row.Cells[_deleteColumn.Index].Value = _selectedHashes.Contains(group.Hash);
                 }
@@ -432,7 +432,7 @@ internal sealed partial class MainForm
         // Select-all / clear act on the object list alone, so their enablement
         // describes the list and ignores whatever the panel has selected.
         bool hasSelectable =
-            _workflow.ImageGroups.Any(g => g.IsSafelyRemovable && _visibleKinds.Contains(g.Kind));
+            _workflow.ObjectGroups.Any(g => g.IsSafelyRemovable && _visibleKinds.Contains(g.Kind));
         bool hasSelected = _selectedHashes.Count > 0;
 
         _saveMenuItem.Enabled = !_isBusy && canSave;

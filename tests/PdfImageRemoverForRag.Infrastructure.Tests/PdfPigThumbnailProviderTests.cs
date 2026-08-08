@@ -57,7 +57,7 @@ public class PdfPigThumbnailProviderTests : IClassFixture<SamplePdfFixture>
         // two sides agree for DCTDecode streams too.
         var analyzer = new PdfSharpDocumentAnalyzer(new PdfPigThumbnailProvider());
         var info = await analyzer.AnalyzeAsync(_samples.JpegImagePath);
-        var group = Assert.Single(info.ImageGroups);
+        var group = Assert.Single(info.ObjectGroups);
         Assert.NotNull(group.ThumbnailBytes);
         Assert.Equal("/DCTDecode", group.Compression);
     }

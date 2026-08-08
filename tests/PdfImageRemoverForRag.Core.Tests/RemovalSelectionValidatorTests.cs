@@ -8,9 +8,9 @@ namespace PdfImageRemoverForRag.Core.Tests;
 // gates the App must enforce before invoking IPdfDocumentCleaner.
 public class RemovalSelectionValidatorTests
 {
-    static PdfImageGroup MakeGroup(string id, bool isSafelyRemovable, string? warningMessage = null)
+    static ObjectGroup MakeGroup(string id, bool isSafelyRemovable, string? warningMessage = null)
     {
-        return new PdfImageGroup(
+        return new ObjectGroup(
             GroupId: id,
             Hash: "HASH_" + id,
             PixelWidth: 100, PixelHeight: 100,
@@ -23,7 +23,7 @@ public class RemovalSelectionValidatorTests
             ThumbnailBytes: null,
             Occurrences: new[]
             {
-                new PdfImageOccurrence(1, "1 0 R", "/Im1", 0, 0, 100, 100),
+                new ObjectOccurrence(1, "1 0 R", "/Im1", 0, 0, 100, 100),
             });
     }
 
@@ -38,7 +38,7 @@ public class RemovalSelectionValidatorTests
         var validator = new RemovalSelectionValidator(groups);
         var outcome = validator.Validate(new[]
         {
-            new ImageRemovalSelection("IMG_001", groups[0].Occurrences),
+            new ObjectRemovalSelection("IMG_001", groups[0].Occurrences),
         });
         Assert.True(outcome.IsValid);
         Assert.Empty(outcome.Errors);
@@ -57,7 +57,7 @@ public class RemovalSelectionValidatorTests
         var validator = new RemovalSelectionValidator(groups);
         var outcome = validator.Validate(new[]
         {
-            new ImageRemovalSelection("IMG_001", groups[0].Occurrences),
+            new ObjectRemovalSelection("IMG_001", groups[0].Occurrences),
         });
         Assert.False(outcome.IsValid);
         Assert.Empty(outcome.Accepted);
@@ -74,7 +74,7 @@ public class RemovalSelectionValidatorTests
         });
         var outcome = validator.Validate(new[]
         {
-            new ImageRemovalSelection("IMG_099", Array.Empty<PdfImageOccurrence>()),
+            new ObjectRemovalSelection("IMG_099", Array.Empty<ObjectOccurrence>()),
         });
         Assert.False(outcome.IsValid);
         var error = Assert.Single(outcome.Errors);
@@ -92,9 +92,9 @@ public class RemovalSelectionValidatorTests
         var validator = new RemovalSelectionValidator(groups);
         var outcome = validator.Validate(new[]
         {
-            new ImageRemovalSelection("IMG_OK", groups[0].Occurrences),
-            new ImageRemovalSelection("IMG_NG", groups[1].Occurrences),
-            new ImageRemovalSelection("IMG_MISSING", Array.Empty<PdfImageOccurrence>()),
+            new ObjectRemovalSelection("IMG_OK", groups[0].Occurrences),
+            new ObjectRemovalSelection("IMG_NG", groups[1].Occurrences),
+            new ObjectRemovalSelection("IMG_MISSING", Array.Empty<ObjectOccurrence>()),
         });
         Assert.False(outcome.IsValid);
         Assert.Equal(2, outcome.Errors.Count);

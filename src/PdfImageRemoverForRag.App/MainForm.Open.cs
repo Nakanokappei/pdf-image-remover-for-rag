@@ -137,7 +137,7 @@ internal sealed partial class MainForm
             AutoSizeContentColumns();
             _logger.LogInformation(
                 "view prepared: groups={Groups} rows={Rows} elapsedMs={ElapsedMs}",
-                _workflow.ImageGroups.Count, _imageListGrid.Rows.Count,
+                _workflow.ObjectGroups.Count, _objectListGrid.Rows.Count,
                 viewStopwatch.ElapsedMilliseconds);
             SetStatus(_workflow.OpenDocuments.Count > 0 ? L10n.StatusAnalyzed : L10n.StatusOpenFailed);
         }

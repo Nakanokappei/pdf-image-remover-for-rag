@@ -39,7 +39,7 @@ public class FlattenIsolationTests : IClassFixture<SamplePdfFixture>
         await new PdfSharpDocumentCleaner(rasterizer).CleanAsync(
             _samples.ImageAndTextPath,
             Path.Combine(_samples.TempDirectory, "isolated-render.pdf"),
-            Array.Empty<ImageRemovalSelection>(),
+            Array.Empty<ObjectRemovalSelection>(),
             new[] { textOnly });
 
         var rendered = Assert.Single(rasterizer.RenderedContent);
@@ -69,7 +69,7 @@ public class FlattenIsolationTests : IClassFixture<SamplePdfFixture>
         await new PdfSharpDocumentCleaner(rasterizer).CleanAsync(
             _samples.ImageAndTextPath,
             Path.Combine(_samples.TempDirectory, "isolated-render-keeps.pdf"),
-            Array.Empty<ImageRemovalSelection>(),
+            Array.Empty<ObjectRemovalSelection>(),
             new[] { OverlapDetector.RegionCovering(detected.Page, detected.Members.ToArray()) });
 
         var rendered = Assert.Single(rasterizer.RenderedContent);
@@ -91,7 +91,7 @@ public class FlattenIsolationTests : IClassFixture<SamplePdfFixture>
         await new PdfSharpDocumentCleaner(rasterizer).CleanAsync(
             _samples.ImageAndTextPath,
             Path.Combine(_samples.TempDirectory, "isolated-render-alpha.pdf"),
-            Array.Empty<ImageRemovalSelection>(),
+            Array.Empty<ObjectRemovalSelection>(),
             new[] { region });
 
         Assert.True(Assert.Single(rasterizer.Transparency));

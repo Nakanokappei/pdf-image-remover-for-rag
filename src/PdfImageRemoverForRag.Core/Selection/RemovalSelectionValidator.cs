@@ -3,7 +3,7 @@ using PdfImageRemoverForRag.Core.Models;
 namespace PdfImageRemoverForRag.Core.Selection;
 
 /// <summary>
-/// Validates the user's <see cref="ImageRemovalSelection"/> set against the
+/// Validates the user's <see cref="ObjectRemovalSelection"/> set against the
 /// currently-open document. Two hard rules from the spec:
 ///
 /// <list type="bullet">
@@ -17,19 +17,19 @@ namespace PdfImageRemoverForRag.Core.Selection;
 /// </summary>
 public sealed class RemovalSelectionValidator
 {
-    readonly IReadOnlyDictionary<string, PdfImageGroup> _groupsById;
+    readonly IReadOnlyDictionary<string, ObjectGroup> _groupsById;
 
-    public RemovalSelectionValidator(IEnumerable<PdfImageGroup> groups)
+    public RemovalSelectionValidator(IEnumerable<ObjectGroup> groups)
     {
         // Build the lookup once — the group set is fixed for the lifetime of
         // a document analysis session.
         _groupsById = groups.ToDictionary(g => g.GroupId, StringComparer.Ordinal);
     }
 
-    public ValidationOutcome Validate(IEnumerable<ImageRemovalSelection> selections)
+    public ValidationOutcome Validate(IEnumerable<ObjectRemovalSelection> selections)
     {
         var errors = new List<string>();
-        var accepted = new List<ImageRemovalSelection>();
+        var accepted = new List<ObjectRemovalSelection>();
 
         foreach (var selection in selections)
         {
@@ -64,5 +64,5 @@ public sealed class RemovalSelectionValidator
 /// </summary>
 public sealed record ValidationOutcome(
     bool IsValid,
-    IReadOnlyList<ImageRemovalSelection> Accepted,
+    IReadOnlyList<ObjectRemovalSelection> Accepted,
     IReadOnlyList<string> Errors);

@@ -3,12 +3,12 @@ using PdfImageRemoverForRag.Core.Models;
 namespace PdfImageRemoverForRag.Core.Grouping;
 
 /// <summary>
-/// Merges the per-file <see cref="PdfImageGroup"/> lists of every open
-/// document into <see cref="CrossFileImageGroup"/>s keyed by stream SHA-256,
-/// so identical images shared across files show as one row and can be
+/// Merges the per-file <see cref="ObjectGroup"/> lists of every open
+/// document into <see cref="CrossFileObjectGroup"/>s keyed by stream SHA-256,
+/// so identical objects shared across files show as one row and can be
 /// removed with a single selection.
 /// </summary>
-public static class CrossFileImageGroupBuilder
+public static class CrossFileObjectGroupBuilder
 {
     /// <summary>
     /// Merge and sort. Same ordering contract as the single-file builder:
@@ -16,18 +16,18 @@ public static class CrossFileImageGroupBuilder
     /// <c>IMG_001</c>-style ids assigned after the sort so ids always match
     /// the display order.
     /// </summary>
-    public static IReadOnlyList<CrossFileImageGroup> Build(
-        IEnumerable<(string FilePath, IReadOnlyList<PdfImageGroup> Groups)> documents)
+    public static IReadOnlyList<CrossFileObjectGroup> Build(
+        IEnumerable<(string FilePath, IReadOnlyList<ObjectGroup> Groups)> documents)
     {
         // Bucket per-file groups by hash, preserving which file each came from.
-        var byHash = new Dictionary<string, List<(string FilePath, PdfImageGroup Group)>>(StringComparer.Ordinal);
+        var byHash = new Dictionary<string, List<(string FilePath, ObjectGroup Group)>>(StringComparer.Ordinal);
         foreach (var (filePath, groups) in documents)
         {
             foreach (var group in groups)
             {
                 if (!byHash.TryGetValue(group.Hash, out var bucket))
                 {
-                    bucket = new List<(string, PdfImageGroup)>();
+                    bucket = new List<(string, ObjectGroup)>();
                     byHash[group.Hash] = bucket;
                 }
                 bucket.Add((filePath, group));
@@ -43,7 +43,7 @@ public static class CrossFileImageGroupBuilder
 
         // Kind-aware sequential ids (IMG_ / TXT_ / SHP_ / DRW_ / SHD_) matching display order.
         int imageIndex = 0, textIndex = 0, shapeIndex = 0, drawingIndex = 0, shadowIndex = 0;
-        var result = new CrossFileImageGroup[sorted.Length];
+        var result = new CrossFileObjectGroup[sorted.Length];
         for (int i = 0; i < sorted.Length; i++)
         {
             var id = sorted[i].Kind switch
@@ -59,7 +59,7 @@ public static class CrossFileImageGroupBuilder
         return result;
     }
 
-    static CrossFileImageGroup BuildOne(string hash, List<(string FilePath, PdfImageGroup Group)> bucket)
+    static CrossFileObjectGroup BuildOne(string hash, List<(string FilePath, ObjectGroup Group)> bucket)
     {
         // Identical stream bytes → identical image metadata; read scalars
         // from the first file's group.
@@ -74,7 +74,7 @@ public static class CrossFileImageGroupBuilder
             .Select(x => x.Group)
             .FirstOrDefault(g => !g.IsSafelyRemovable);
 
-        return new CrossFileImageGroup(
+        return new CrossFileObjectGroup(
             GroupId: "IMG_000", // placeholder — assigned after sorting in Build
             Hash: hash,
             PixelWidth: first.PixelWidth,

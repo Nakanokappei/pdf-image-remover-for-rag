@@ -4,7 +4,7 @@ namespace PdfImageRemoverForRag.Core.Hashing;
 
 /// <summary>
 /// Deterministic SHA-256 helper used by Infrastructure when it builds
-/// <c>ImageDiscovery</c> records. Extracted into Core so tests can exercise
+/// <c>ObjectDiscovery</c> records. Extracted into Core so tests can exercise
 /// the exact hex formatting used elsewhere in the app (§10, §24).
 /// </summary>
 public static class StreamHasher

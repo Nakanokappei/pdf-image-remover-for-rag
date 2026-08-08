@@ -1,22 +1,22 @@
 namespace PdfImageRemoverForRag.Core.Models;
 
 /// <summary>
-/// The placements of one image within one file, as part of a
-/// <see cref="CrossFileImageGroup"/>. Holds only the file path and
+/// The placements of one object within one file, as part of a
+/// <see cref="CrossFileObjectGroup"/>. Holds only the file path and
 /// occurrence metadata — never decoded pixels or an open document.
 /// </summary>
 public sealed record CrossFileOccurrences(
     string FilePath,
-    IReadOnlyList<PdfImageOccurrence> Occurrences);
+    IReadOnlyList<ObjectOccurrence> Occurrences);
 
 /// <summary>
-/// One image identity across every open file: the same stream bytes (same
-/// SHA-256) appearing in one or more PDFs collapse into a single row, so a
-/// logo shared by several documents can be removed with one checkbox.
-/// Mirrors <see cref="PdfImageGroup"/> but replaces the flat occurrence list
+/// One object identity across every open file: the same bytes (same SHA-256)
+/// or the same string appearing in one or more PDFs collapse into a single
+/// row, so a logo shared by several documents is removed with one tick.
+/// Mirrors <see cref="ObjectGroup"/> but replaces the flat occurrence list
 /// with a per-file breakdown that the save flow needs.
 /// </summary>
-public sealed record CrossFileImageGroup(
+public sealed record CrossFileObjectGroup(
     string GroupId,
     string Hash,
     int PixelWidth,

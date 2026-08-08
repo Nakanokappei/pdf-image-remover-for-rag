@@ -3,17 +3,17 @@ using PdfImageRemoverForRag.Core.Models;
 namespace PdfImageRemoverForRag.Core.Grouping;
 
 /// <summary>
-/// Reduces a flat list of <see cref="ImageDiscovery"/> records into
-/// <see cref="PdfImageGroup"/> instances by stream SHA-256 (spec §10).
+/// Reduces a flat list of <see cref="ObjectDiscovery"/> records into
+/// <see cref="ObjectGroup"/> instances by stream SHA-256 (spec §10).
 /// Keeping this logic in Core — separated from the PDFsharp-dependent
 /// analyzer — is what makes grouping unit-testable without touching a real
 /// PDF (spec §24 "同一画像のグループ化").
 /// </summary>
-public sealed class ImageGroupBuilder
+public sealed class ObjectGroupBuilder
 {
     readonly FullPageImageDetector _fullPageDetector;
 
-    public ImageGroupBuilder(FullPageImageDetector fullPageDetector)
+    public ObjectGroupBuilder(FullPageImageDetector fullPageDetector)
     {
         _fullPageDetector = fullPageDetector;
     }
@@ -25,7 +25,7 @@ public sealed class ImageGroupBuilder
     /// (§11.1). IDs are assigned after the sort — <c>IMG_001…</c> for images,
     /// <c>TXT_001…</c> for text — so the id order mirrors the display order.
     /// </summary>
-    public IReadOnlyList<PdfImageGroup> Build(IEnumerable<ImageDiscovery> discoveries)
+    public IReadOnlyList<ObjectGroup> Build(IEnumerable<ObjectDiscovery> discoveries)
     {
         var sorted = discoveries
             .GroupBy(d => d.StreamHash, StringComparer.Ordinal)
@@ -38,10 +38,10 @@ public sealed class ImageGroupBuilder
     }
 
     /// <summary>Assign sequential per-kind ids in the already-sorted order.</summary>
-    internal static PdfImageGroup[] AssignGroupIds(IReadOnlyList<PdfImageGroup> sorted)
+    internal static ObjectGroup[] AssignGroupIds(IReadOnlyList<ObjectGroup> sorted)
     {
         int imageIndex = 0, textIndex = 0, shapeIndex = 0, drawingIndex = 0, shadowIndex = 0;
-        var result = new PdfImageGroup[sorted.Count];
+        var result = new ObjectGroup[sorted.Count];
         for (int i = 0; i < sorted.Count; i++)
         {
             var group = sorted[i];
@@ -58,7 +58,7 @@ public sealed class ImageGroupBuilder
         return result;
     }
 
-    PdfImageGroup BuildGroup(IGrouping<string, ImageDiscovery> bucket)
+    ObjectGroup BuildGroup(IGrouping<string, ObjectDiscovery> bucket)
     {
         // All discoveries in a bucket share the same underlying stream bytes,
         // so scalar metadata can be read from any element; occurrences are
@@ -72,7 +72,7 @@ public sealed class ImageGroupBuilder
         // the spec forbids (§14.3) — so the whole group becomes unsafe.
         var unsafeDiscovery = bucket.FirstOrDefault(d => !d.IsSafelyRemovable);
 
-        return new PdfImageGroup(
+        return new ObjectGroup(
             GroupId: "IMG_000", // placeholder — real id assigned after sorting in Build
             Hash: bucket.Key,
             PixelWidth: first.PixelWidth,

@@ -15,7 +15,7 @@ namespace PdfImageRemoverForRag.App;
 /// promise a thumbnail that is never coming.
 /// </param>
 internal readonly record struct ObjectThumbnail(
-    CrossFileImageGroup? Group,
+    CrossFileObjectGroup? Group,
     Image? Bitmap,
     bool CanEverRender);
 
@@ -61,7 +61,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
     readonly List<UnitEntry> _units = new();
     readonly List<Row> _rows = new();
 
-    CrossFileImageGroup? _selectedGroup;
+    CrossFileObjectGroup? _selectedGroup;
     bool _anyDocuments;
 
     readonly UnitListView _list;
@@ -472,7 +472,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
     /// on the left — empties the panel: there is no object to say anything
     /// about, and showing every unit here would just be the object list again.
     /// </summary>
-    public void ShowFor(CrossFileImageGroup? group)
+    public void ShowFor(CrossFileObjectGroup? group)
     {
         // The grid raises CurrentCellChanged for a sideways move too, and the
         // panel describes the ROW. Rebuilding on those would re-filter every
@@ -565,7 +565,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
     /// what "is" means lives on the group itself, so this side and the host's
     /// object-to-row lookup can never disagree about identity.
     /// </summary>
-    static bool UnitContains(UnitEntry unit, CrossFileImageGroup group) =>
+    static bool UnitContains(UnitEntry unit, CrossFileObjectGroup group) =>
         unit.Region.Members.Any(group.Matches);
 
     // =======================================================================
@@ -609,7 +609,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
         // Text draws its string rather than a bitmap, the same rule the table
         // and the tiles follow — so one object looks the same in all three, and
         // so a text row never pays for a lookup whose answer it discards.
-        string? text = ImageListRow.ThumbnailText(member.Kind, member.Identity);
+        string? text = ObjectDisplay.ThumbnailText(member.Kind, member.Identity);
         var thumbnail = text is null ? ThumbnailFor?.Invoke(member) ?? default : default;
 
         return new RowVisual(
@@ -641,7 +641,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
         .OrderBy(k => k)
         .Select(KindLabel));
 
-    static string KindLabel(RemovableKind kind) => ImageListRow.TypeLabel(kind);
+    static string KindLabel(RemovableKind kind) => ObjectDisplay.TypeLabel(kind);
 
     /// <summary>
     /// An object's name: its kind, then what identifies it to a person. For text
@@ -966,12 +966,12 @@ internal sealed class GraphicsObjectsPanel : UserControl
     /// bitmaps; the host renders these into the same viewport-bounded cache the
     /// object list uses.
     /// </summary>
-    public IReadOnlyList<CrossFileImageGroup> VisibleThumbnailGroups()
+    public IReadOnlyList<CrossFileObjectGroup> VisibleThumbnailGroups()
     {
-        if (ThumbnailFor is null || _rows.Count == 0) return Array.Empty<CrossFileImageGroup>();
+        if (ThumbnailFor is null || _rows.Count == 0) return Array.Empty<CrossFileObjectGroup>();
 
         var (first, count) = _list.VisibleRange();
-        var groups = new List<CrossFileImageGroup>(count);
+        var groups = new List<CrossFileObjectGroup>(count);
         for (int i = first; i < first + count && i < _rows.Count; i++)
         {
             var member = _rows[i].Object;

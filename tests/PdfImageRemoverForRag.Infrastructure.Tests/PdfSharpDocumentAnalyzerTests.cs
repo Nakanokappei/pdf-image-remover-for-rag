@@ -86,7 +86,7 @@ public class PdfSharpDocumentAnalyzerTests : IClassFixture<SamplePdfFixture>
         var info = await analyzer.AnalyzeAsync(_samples.OneImagePath);
         Assert.Equal(1, info.PageCount);
         Assert.False(info.IsEncrypted);
-        var group = Assert.Single(info.ImageGroups);
+        var group = Assert.Single(info.ObjectGroups);
         Assert.Equal(1, group.UsageCount);
         Assert.True(group.IsSafelyRemovable);
         Assert.False(group.IsPossibleFullPageImage);
@@ -100,7 +100,7 @@ public class PdfSharpDocumentAnalyzerTests : IClassFixture<SamplePdfFixture>
         Assert.Equal(5, info.PageCount);
         // Scope to images — the sample also has a body line repeated on every
         // page, which is (correctly) surfaced as a separate text group.
-        var group = Assert.Single(info.ImageGroups, g => g.Kind == Core.Models.RemovableKind.Image);
+        var group = Assert.Single(info.ObjectGroups, g => g.Kind == Core.Models.RemovableKind.Image);
         Assert.Equal(5, group.UsageCount);
         Assert.Equal(new[] { 1, 2, 3, 4, 5 }, group.UsagePages);
     }
@@ -111,8 +111,8 @@ public class PdfSharpDocumentAnalyzerTests : IClassFixture<SamplePdfFixture>
         var analyzer = NewAnalyzer();
         var info = await analyzer.AnalyzeAsync(_samples.MultipleImagesPath);
         Assert.Equal(1, info.PageCount);
-        Assert.Equal(3, info.ImageGroups.Count);
-        Assert.All(info.ImageGroups, g => Assert.True(g.IsSafelyRemovable));
+        Assert.Equal(3, info.ObjectGroups.Count);
+        Assert.All(info.ObjectGroups, g => Assert.True(g.IsSafelyRemovable));
     }
 
     [Fact]
@@ -126,7 +126,7 @@ public class PdfSharpDocumentAnalyzerTests : IClassFixture<SamplePdfFixture>
         var analyzer = NewAnalyzer();
         var info = await analyzer.AnalyzeAsync(_samples.FormEmbeddedImagePath);
         Assert.Equal(2, info.PageCount);
-        var group = Assert.Single(info.ImageGroups, g => g.Kind == Core.Models.RemovableKind.Image);
+        var group = Assert.Single(info.ObjectGroups, g => g.Kind == Core.Models.RemovableKind.Image);
         Assert.False(group.IsSafelyRemovable);
         Assert.False(string.IsNullOrEmpty(group.WarningMessage));
     }
@@ -136,7 +136,7 @@ public class PdfSharpDocumentAnalyzerTests : IClassFixture<SamplePdfFixture>
     {
         var analyzer = NewAnalyzer();
         var info = await analyzer.AnalyzeAsync(_samples.ScannedPagePath);
-        var group = Assert.Single(info.ImageGroups);
+        var group = Assert.Single(info.ObjectGroups);
         Assert.True(group.IsPossibleFullPageImage);
     }
 
@@ -149,7 +149,7 @@ public class PdfSharpDocumentAnalyzerTests : IClassFixture<SamplePdfFixture>
         // caught by the individual analyzer tests above.
         var analyzer = NewAnalyzer();
         var info = await analyzer.AnalyzeAsync(_samples.MultipleImagesPath);
-        Assert.Contains(info.ImageGroups, g => g.ThumbnailBytes is { Length: > 0 });
+        Assert.Contains(info.ObjectGroups, g => g.ThumbnailBytes is { Length: > 0 });
     }
 
     [Fact]

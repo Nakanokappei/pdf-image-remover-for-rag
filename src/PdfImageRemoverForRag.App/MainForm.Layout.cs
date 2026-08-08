@@ -205,7 +205,7 @@ internal sealed partial class MainForm
 
         ApplyWorkspaceSplitMetrics();
 
-        if (_imageListGrid.Columns.Count > 0) AutoSizeContentColumns();
+        if (_objectListGrid.Columns.Count > 0) AutoSizeContentColumns();
     }
 
     /// <summary>
@@ -259,13 +259,13 @@ internal sealed partial class MainForm
     int PreferredObjectListWidth()
     {
         int columns = 0;
-        foreach (DataGridViewColumn column in _imageListGrid.Columns)
+        foreach (DataGridViewColumn column in _objectListGrid.Columns)
         {
             // The warning column fills, so its chosen width lives in the
             // minimum; every other column carries its own.
             if (column.Visible) columns += Math.Max(column.Width, column.MinimumWidth);
         }
-        return columns + _imageListGrid.RowHeadersWidth + Dip(6);
+        return columns + _objectListGrid.RowHeadersWidth + Dip(6);
     }
 
     /// <summary>
@@ -285,13 +285,13 @@ internal sealed partial class MainForm
 
     void BuildLayout()
     {
-        ConfigureImageListGrid();
+        ConfigureObjectListGrid();
 
         // Table and tile views share one host panel; visibility is toggled
         // by the 表示 menu. Neither needs a header of its own: what a header
         // would say about one file is wrong as soon as several are open.
         var viewHost = new Panel { Dock = DockStyle.Fill };
-        viewHost.Controls.Add(_imageListGrid);
+        viewHost.Controls.Add(_objectListGrid);
         viewHost.Controls.Add(_tileView);
 
         // Object list left, graphics objects panel right — both always visible;
@@ -312,61 +312,61 @@ internal sealed partial class MainForm
         Controls.Add(_statusStrip);
     }
 
-    void ConfigureImageListGrid()
+    void ConfigureObjectListGrid()
     {
-        _imageListGrid.Dock = DockStyle.Fill;
-        _imageListGrid.AllowUserToAddRows = false;
-        _imageListGrid.AllowUserToDeleteRows = false;
-        _imageListGrid.AllowUserToResizeRows = false;
-        _imageListGrid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-        _imageListGrid.MultiSelect = false;
+        _objectListGrid.Dock = DockStyle.Fill;
+        _objectListGrid.AllowUserToAddRows = false;
+        _objectListGrid.AllowUserToDeleteRows = false;
+        _objectListGrid.AllowUserToResizeRows = false;
+        _objectListGrid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+        _objectListGrid.MultiSelect = false;
         // Tab leaves the grid instead of walking its cells. The default is the
         // other way round, which made the grid a keyboard trap: once focus
         // arrived there it could not be moved on to the toolbar or the Flatten
         // panel, and a keyboard-only user was stuck. Nothing is lost by it —
         // whole rows are selected, so the arrow keys are how you move here, and
         // Ctrl+Tab still steps through cells for anyone who wants that.
-        _imageListGrid.StandardTab = true;
-        _imageListGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None;
+        _objectListGrid.StandardTab = true;
+        _objectListGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None;
         // Every row is cloned from this template, so replacing it is what gives
         // all of them the screen-reader name that counts from 1. Set before the
         // height below, since assigning the template discards the old one.
-        _imageListGrid.RowTemplate = new ObjectListRow();
-        _imageListGrid.RowTemplate.Height = 68;
+        _objectListGrid.RowTemplate = new ObjectListRow();
+        _objectListGrid.RowTemplate.Height = 68;
         // Trailing area past the last column reads as empty spreadsheet space.
-        _imageListGrid.BackgroundColor = SystemColors.Window;
+        _objectListGrid.BackgroundColor = SystemColors.Window;
         // Users can drag column boundaries to resize (§ resize requirement);
         // double-click auto-fit is wired via ColumnDividerDoubleClick.
-        _imageListGrid.AllowUserToResizeColumns = true;
+        _objectListGrid.AllowUserToResizeColumns = true;
 
         // Excel-style 表頭 / 表側: the column-header row and the row-number gutter
         // are custom-painted (OnGridCellPainting → PaintExcelHeader) with the
         // sampled highlight / shadow colors. Visual styles off so our painting is
         // not overdrawn; the border styles below are just the non-painted fallback.
-        _imageListGrid.EnableHeadersVisualStyles = false;
-        _imageListGrid.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.Single;
-        _imageListGrid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
+        _objectListGrid.EnableHeadersVisualStyles = false;
+        _objectListGrid.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.Single;
+        _objectListGrid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
 
         // 表側 = row-number gutter (DataGridView row headers), same Excel look.
-        _imageListGrid.RowHeadersVisible = true;
-        _imageListGrid.RowHeadersBorderStyle = DataGridViewHeaderBorderStyle.Single;
+        _objectListGrid.RowHeadersVisible = true;
+        _objectListGrid.RowHeadersBorderStyle = DataGridViewHeaderBorderStyle.Single;
         // Width is set by hand in FitRowHeaderWidth after each rebuild.
         //
         // NOT AutoSizeToAllHeaders: that re-measures every row header each time
         // one header value is assigned, so filling 2,015 row numbers cost
         // ~2,000 x 2,000 text measurements — 3 minutes 37 seconds, measured.
         // (It was also why sorting 254 rows used to take 2.5 seconds.)
-        _imageListGrid.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.DisableResizing;
-        _imageListGrid.RowHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+        _objectListGrid.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.DisableResizing;
+        _objectListGrid.RowHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
 
-        _imageListGrid.CellBorderStyle = DataGridViewCellBorderStyle.Single;
+        _objectListGrid.CellBorderStyle = DataGridViewCellBorderStyle.Single;
 
         // The palette values captured by cell styles live in one place so a
         // theme change (notably high contrast on/off) can re-apply them.
         ApplyGridPalette();
         _thumbnailColumn.DefaultCellStyle.NullValue = null;
 
-        _imageListGrid.Columns.AddRange(
+        _objectListGrid.Columns.AddRange(
             _deleteColumn, _thumbnailColumn, _objectIdColumn, _typeColumn, _sizeColumn,
             _usageCountColumn, _compressionColumn, _estimatedSizeColumn, _warningColumn);
 
@@ -416,7 +416,7 @@ internal sealed partial class MainForm
         // Sorting is handled manually (the grid is unbound and rows are drawn
         // with custom painting), so every column uses Programmatic sort mode —
         // this lets us show a sort glyph without the built-in sort firing.
-        foreach (DataGridViewColumn column in _imageListGrid.Columns)
+        foreach (DataGridViewColumn column in _objectListGrid.Columns)
         {
             column.SortMode = DataGridViewColumnSortMode.Programmatic;
         }
@@ -424,7 +424,7 @@ internal sealed partial class MainForm
         // The ☑ header glyph (U+2611) is not in every UI font outside Japanese
         // locales; swap the header's font to a Windows standard symbol font
         // when the grid font cannot render it.
-        _glyphHeaderFont = ResolveGlyphHeaderFont(_imageListGrid.Font);
+        _glyphHeaderFont = ResolveGlyphHeaderFont(_objectListGrid.Font);
         if (_glyphHeaderFont is not null)
         {
             _deleteColumn.HeaderCell.Style.Font = _glyphHeaderFont;
@@ -439,25 +439,25 @@ internal sealed partial class MainForm
     /// Apply the header / gridline palette to the styles that capture color
     /// VALUES (a cell style stores the ARGB it was given, unlike a property
     /// holding a SystemColors known-color, which re-resolves on every paint).
-    /// Called once from <see cref="ConfigureImageListGrid"/> and again from
+    /// Called once from <see cref="ConfigureObjectListGrid"/> and again from
     /// <see cref="OnSystemColorsChanged"/> so a high-contrast switch takes
     /// effect without restarting.
     /// </summary>
     void ApplyGridPalette()
     {
-        _imageListGrid.ColumnHeadersDefaultCellStyle.BackColor = HeaderFill;
-        _imageListGrid.ColumnHeadersDefaultCellStyle.ForeColor = HeaderText;
+        _objectListGrid.ColumnHeadersDefaultCellStyle.BackColor = HeaderFill;
+        _objectListGrid.ColumnHeadersDefaultCellStyle.ForeColor = HeaderText;
         // Selecting a cell must not recolor its header (no white-on-select text).
-        _imageListGrid.ColumnHeadersDefaultCellStyle.SelectionBackColor = HeaderFill;
-        _imageListGrid.ColumnHeadersDefaultCellStyle.SelectionForeColor = HeaderText;
+        _objectListGrid.ColumnHeadersDefaultCellStyle.SelectionBackColor = HeaderFill;
+        _objectListGrid.ColumnHeadersDefaultCellStyle.SelectionForeColor = HeaderText;
         // Same on the row gutter: a selected row keeps dark text on gray (the
         // framework otherwise draws it white — invisible on our light header).
-        _imageListGrid.RowHeadersDefaultCellStyle.BackColor = HeaderFill;
-        _imageListGrid.RowHeadersDefaultCellStyle.ForeColor = HeaderText;
-        _imageListGrid.RowHeadersDefaultCellStyle.SelectionBackColor = HeaderFill;
-        _imageListGrid.RowHeadersDefaultCellStyle.SelectionForeColor = HeaderText;
+        _objectListGrid.RowHeadersDefaultCellStyle.BackColor = HeaderFill;
+        _objectListGrid.RowHeadersDefaultCellStyle.ForeColor = HeaderText;
+        _objectListGrid.RowHeadersDefaultCellStyle.SelectionBackColor = HeaderFill;
+        _objectListGrid.RowHeadersDefaultCellStyle.SelectionForeColor = HeaderText;
         // Pale gray cell gridlines (Excel-like) instead of the default dark ones.
-        _imageListGrid.GridColor = GridLineColor;
+        _objectListGrid.GridColor = GridLineColor;
         // Window (not literal white) keeps transparent images readable (§12)
         // while following the theme's background under high contrast.
         _thumbnailColumn.DefaultCellStyle.BackColor = SystemColors.Window;
@@ -547,16 +547,16 @@ internal sealed partial class MainForm
         // down can then be wider than its column, but it stays readable via the
         // scroll bar and a manual double-click on the divider still fits it —
         // that is a better trade than freezing for tens of seconds on open.
-        var measurement = _imageListGrid.Rows.Count > AllCellsMeasurementLimit
+        var measurement = _objectListGrid.Rows.Count > AllCellsMeasurementLimit
             ? DataGridViewAutoSizeColumnMode.DisplayedCells
             : DataGridViewAutoSizeColumnMode.AllCells;
-        foreach (DataGridViewColumn column in _imageListGrid.Columns)
+        foreach (DataGridViewColumn column in _objectListGrid.Columns)
         {
             int content = column.GetPreferredWidth(measurement, fixedHeight: true);
             if (column == _deleteColumn)
             {
                 // The ☑ cell has no text; count it as two characters wide.
-                int twoChars = TextRenderer.MeasureText("00", _imageListGrid.Font).Width;
+                int twoChars = TextRenderer.MeasureText("00", _objectListGrid.Font).Width;
                 content = Math.Max(content, twoChars);
             }
 

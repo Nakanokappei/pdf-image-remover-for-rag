@@ -6,7 +6,7 @@ namespace PdfImageRemoverForRag.Core.Models;
 /// and the rectangle it covers in PDF points with the origin at the page's
 /// bottom-left.
 ///
-/// This is deliberately not <see cref="PdfImageOccurrence"/>: an occurrence
+/// This is deliberately not <see cref="ObjectOccurrence"/>: an occurrence
 /// belongs to a group and carries a resource name, while overlap detection only
 /// needs geometry plus an identity, and it needs one for text and shapes too
 /// (whose occurrences carry no rectangle).

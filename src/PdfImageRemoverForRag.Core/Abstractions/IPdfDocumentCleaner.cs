@@ -35,7 +35,7 @@ public interface IPdfDocumentCleaner
     Task<CleaningResult> CleanAsync(
         string sourcePath,
         string destinationPath,
-        IReadOnlyList<ImageRemovalSelection> selections,
+        IReadOnlyList<ObjectRemovalSelection> selections,
         IReadOnlyList<OverlapRegion>? regionsToFlatten = null,
         IReadOnlyList<OverlapRegion>? regionsToClear = null,
         bool fitImagesToScreen = false,

@@ -31,12 +31,12 @@ public class RemovedImagePruningTests : IClassFixture<SamplePdfFixture>
     public async Task RemovingAnImage_TakesItsXObjectOutOfEveryPage()
     {
         var info = await NewAnalyzer().AnalyzeAsync(_samples.RepeatedLogoPath);
-        var group = info.ImageGroups.Single(g => g.Kind == RemovableKind.Image);
+        var group = info.ObjectGroups.Single(g => g.Kind == RemovableKind.Image);
         var dest = Path.Combine(_samples.TempDirectory, "pruning-logo_cleaned.pdf");
 
         await new PdfSharpDocumentCleaner().CleanAsync(
             _samples.RepeatedLogoPath, dest,
-            new[] { new ImageRemovalSelection(group.GroupId, group.Occurrences, Hash: group.Hash) });
+            new[] { new ObjectRemovalSelection(group.GroupId, group.Occurrences, Hash: group.Hash) });
 
         // The logo is drawn on five pages, so this also covers "removed from
         // every page's resources", not just the first one that mentioned it.
@@ -49,14 +49,14 @@ public class RemovedImagePruningTests : IClassFixture<SamplePdfFixture>
         // The pruning walks every page and deletes by hash, so the guard that
         // matters is that it deletes ONLY what was selected.
         var info = await NewAnalyzer().AnalyzeAsync(_samples.MultipleImagesPath);
-        var images = info.ImageGroups.Where(g => g.Kind == RemovableKind.Image).ToArray();
+        var images = info.ObjectGroups.Where(g => g.Kind == RemovableKind.Image).ToArray();
         Assert.True(images.Length > 1, "sample must hold more than one image to make this meaningful");
 
         var doomed = images[0];
         var dest = Path.Combine(_samples.TempDirectory, "pruning-multiple_cleaned.pdf");
         await new PdfSharpDocumentCleaner().CleanAsync(
             _samples.MultipleImagesPath, dest,
-            new[] { new ImageRemovalSelection(doomed.GroupId, doomed.Occurrences, Hash: doomed.Hash) });
+            new[] { new ObjectRemovalSelection(doomed.GroupId, doomed.Occurrences, Hash: doomed.Hash) });
 
         var remaining = HashesInPageResources(dest);
         Assert.DoesNotContain(doomed.Hash, remaining);
@@ -74,15 +74,15 @@ public class RemovedImagePruningTests : IClassFixture<SamplePdfFixture>
         // never appeared in its own object list. Re-analysis must now agree
         // with the file rather than paper over it.
         var info = await NewAnalyzer().AnalyzeAsync(_samples.RepeatedLogoPath);
-        var group = info.ImageGroups.Single(g => g.Kind == RemovableKind.Image);
+        var group = info.ObjectGroups.Single(g => g.Kind == RemovableKind.Image);
         var dest = Path.Combine(_samples.TempDirectory, "pruning-reopen_cleaned.pdf");
 
         await new PdfSharpDocumentCleaner().CleanAsync(
             _samples.RepeatedLogoPath, dest,
-            new[] { new ImageRemovalSelection(group.GroupId, group.Occurrences, Hash: group.Hash) });
+            new[] { new ObjectRemovalSelection(group.GroupId, group.Occurrences, Hash: group.Hash) });
 
         var reopened = await NewAnalyzer().AnalyzeAsync(dest);
-        Assert.DoesNotContain(reopened.ImageGroups, g => g.Kind == RemovableKind.Image);
+        Assert.DoesNotContain(reopened.ObjectGroups, g => g.Kind == RemovableKind.Image);
         Assert.Empty(HashesInPageResources(dest));
         // And not merely unlisted. Both the resource check above and the
         // verifier's own ask "does the page still name it"; the promise being
@@ -100,7 +100,7 @@ public class RemovedImagePruningTests : IClassFixture<SamplePdfFixture>
         // survived every "removal" to be extracted later as a black rectangle.
         // It is deleted only as its parent's dependant, never on its own.
         var info = await NewAnalyzer().AnalyzeAsync(_samples.SoftMaskedImagePath);
-        var image = info.ImageGroups.Single(g => g.Kind == RemovableKind.Image);
+        var image = info.ObjectGroups.Single(g => g.Kind == RemovableKind.Image);
 
         // Two image objects before: the picture, and the mask that no listing
         // shows. If this ever reads 1, the sample stopped exercising the case.
@@ -109,7 +109,7 @@ public class RemovedImagePruningTests : IClassFixture<SamplePdfFixture>
         var dest = Path.Combine(_samples.TempDirectory, "pruning-smask_cleaned.pdf");
         await new PdfSharpDocumentCleaner().CleanAsync(
             _samples.SoftMaskedImagePath, dest,
-            new[] { new ImageRemovalSelection(image.GroupId, image.Occurrences, Hash: image.Hash) });
+            new[] { new ObjectRemovalSelection(image.GroupId, image.Occurrences, Hash: image.Hash) });
 
         Assert.Empty(ImageObjectsInFile(dest));
     }
@@ -123,7 +123,7 @@ public class RemovedImagePruningTests : IClassFixture<SamplePdfFixture>
         // remove anyway.
         var info = await NewAnalyzer().AnalyzeAsync(_samples.SoftMaskedImagePath);
 
-        var image = Assert.Single(info.ImageGroups, g => g.Kind == RemovableKind.Image);
+        var image = Assert.Single(info.ObjectGroups, g => g.Kind == RemovableKind.Image);
         Assert.Equal(1, image.UsageCount);
     }
 
@@ -136,12 +136,12 @@ public class RemovedImagePruningTests : IClassFixture<SamplePdfFixture>
         // leave the annotation pointing at nothing. The page's reference goes;
         // the object stays, and the run says so rather than pretending.
         var info = await NewAnalyzer().AnalyzeAsync(_samples.AnnotationSharedImagePath);
-        var image = info.ImageGroups.Single(g => g.Kind == RemovableKind.Image);
+        var image = info.ObjectGroups.Single(g => g.Kind == RemovableKind.Image);
         var dest = Path.Combine(_samples.TempDirectory, "pruning-annotation_cleaned.pdf");
 
         var result = await new PdfSharpDocumentCleaner().CleanAsync(
             _samples.AnnotationSharedImagePath, dest,
-            new[] { new ImageRemovalSelection(image.GroupId, image.Occurrences, Hash: image.Hash) });
+            new[] { new ObjectRemovalSelection(image.GroupId, image.Occurrences, Hash: image.Hash) });
 
         // Gone from the page: not drawn, not listed — which is all the verifier
         // asks, and all removal can honestly promise here.
@@ -163,12 +163,12 @@ public class RemovedImagePruningTests : IClassFixture<SamplePdfFixture>
         // The other side of the same counter: it has to stay at zero for an
         // ordinary document, or it says nothing when it is not zero.
         var info = await NewAnalyzer().AnalyzeAsync(_samples.RepeatedLogoPath);
-        var group = info.ImageGroups.Single(g => g.Kind == RemovableKind.Image);
+        var group = info.ObjectGroups.Single(g => g.Kind == RemovableKind.Image);
         var dest = Path.Combine(_samples.TempDirectory, "pruning-keptback-zero_cleaned.pdf");
 
         var result = await new PdfSharpDocumentCleaner().CleanAsync(
             _samples.RepeatedLogoPath, dest,
-            new[] { new ImageRemovalSelection(group.GroupId, group.Occurrences, Hash: group.Hash) });
+            new[] { new ObjectRemovalSelection(group.GroupId, group.Occurrences, Hash: group.Hash) });
 
         Assert.Equal(0, result.ImagesKeptForOtherReferences);
     }
@@ -180,7 +180,7 @@ public class RemovedImagePruningTests : IClassFixture<SamplePdfFixture>
         // were the cleaned output is the cheapest way to prove the new check
         // actually fires — and that it would have caught the shipped defect.
         var info = await NewAnalyzer().AnalyzeAsync(_samples.RepeatedLogoPath);
-        var group = info.ImageGroups.Single(g => g.Kind == RemovableKind.Image);
+        var group = info.ObjectGroups.Single(g => g.Kind == RemovableKind.Image);
 
         var report = await new PdfSharpDocumentVerifier().VerifyAsync(
             _samples.RepeatedLogoPath, _samples.RepeatedLogoPath,
@@ -196,13 +196,13 @@ public class RemovedImagePruningTests : IClassFixture<SamplePdfFixture>
     public async Task TheVerifier_PassesAProperlyPrunedFile()
     {
         var info = await NewAnalyzer().AnalyzeAsync(_samples.MultipleImagesPath);
-        var images = info.ImageGroups.Where(g => g.Kind == RemovableKind.Image).ToArray();
+        var images = info.ObjectGroups.Where(g => g.Kind == RemovableKind.Image).ToArray();
         var doomed = images[0];
         var dest = Path.Combine(_samples.TempDirectory, "pruning-verified_cleaned.pdf");
 
         await new PdfSharpDocumentCleaner().CleanAsync(
             _samples.MultipleImagesPath, dest,
-            new[] { new ImageRemovalSelection(doomed.GroupId, doomed.Occurrences, Hash: doomed.Hash) });
+            new[] { new ObjectRemovalSelection(doomed.GroupId, doomed.Occurrences, Hash: doomed.Hash) });
 
         var report = await new PdfSharpDocumentVerifier().VerifyAsync(
             _samples.MultipleImagesPath, dest,

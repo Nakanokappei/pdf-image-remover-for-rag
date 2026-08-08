@@ -25,8 +25,8 @@ public class FlattenRegionTests : IClassFixture<SamplePdfFixture>
 
     string Destination(string name) => Path.Combine(_samples.TempDirectory, name);
 
-    static IReadOnlyList<ImageRemovalSelection> NothingToRemove() =>
-        Array.Empty<ImageRemovalSelection>();
+    static IReadOnlyList<ObjectRemovalSelection> NothingToRemove() =>
+        Array.Empty<ObjectRemovalSelection>();
 
     [Fact]
     public async Task FlatteningARegion_DropsItsTextAndDrawsAPictureInstead()
@@ -75,7 +75,7 @@ public class FlattenRegionTests : IClassFixture<SamplePdfFixture>
             .CleanAsync(_samples.ImageAndTextPath, dest, NothingToRemove(), new[] { region });
 
         var reanalyzed = await NewAnalyzer().AnalyzeAsync(dest);
-        var image = Assert.Single(reanalyzed.ImageGroups, g => g.Kind == RemovableKind.Image);
+        var image = Assert.Single(reanalyzed.ObjectGroups, g => g.Kind == RemovableKind.Image);
         Assert.Equal(1, image.UsageCount);
 
         // And it covers exactly what it replaced. Worth asserting on its own:
@@ -110,9 +110,9 @@ public class FlattenRegionTests : IClassFixture<SamplePdfFixture>
         Assert.Equal(1, result.RegionsFlattened);
 
         var reanalyzed = await NewAnalyzer().AnalyzeAsync(dest);
-        Assert.Contains(reanalyzed.ImageGroups,
+        Assert.Contains(reanalyzed.ObjectGroups,
             g => g.Kind == RemovableKind.Image && g.Hash == originalImageHash);
-        Assert.Equal(2, reanalyzed.ImageGroups.Count(g => g.Kind == RemovableKind.Image));
+        Assert.Equal(2, reanalyzed.ObjectGroups.Count(g => g.Kind == RemovableKind.Image));
     }
 
     [Fact]

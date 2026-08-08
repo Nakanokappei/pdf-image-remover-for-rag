@@ -27,7 +27,7 @@ public class SingleCharacterTextTests : IClassFixture<SamplePdfFixture>
     {
         var info = await NewAnalyzer().AnalyzeAsync(_samples.SingleCharacterTextPath);
 
-        var marking = Assert.Single(info.ImageGroups,
+        var marking = Assert.Single(info.ObjectGroups,
             g => g.Kind == RemovableKind.Text && g.TextValue == "S");
         Assert.Equal(3, marking.UsageCount);
         Assert.Equal(new[] { 1, 2, 3 }, marking.UsagePages);
@@ -41,7 +41,7 @@ public class SingleCharacterTextTests : IClassFixture<SamplePdfFixture>
 
         // Shown on all three pages, so only the readable-character rule keeps
         // it out — the repetition rule would have let it through.
-        Assert.DoesNotContain(info.ImageGroups, g =>
+        Assert.DoesNotContain(info.ObjectGroups, g =>
             g.Kind == RemovableKind.Text
             && !string.IsNullOrEmpty(g.TextValue)
             && g.TextValue!.All(char.IsWhiteSpace));
@@ -54,7 +54,7 @@ public class SingleCharacterTextTests : IClassFixture<SamplePdfFixture>
 
         // Lowering the character count did not touch the repetition rule: one
         // showing is not noise, it is content.
-        Assert.DoesNotContain(info.ImageGroups,
+        Assert.DoesNotContain(info.ObjectGroups,
             g => g.Kind == RemovableKind.Text && g.TextValue == "X");
     }
 }

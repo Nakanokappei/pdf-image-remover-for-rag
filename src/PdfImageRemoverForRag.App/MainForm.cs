@@ -18,7 +18,7 @@ namespace PdfImageRemoverForRag.App;
 /// row's right-click menu opens. This class does layout and event
 /// wiring only — analysis, cleaning, and verification live in
 /// <see cref="PdfCleaningWorkflow"/>, display formatting in
-/// <see cref="ImageListRow"/>, and all user-visible strings in
+/// <see cref="ObjectDisplay"/>, and all user-visible strings in
 /// <see cref="L10n"/>.
 /// </summary>
 internal sealed partial class MainForm : Form
@@ -125,12 +125,12 @@ internal sealed partial class MainForm : Form
     bool _syncingKindToggles;
 
     // --- table view (§11.3) ------------------------------------------------
-    // No AutoSizeMode here: ConfigureImageListGrid gives every column its mode
+    // No AutoSizeMode here: ConfigureObjectListGrid gives every column its mode
     // (None for the fixed ones, Fill for 警告) and AutoSizeContentColumns then
     // fits them to content. An AutoSizeMode set on the field would be silently
     // overwritten, and it would read as if the columns sized themselves — they
     // do not, and cannot: an auto-sized column is not user-resizable.
-    readonly DataGridView _imageListGrid = new();
+    readonly DataGridView _objectListGrid = new();
     readonly DataGridViewCheckBoxColumn _deleteColumn = new() { HeaderText = L10n.ColumnDelete };
     readonly DataGridViewImageColumn _thumbnailColumn = new() { HeaderText = L10n.ColumnThumbnail, ImageLayout = DataGridViewImageCellLayout.Zoom };
     readonly DataGridViewTextBoxColumn _objectIdColumn = new() { HeaderText = L10n.ColumnObjectId, ReadOnly = true };
@@ -209,7 +209,7 @@ internal sealed partial class MainForm : Form
     // became the picture — so by the time there is anything to undo, the unit
     // it came from is gone from the panel. What is left is this row.
     readonly ToolStripMenuItem _undoFlattenMenuItem = new(L10n.FlattenUndo);
-    CrossFileImageGroup? _contextGroup;
+    CrossFileObjectGroup? _contextGroup;
 
     // --- status bar --------------------------------------------------------
     readonly StatusStrip _statusStrip = new();
@@ -223,8 +223,8 @@ internal sealed partial class MainForm : Form
     // Bitmaps for what is on screen, backed by the on-disk store. Bounded by
     // the viewport, never by the size of the workspace.
     readonly ThumbnailCache _thumbnails;
-    readonly Image _gridPlaceholderIcon = ImageListRow.CreatePlaceholderIcon();
-    readonly Image _tilePlaceholderIcon = ImageListRow.CreatePlaceholderIcon(128, 96);
+    readonly Image _gridPlaceholderIcon = ObjectDisplay.CreatePlaceholderIcon();
+    readonly Image _tilePlaceholderIcon = ObjectDisplay.CreatePlaceholderIcon(128, 96);
     // One icon per function, shared by the toolbar button and the menu item so
     // the same action always shows the same glyph. Not readonly: the bitmaps
     // bake in the theme's glyph color, so a theme change re-renders them
@@ -265,7 +265,7 @@ internal sealed partial class MainForm : Form
     bool _sortAscending;
 
     // The last sorted+filtered set the views render.
-    CrossFileImageGroup[] _displayGroups = Array.Empty<CrossFileImageGroup>();
+    CrossFileObjectGroup[] _displayGroups = Array.Empty<CrossFileObjectGroup>();
 
     // Cancels the background pass that renders and loads the viewport's
     // bitmaps. A rebuild disposes what the running pass is holding, so the old
@@ -422,20 +422,20 @@ internal sealed partial class MainForm : Form
         _selectAllToolButton.Click += OnSelectAllClicked;
         _clearSelectionToolButton.Click += OnClearSelectionClicked;
 
-        _imageListGrid.CurrentCellDirtyStateChanged += OnGridCellDirtyStateChanged;
-        _imageListGrid.CellValueChanged += OnGridCellValueChanged;
-        _imageListGrid.CellPainting += OnGridCellPainting;
-        _imageListGrid.ColumnHeaderMouseClick += OnColumnHeaderClicked;
-        _imageListGrid.ColumnDividerDoubleClick += OnColumnDividerDoubleClick;
+        _objectListGrid.CurrentCellDirtyStateChanged += OnGridCellDirtyStateChanged;
+        _objectListGrid.CellValueChanged += OnGridCellValueChanged;
+        _objectListGrid.CellPainting += OnGridCellPainting;
+        _objectListGrid.ColumnHeaderMouseClick += OnColumnHeaderClicked;
+        _objectListGrid.ColumnDividerDoubleClick += OnColumnDividerDoubleClick;
         // Whole ☑-cell hit area + Shift-range checking are handled via mouse
         // events (the built-in glyph-only toggle is disabled by ReadOnly cells).
-        _imageListGrid.CellMouseDown += OnGridCellMouseDown;
-        _imageListGrid.CellMouseUp += OnGridCellMouseUp;
+        _objectListGrid.CellMouseDown += OnGridCellMouseDown;
+        _objectListGrid.CellMouseUp += OnGridCellMouseUp;
         // …and by the space bar, which a read-only checkbox cell would ignore.
-        _imageListGrid.KeyDown += OnGridKeyDown;
+        _objectListGrid.KeyDown += OnGridKeyDown;
         // Scrolling either view restarts the settle timer; the tick is where
         // the viewport's bitmaps are actually fetched.
-        _imageListGrid.Scroll += (_, _) => ScheduleThumbnailLoad();
+        _objectListGrid.Scroll += (_, _) => ScheduleThumbnailLoad();
         _tileView.ViewportChanged += (_, _) => ScheduleThumbnailLoad();
         _tileView.TileToggled += OnTileToggled;
         _tileView.RangeToggleRequested += OnTileRangeToggled;
@@ -448,7 +448,7 @@ internal sealed partial class MainForm : Form
         // with two scopes, and the eye shows the result of both.
         _graphicsObjectsPanel.IsHidden = (filePath, pageNumber, placed) =>
             _workflow.IsPlacementHidden(filePath, pageNumber, placed)
-            || (_workflow.ImageGroups.FirstOrDefault(g => g.Matches(placed)) is { } group
+            || (_workflow.ObjectGroups.FirstOrDefault(g => g.Matches(placed)) is { } group
                 && _selectedHashes.Contains(group.Hash));
         _graphicsObjectsPanel.VisibilityChangeRequested += OnObjectVisibilityChangeRequested;
         // A hidden object is shown by not being there: the preview renders a
@@ -470,7 +470,7 @@ internal sealed partial class MainForm : Form
         _graphicsObjectsPanel.ThumbnailFor = ObjectThumbnailFor;
         _graphicsObjectsPanel.ViewportChanged += (_, _) => ScheduleThumbnailLoad();
         // Whichever view is showing, moving the cursor re-aims the panel.
-        _imageListGrid.CurrentCellChanged += (_, _) => ShowGraphicsObjectsForCurrentRow();
+        _objectListGrid.CurrentCellChanged += (_, _) => ShowGraphicsObjectsForCurrentRow();
         _tileView.FocusedGroupChanged += (_, _) => ShowGraphicsObjectsForCurrentRow();
 
         _usageLocationsMenuItem.Click += OnUsageLocationsClicked;

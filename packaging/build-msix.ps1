@@ -3,12 +3,19 @@
     Turn the staged package layout into a signed-ready .msixbundle. Run on Windows 11.
 
 .DESCRIPTION
-    scripts/stage-msix.py (run on macOS) produces artifacts/msix-b<N>/{x64,arm64}.
-    This script copies that layout to a local working folder, builds resources.pri
-    for each architecture, packs each into a .msix, and bundles the two together.
+    scripts/stage-msix.py produces artifacts/msix-b<N>/{x64,arm64}. This script
+    copies that layout to a working folder, builds resources.pri for each
+    architecture, packs each into a .msix, and bundles the two together.
 
-    The copy is not optional: Parallels shared folders can serve stale bytes, and
-    packaging tools read every file in the tree.
+    The copy is not optional: packaging tools read and rewrite every file in the
+    tree, and the staged layout has to survive a failed run unchanged.
+
+    The working folder defaults to <Source>-work, beside the source under
+    artifacts/. Everything this repository produces stays under artifacts/ (user's
+    decision, 2026-08-08); nothing is written to C:\work any more. The build
+    number in the source path gives every run a folder of its own, which is what
+    the stale-bytes rule actually asks for - a re-used path is the problem, not
+    the shared volume.
 
     Keep this file ASCII-only. Windows PowerShell 5.1 reads a BOM-less script as
     the system ANSI code page (CP932 on a Japanese system), so any multi-byte
@@ -24,8 +31,8 @@ param(
     [Parameter(Mandatory = $true)]
     [string] $Source,
 
-    # Local working copy. Anything already here is replaced.
-    [string] $Work = "C:\work\msix",
+    # Working copy. Defaults to <Source>-work. Anything already here is replaced.
+    [string] $Work = "",
 
     # Windows SDK binaries. arm64 is native on this VM; x64 also works.
     [string] $Sdk = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\arm64",
@@ -52,6 +59,12 @@ foreach ($tool in $makepri, $makeappx) {
     if (-not (Test-Path $tool)) { throw "not found: $tool  (check -Sdk)" }
 }
 if (-not (Test-Path $Source)) { throw "not found: $Source" }
+
+# Derived rather than defaulted in the param block, so it follows the build number
+# in the source path and no two runs share a folder.
+if ([string]::IsNullOrEmpty($Work)) {
+    $Work = (Join-Path (Split-Path $Source -Parent) ((Split-Path $Source -Leaf) + "-work"))
+}
 
 # --- 1. Local copy -------------------------------------------------------
 Write-Host "copying $Source -> $Work" -ForegroundColor Cyan

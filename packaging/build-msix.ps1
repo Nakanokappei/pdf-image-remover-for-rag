@@ -31,7 +31,7 @@ param(
     [string] $Sdk = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\arm64",
 
     # Languages declared in the manifest's <Resources> block.
-    [string] $Languages = "en-US_ja-JP"
+    [string] $Languages = "en-US_ja-JP_de-DE_fr-FR_es-ES_it-IT_pt-BR_ru-RU_ko-KR_zh-CN_zh-TW_id-ID_ms-MY_hi-IN_tr-TR_vi-VN"
 )
 
 $ErrorActionPreference = "Stop"

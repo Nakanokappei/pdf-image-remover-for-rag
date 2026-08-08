@@ -41,9 +41,28 @@
                         MaxVersionTested="10.0.26100.0" />
   </Dependencies>
 
+  <!-- Every language the app speaks. The strings are compiled in (see
+       IStrings), not carried as resource files, so nothing here is a
+       promise about the package's contents - it is what the Store reads
+       to say which languages the app is available in, and the listing
+       exists in all sixteen. -->
   <Resources>
     <Resource Language="en-US" />
     <Resource Language="ja-JP" />
+    <Resource Language="de-DE" />
+    <Resource Language="fr-FR" />
+    <Resource Language="es-ES" />
+    <Resource Language="it-IT" />
+    <Resource Language="pt-BR" />
+    <Resource Language="ru-RU" />
+    <Resource Language="ko-KR" />
+    <Resource Language="zh-CN" />
+    <Resource Language="zh-TW" />
+    <Resource Language="id-ID" />
+    <Resource Language="ms-MY" />
+    <Resource Language="hi-IN" />
+    <Resource Language="tr-TR" />
+    <Resource Language="vi-VN" />
   </Resources>
 
   <Applications>

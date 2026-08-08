@@ -32,6 +32,8 @@ Thumbs.db
 /docs/proof-of-concept-result.md
 /docs/store-certification.md
 /docs/store-listing.md
+# The same listing text, one file per language, ready for Partner Center's importer.
+/docs/store-listing-i18n/
 /docs/test-on-parallels.md
 /docs/images/store-*.png
 

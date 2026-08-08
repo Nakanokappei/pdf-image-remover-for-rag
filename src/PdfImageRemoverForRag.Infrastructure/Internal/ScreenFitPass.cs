@@ -25,7 +25,7 @@ namespace PdfImageRemoverForRag.Infrastructure.Internal;
 /// it, and the quality alone is worth several megabytes.
 ///
 /// What is left alone: anything whose bytes this cannot read back (JPEG 2000,
-/// JBIG2, fax), anything but 8 bits a component, indexed and separation colours,
+/// JBIG2, fax), anything but 8 bits a component, indexed and separation colors,
 /// and anything already small enough. Leaving an image as it was is always safe;
 /// writing one back wrongly is not.
 /// </summary>
@@ -113,7 +113,7 @@ internal static class ScreenFitPass
         // Compared as they will be STORED, not as they were handed back: raw
         // samples are only meaningful against the stream once compressed. And a
         // "smaller" image that takes more bytes is not a saving — a drawing of
-        // three flat colours compresses better whole than resampled, and there
+        // three flat colors compresses better whole than resampled, and there
         // is nothing to gain by making it worse.
         var stream = fitted.Encoding == StoredImageEncoding.Jpeg
             ? fitted.Data
@@ -130,7 +130,7 @@ internal static class ScreenFitPass
     /// </summary>
     static StoredImage? Read(PdfDictionary image, int width, int height)
     {
-        // An image mask is one bit a pixel painting the current colour, not a
+        // An image mask is one bit a pixel painting the current color, not a
         // picture; and a decode array or predictor means the samples are not
         // simply what the stream holds.
         if (image.Elements.GetBoolean("/ImageMask")) return null;
@@ -251,7 +251,7 @@ internal static class ScreenFitPass
     }
 
     /// <summary>
-    /// How many samples a pixel has, or zero for a colour space whose samples
+    /// How many samples a pixel has, or zero for a color space whose samples
     /// this cannot interpret — indexed palettes and separations among them.
     /// </summary>
     static int ComponentsOf(PdfDictionary image)
@@ -267,7 +267,7 @@ internal static class ScreenFitPass
                 };
 
             // An ICC profile says how many components it describes, and the
-            // samples underneath are ordinary grey or RGB.
+            // samples underneath are ordinary gray or RGB.
             case PdfArray array when array.Elements.Count == 2
                                      && array.Elements[0] is PdfName { Value: "/ICCBased" }:
                 var profile = array.Elements.GetDictionary(1);

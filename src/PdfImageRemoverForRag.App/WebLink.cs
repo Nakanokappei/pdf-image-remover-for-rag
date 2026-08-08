@@ -6,7 +6,7 @@ namespace PdfImageRemoverForRag.App;
 /// <summary>
 /// Opens a URL in the user's default browser. Shared by the Help menu's
 /// online-manual item and the About dialog's license link, so the fallback
-/// behaviour is identical in both places.
+/// behavior is identical in both places.
 /// </summary>
 internal static class WebLink
 {

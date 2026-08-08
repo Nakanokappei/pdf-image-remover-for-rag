@@ -17,7 +17,7 @@ namespace PdfImageRemoverForRag.Core.Abstractions;
 /// in — the same arrangement as <see cref="IThumbnailProvider"/>.
 ///
 /// It also means the rewrite logic can be tested without an OS renderer at all:
-/// a test supplies a rasterizer that returns a flat colour.
+/// a test supplies a rasterizer that returns a flat color.
 /// </remarks>
 public interface IPageRasterizer
 {
@@ -51,7 +51,7 @@ public interface IPageRasterizer
     /// Leave the paper unpainted, so the result carries alpha where the page
     /// draws nothing. Flattening needs it: the picture it produces holds only
     /// the objects the user ticked, and an opaque background would hide the
-    /// neighbours they chose to keep. A preview wants the opposite — paper is
+    /// neighbors they chose to keep. A preview wants the opposite — paper is
     /// what a page looks like.
     /// </param>
     Task<byte[]?> RenderRegionAsync(

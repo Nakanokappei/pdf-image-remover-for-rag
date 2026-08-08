@@ -57,8 +57,8 @@ internal sealed class ChineseSimplifiedStrings : IStrings
     public string StatusAnalyzing => "正在分析 PDF…";
 
     public string Cancel => "取消";
-    public string StatusCancelling => "正在取消…";
-    public string StatusCancelled => "已取消打开";
+    public string StatusCanceling => "正在取消…";
+    public string StatusCanceled => "已取消打开";
 
     public string ProgressReadingPages(string fileName, int page, int pageCount) =>
         $"{fileName} — 正在分析第 {page}/{pageCount} 页";
@@ -211,7 +211,7 @@ internal sealed class ChineseSimplifiedStrings : IStrings
         "保存后验证失败，因此未保存该 PDF。",
         "源 PDF 未被更改。请复制详细信息并反馈该问题。");
 
-    public ErrorText UserCancelled => new("操作已取消。", "");
+    public ErrorText UserCanceled => new("操作已取消。", "");
 
     public ErrorText Unexpected => new(
         "发生了意外错误。",

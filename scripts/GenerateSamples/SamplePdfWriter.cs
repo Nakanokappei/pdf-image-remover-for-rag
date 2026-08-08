@@ -533,11 +533,11 @@ public static class SamplePdfWriter
     {
         // The three images that decide what counts as a shadow, on one page.
         //
-        // A shadow layer is one flat colour shaped by a soft mask — that is
+        // A shadow layer is one flat color shaped by a soft mask — that is
         // what a drop shadow becomes when it is exported, because PDF has no
         // blur operator to draw one with. The other two are here to pin the
         // rule from both sides: a picture that also has a mask is NOT a shadow
-        // (it has a picture in it), and a flat colour with no mask is NOT one
+        // (it has a picture in it), and a flat color with no mask is NOT one
         // either (it is a filled rectangle the page shows as itself).
         using var doc = NewDocument("shadow-layer sample");
         var page = doc.AddPage();
@@ -560,7 +560,7 @@ public static class SamplePdfWriter
             }
         }
 
-        // The picture: many colours, and a mask of its own, so a test can tell
+        // The picture: many colors, and a mask of its own, so a test can tell
         // that the mask is not what makes a shadow.
         var pictureRgb = new byte[pixels * 3];
         var pictureAlpha = new byte[pixels];
@@ -572,7 +572,7 @@ public static class SamplePdfWriter
             pictureAlpha[i] = 255;
         }
 
-        // The flat fill: one colour, no mask.
+        // The flat fill: one color, no mask.
         var fillRgb = new byte[pixels * 3];
         for (int i = 0; i < pixels; i++)
         {

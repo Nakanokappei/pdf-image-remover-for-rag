@@ -64,7 +64,7 @@ internal sealed class WindowsImageResampler : IImageResampler
 
     /// <summary>
     /// A bitmap built from raw samples. PDF stores them tightly packed, row by
-    /// row, while GDI+ wants a stride it chooses and colour components the other
+    /// row, while GDI+ wants a stride it chooses and color components the other
     /// way round, so the rows are copied one at a time rather than in one block.
     /// </summary>
     static Bitmap? FromSamples(byte[] samples, int width, int height, int components)
@@ -83,7 +83,7 @@ internal sealed class WindowsImageResampler : IImageResampler
                 int read = y * width * components;
                 for (int x = 0; x < width; x++)
                 {
-                    // GDI+ is blue-green-red; PDF grey repeats its one sample.
+                    // GDI+ is blue-green-red; PDF gray repeats its one sample.
                     byte r = samples[read + (x * components)];
                     byte g = components == 3 ? samples[read + (x * components) + 1] : r;
                     byte b = components == 3 ? samples[read + (x * components) + 2] : r;
@@ -126,7 +126,7 @@ internal sealed class WindowsImageResampler : IImageResampler
                     }
                     else
                     {
-                        // The weights every luminance conversion uses; a grey
+                        // The weights every luminance conversion uses; a gray
                         // image round-trips through them unchanged.
                         samples[write + x] = (byte)(((r * 299) + (g * 587) + (b * 114)) / 1000);
                     }

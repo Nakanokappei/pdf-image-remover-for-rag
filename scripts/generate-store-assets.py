@@ -41,7 +41,7 @@ SQUARE_ASSETS = {
 }
 
 # Non-square assets: manifest name -> (logical width, logical height).
-# The icon is drawn square and centred; the remaining width stays transparent.
+# The icon is drawn square and centered; the remaining width stays transparent.
 # No SplashScreen — a full-trust desktop app never shows one.
 WIDE_ASSETS = {
     "Wide310x150Logo": (310, 150),
@@ -49,7 +49,7 @@ WIDE_ASSETS = {
 
 # Target sizes for the app-list icon. Windows picks one per surface (taskbar,
 # Start list, Alt+Tab, ...). The unplated variants are shown without the
-# coloured plate behind them, so they must keep their transparency.
+# colored plate behind them, so they must keep their transparency.
 TARGET_SIZES = (16, 20, 24, 30, 32, 36, 40, 48, 56, 60, 64, 72, 80, 96, 256)
 UNPLATED_SUFFIXES = ("", "_altform-unplated", "_altform-lightunplated")
 
@@ -57,7 +57,7 @@ UNPLATED_SUFFIXES = ("", "_altform-unplated", "_altform-lightunplated")
 def resized(master: Image.Image, edge: int) -> Image.Image:
     """Render the icon at the given edge length.
 
-    Up to icon_small.MAX_SIZE the master's detail collapses into a grey blur,
+    Up to icon_small.MAX_SIZE the master's detail collapses into a gray blur,
     so those sizes use the simplified pixel-grid drawing instead.
     """
     if edge <= icon_small.MAX_SIZE:
@@ -84,7 +84,7 @@ def main() -> None:
             resized(master, logical).save(OUT / "StoreLogo.png")
             written += 1
 
-    # Wide tile and splash screen: square icon centred on a transparent canvas.
+    # Wide tile and splash screen: square icon centered on a transparent canvas.
     for name, (logical_w, logical_h) in WIDE_ASSETS.items():
         for scale in SCALES:
             width = round(logical_w * scale / 100)

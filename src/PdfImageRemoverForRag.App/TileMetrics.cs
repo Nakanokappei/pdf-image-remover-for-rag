@@ -16,7 +16,7 @@ internal static class TileMetrics
     public const int TileWidth = 256;
     public const int TileHeight = 208;
 
-    /// <summary>Gap between neighbouring tiles.</summary>
+    /// <summary>Gap between neighboring tiles.</summary>
     public const int TileMargin = 6;
 
     /// <summary>Inset from the view's edge to the first tile.</summary>

@@ -42,7 +42,7 @@ public class ThumbnailExtractionScopeTests : IClassFixture<SamplePdfFixture>
     [Fact]
     public async Task AskingForEverythingIsStillTheDefault()
     {
-        // Null means "no opinion", which has to keep the old behaviour: a
+        // Null means "no opinion", which has to keep the old behavior: a
         // caller that cannot say what it wants must not silently get less.
         var thumbnails = await new PdfPigThumbnailProvider()
             .ExtractThumbnailsAsync(_samples.MultipleImagesPath, 160, 120, wantedHashes: null);

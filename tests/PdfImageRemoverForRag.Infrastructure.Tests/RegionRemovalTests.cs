@@ -75,7 +75,7 @@ public class RegionRemovalTests
     [Fact]
     public void OnlyTheRuleInsideTheRegionIsRemoved()
     {
-        // The same rule (same signature: same shape, width and colour) drawn at
+        // The same rule (same signature: same shape, width and color) drawn at
         // two heights. Zero-height paths are exactly the case the minimum extent
         // exists for.
         var sequence = Parse(

@@ -143,14 +143,14 @@ internal sealed partial class MainForm
         }
         catch (OperationCanceledException)
         {
-            // Cancelling abandons the whole open: a workspace holding "the two
+            // Canceling abandons the whole open: a workspace holding "the two
             // files that happened to finish first" is harder to reason about
             // than an empty one.
             _workflow.CloseAll();
             _selectedHashes.Clear();
             RefreshWorkspace();
             AutoSizeContentColumns();
-            SetStatus(L10n.StatusCancelled);
+            SetStatus(L10n.StatusCanceled);
         }
         catch (Exception ex)
         {
@@ -184,7 +184,7 @@ internal sealed partial class MainForm
             catch (PdfCleanerException ex)
             {
                 // One bad file must not block the rest of the batch.
-                if (ex.Kind != PdfCleanerErrorKind.UserCancelled) ErrorDialog.Show(this, ex);
+                if (ex.Kind != PdfCleanerErrorKind.UserCanceled) ErrorDialog.Show(this, ex);
             }
         }
     }

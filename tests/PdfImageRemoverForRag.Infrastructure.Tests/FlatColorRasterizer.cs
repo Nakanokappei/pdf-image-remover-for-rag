@@ -5,7 +5,7 @@ using PdfImageRemoverForRag.Scripts.GenerateSamples;
 namespace PdfImageRemoverForRag.Infrastructure.Tests;
 
 /// <summary>
-/// Renders every region as one flat colour, and records what it was asked for so
+/// Renders every region as one flat color, and records what it was asked for so
 /// the request itself can be asserted on.
 /// </summary>
 /// <remarks>
@@ -15,11 +15,11 @@ namespace PdfImageRemoverForRag.Infrastructure.Tests;
 /// operating system; whether the pixels look right is a question for the machine
 /// that has the renderer.
 /// </remarks>
-internal sealed class FlatColourRasterizer : IPageRasterizer
+internal sealed class FlatColorRasterizer : IPageRasterizer
 {
     readonly bool _succeeds;
 
-    public FlatColourRasterizer(bool succeeds = true)
+    public FlatColorRasterizer(bool succeeds = true)
     {
         _succeeds = succeeds;
     }

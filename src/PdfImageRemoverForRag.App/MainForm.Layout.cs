@@ -94,8 +94,8 @@ internal sealed partial class MainForm
                 AutoSize = true,
                 ToolTipText = ShownTypesCaption,
                 // Hosted controls are not painted by the ToolStrip renderer, so
-                // the host has to carry the strip's own colour or the box sits
-                // on a grey patch.
+                // the host has to carry the strip's own color or the box sits
+                // on a gray patch.
                 BackColor = SystemColors.Window,
             };
 
@@ -164,7 +164,7 @@ internal sealed partial class MainForm
     {
         // 16-logical glyphs; 10-logical padding all round → 36-logical buttons.
         _toolStrip.ImageScalingSize = new Size(Dip(16), Dip(16));
-        // Horizontal padding is what sets the distance between neighbours: two
+        // Horizontal padding is what sets the distance between neighbors: two
         // adjacent buttons are separated by one's right padding plus the
         // other's left, and nothing else. At 10 each that came to 20 logical px
         // between one command and the next, which read as five loose buttons
@@ -430,7 +430,7 @@ internal sealed partial class MainForm
             _deleteColumn.HeaderCell.Style.Font = _glyphHeaderFont;
         }
 
-        // Initial / reset sort order: 使用回数 descending (§ open behaviour).
+        // Initial / reset sort order: 使用回数 descending (§ open behavior).
         _sortColumn = _usageCountColumn;
         _sortAscending = false;
     }

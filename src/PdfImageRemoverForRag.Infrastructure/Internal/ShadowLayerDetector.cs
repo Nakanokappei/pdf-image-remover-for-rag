@@ -7,35 +7,35 @@ namespace PdfImageRemoverForRag.Infrastructure.Internal;
 ///
 /// A shadow has no picture in it. PowerPoint (and every other producer, since
 /// PDF has no blur operator) exports one as an Image XObject filled with a
-/// single flat colour, plus a soft mask holding the blurred outline. Two
+/// single flat color, plus a soft mask holding the blurred outline. Two
 /// measurements were taken from a customer's document and from slides exported
 /// on purpose, one per effect:
 ///
 /// <list type="bullet">
-///   <item>every shadow layer was one flat colour — 49 of them, all
+///   <item>every shadow layer was one flat color — 49 of them, all
 ///   <c>000000</c> — while every real picture used many;</item>
 ///   <item>glow, soft edges and reflection are NOT separate layers: the
-///   producer rasterises them together with the object they belong to, so
+///   producer rasterizes them together with the object they belong to, so
 ///   those images carry real pixels and are not shadows.</item>
 /// </list>
 ///
 /// Judging the mask instead is what the first attempt did, and the slides
 /// disproved it: a shape's outer shadow reaches full opacity (so "never
 /// opaque" missed it) and a reflection is faint everywhere (so "mostly
-/// transparent" wrongly caught it). The colour count is the honest signal.
+/// transparent" wrongly caught it). The color count is the honest signal.
 /// </summary>
 internal static class ShadowLayerDetector
 {
     /// <summary>
-    /// Whether this Image XObject is a shadow layer: one flat colour, drawn
+    /// Whether this Image XObject is a shadow layer: one flat color, drawn
     /// through a soft mask. Anything that cannot be read as plain samples is
     /// answered <c>false</c> — an unreadable image is left an ordinary image
     /// rather than guessed at.
     /// </summary>
     public static bool IsShadowLayer(PdfDictionary image)
     {
-        // No mask, no shadow: the mask is what gives the flat colour a shape.
-        // A flat-colour image without one is a plain filled rectangle, which
+        // No mask, no shadow: the mask is what gives the flat color a shape.
+        // A flat-color image without one is a plain filled rectangle, which
         // is content the page shows as itself.
         if (image.Elements.GetDictionary("/SMask") is null) return false;
 
@@ -78,7 +78,7 @@ internal static class ShadowLayerDetector
         var expected = (long)width * height * channels;
         if (expected <= 0 || samples.LongLength < expected) return false;
 
-        // One flat colour, tested channel by channel and abandoned at the first
+        // One flat color, tested channel by channel and abandoned at the first
         // pixel that differs. A photograph is rejected within a few bytes; only
         // an image that really is uniform is read to the end.
         for (var channel = 0; channel < channels; channel++)

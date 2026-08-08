@@ -62,8 +62,8 @@ internal sealed class PortugueseStrings : IStrings
     public string StatusAnalyzing => "Analisando o PDF…";
 
     public string Cancel => "Cancelar";
-    public string StatusCancelling => "Cancelando…";
-    public string StatusCancelled => "Abertura cancelada";
+    public string StatusCanceling => "Cancelando…";
+    public string StatusCanceled => "Abertura cancelada";
 
     public string ProgressReadingPages(string fileName, int page, int pageCount) =>
         $"{fileName} — analisando a página {page} de {pageCount}";
@@ -218,7 +218,7 @@ internal sealed class PortugueseStrings : IStrings
         "A verificação após o salvamento falhou, portanto o PDF não foi salvo.",
         "O PDF de origem está inalterado. Copie os detalhes e relate o problema.");
 
-    public ErrorText UserCancelled => new("A operação foi cancelada.", "");
+    public ErrorText UserCanceled => new("A operação foi cancelada.", "");
 
     public ErrorText Unexpected => new(
         "Ocorreu um erro inesperado.",

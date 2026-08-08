@@ -68,8 +68,8 @@ internal sealed class TurkishStrings : IStrings
     public string StatusAnalyzing => "PDF çözümleniyor…";
 
     public string Cancel => "İptal";
-    public string StatusCancelling => "İptal ediliyor…";
-    public string StatusCancelled => "Açma işlemi iptal edildi";
+    public string StatusCanceling => "İptal ediliyor…";
+    public string StatusCanceled => "Açma işlemi iptal edildi";
 
     public string ProgressReadingPages(string fileName, int page, int pageCount) =>
         $"{fileName} — sayfa {page}/{pageCount} çözümleniyor";
@@ -224,7 +224,7 @@ internal sealed class TurkishStrings : IStrings
         "Kayıt sonrası doğrulama başarısız olduğundan PDF kaydedilmedi.",
         "Kaynak PDF değişmedi. Ayrıntıları kopyalayıp sorunu bildirin.");
 
-    public ErrorText UserCancelled => new("İşlem iptal edildi.", "");
+    public ErrorText UserCanceled => new("İşlem iptal edildi.", "");
 
     public ErrorText Unexpected => new(
         "Beklenmeyen bir hata oluştu.",

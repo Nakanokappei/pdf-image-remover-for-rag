@@ -84,7 +84,7 @@ internal sealed partial class MainForm
         catch (PdfCleanerException ex)
         {
             SetStatus(L10n.StatusSaveFailed);
-            if (ex.Kind != PdfCleanerErrorKind.UserCancelled) ErrorDialog.Show(this, ex);
+            if (ex.Kind != PdfCleanerErrorKind.UserCanceled) ErrorDialog.Show(this, ex);
             return false;
         }
         catch (Exception ex)

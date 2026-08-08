@@ -41,8 +41,8 @@ public enum PdfCleanerErrorKind
     /// <summary>Cleaned PDF could not be reopened after saving.</summary>
     PostSaveVerificationFailed,
 
-    /// <summary>User cancelled the operation.</summary>
-    UserCancelled,
+    /// <summary>User canceled the operation.</summary>
+    UserCanceled,
 
     /// <summary>Anything else — a wrapped exception the UI should treat as a bug report.</summary>
     Unexpected,

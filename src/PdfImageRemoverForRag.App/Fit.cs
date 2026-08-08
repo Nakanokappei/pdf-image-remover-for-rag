@@ -10,7 +10,7 @@ internal static class Fit
 {
     /// <summary>
     /// The rectangle to draw <paramref name="picture"/> in: scaled to fit
-    /// <paramref name="box"/> and centred in it, never distorted.
+    /// <paramref name="box"/> and centered in it, never distorted.
     /// </summary>
     /// <param name="mayEnlarge">
     /// True where the picture was rendered for this box and filling it is the
@@ -18,7 +18,7 @@ internal static class Fit
     /// False where the picture is whatever a document happened to hold: a
     /// 40×30 logo blown up to fill a cell is a blur, and the usage window's
     /// one-pixel stand-in for a page that would not render would become a
-    /// full-size grey rectangle.
+    /// full-size gray rectangle.
     /// </param>
     public static Rectangle Inside(Size picture, Rectangle box, bool mayEnlarge)
     {

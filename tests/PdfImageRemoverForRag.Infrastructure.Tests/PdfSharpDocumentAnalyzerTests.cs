@@ -22,7 +22,7 @@ public class PdfSharpDocumentAnalyzerTests : IClassFixture<SamplePdfFixture>
     // --- progress and cancellation (§18) ------------------------------------
     // A 30 MB PDF takes minutes, so the UI needs to show movement and offer a
     // way out. Both are plumbed through IProgress/CancellationToken; these
-    // tests pin the behaviour the dialog depends on.
+    // tests pin the behavior the dialog depends on.
 
     [Fact]
     public async Task Analyze_ReportsPageProgressAndThumbnailProgress()
@@ -69,7 +69,7 @@ public class PdfSharpDocumentAnalyzerTests : IClassFixture<SamplePdfFixture>
     }
 
     [Fact]
-    public async Task Analyze_WithAlreadyCancelledToken_Throws()
+    public async Task Analyze_WithAlreadyCanceledToken_Throws()
     {
         var analyzer = NewAnalyzer();
         using var cancellation = new CancellationTokenSource();

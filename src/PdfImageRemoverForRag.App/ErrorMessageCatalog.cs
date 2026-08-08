@@ -30,7 +30,7 @@ internal static class ErrorMessageCatalog
             PdfCleanerErrorKind.FileInUse => s.FileInUse,
             PdfCleanerErrorKind.DiskFull => s.DiskFull,
             PdfCleanerErrorKind.PostSaveVerificationFailed => s.PostSaveVerificationFailed,
-            PdfCleanerErrorKind.UserCancelled => s.UserCancelled,
+            PdfCleanerErrorKind.UserCanceled => s.UserCanceled,
             PdfCleanerErrorKind.Unexpected => s.Unexpected,
             _ => s.Unexpected,
         };

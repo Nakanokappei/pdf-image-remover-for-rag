@@ -64,8 +64,8 @@ internal sealed class VietnameseStrings : IStrings
     public string StatusAnalyzing => "Đang phân tích tệp PDF…";
 
     public string Cancel => "Hủy";
-    public string StatusCancelling => "Đang hủy…";
-    public string StatusCancelled => "Đã hủy việc mở tệp";
+    public string StatusCanceling => "Đang hủy…";
+    public string StatusCanceled => "Đã hủy việc mở tệp";
 
     public string ProgressReadingPages(string fileName, int page, int pageCount) =>
         $"{fileName} — đang phân tích trang {page}/{pageCount}";
@@ -220,7 +220,7 @@ internal sealed class VietnameseStrings : IStrings
         "Kiểm tra sau khi lưu không đạt nên tệp PDF chưa được lưu.",
         "Tệp PDF nguồn không thay đổi. Hãy sao chép chi tiết và báo lỗi.");
 
-    public ErrorText UserCancelled => new("Thao tác đã bị hủy.", "");
+    public ErrorText UserCanceled => new("Thao tác đã bị hủy.", "");
 
     public ErrorText Unexpected => new(
         "Đã xảy ra lỗi không mong muốn.",

@@ -58,8 +58,8 @@ internal sealed class EnglishStrings : IStrings
     public string StatusAnalyzing => "Analyzing PDF…";
 
     public string Cancel => "Cancel";
-    public string StatusCancelling => "Canceling…";
-    public string StatusCancelled => "Opening canceled";
+    public string StatusCanceling => "Canceling…";
+    public string StatusCanceled => "Opening canceled";
 
     public string ProgressReadingPages(string fileName, int page, int pageCount) =>
         $"{fileName} — analyzing page {page} of {pageCount}";
@@ -214,7 +214,7 @@ internal sealed class EnglishStrings : IStrings
         "Post-save verification failed, so the PDF was not saved.",
         "The source PDF is unchanged. Copy the details and report the problem.");
 
-    public ErrorText UserCancelled => new("The operation was canceled.", "");
+    public ErrorText UserCanceled => new("The operation was canceled.", "");
 
     public ErrorText Unexpected => new(
         "An unexpected error occurred.",

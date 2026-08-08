@@ -41,7 +41,7 @@ internal sealed class TileView : Panel
     /// <summary>
     /// Raised on a Shift+click range selection: every safely-removable group
     /// between the anchor and the clicked tile is set to <c>Select</c>
-    /// (checked) or cleared. Mirrors the table's Shift+click behaviour.
+    /// (checked) or cleared. Mirrors the table's Shift+click behavior.
     /// </summary>
     public event Action<IReadOnlyList<CrossFileObjectGroup>, bool>? RangeToggleRequested;
 

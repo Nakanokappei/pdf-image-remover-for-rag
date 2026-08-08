@@ -2,7 +2,7 @@
 
 The 1024px master (assets/app-icon-master.png) carries a thin red border, a
 photo-like picture symbol, and dissolving pixels. Downscaled below ~32px those
-details turn into a grey blur with a washed-out border, so the small sizes are
+details turn into a gray blur with a washed-out border, so the small sizes are
 drawn here instead — same motif, snapped to the pixel grid so every edge stays
 crisp.
 

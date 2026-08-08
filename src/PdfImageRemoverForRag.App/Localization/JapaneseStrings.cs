@@ -55,8 +55,8 @@ internal sealed class JapaneseStrings : IStrings
     public string StatusAnalyzing => "PDFを解析しています…";
 
     public string Cancel => "キャンセル";
-    public string StatusCancelling => "キャンセルしています…";
-    public string StatusCancelled => "読み込みをキャンセルしました";
+    public string StatusCanceling => "キャンセルしています…";
+    public string StatusCanceled => "読み込みをキャンセルしました";
 
     public string ProgressReadingPages(string fileName, int page, int pageCount) =>
         $"{fileName} — {page}/{pageCount} ページを解析中";
@@ -210,7 +210,7 @@ internal sealed class JapaneseStrings : IStrings
         "保存後の検証に失敗したため、PDF は保存されませんでした。",
         "元の PDF は変更されていません。詳細をコピーして報告してください。");
 
-    public ErrorText UserCancelled => new("処理をキャンセルしました。", "");
+    public ErrorText UserCanceled => new("処理をキャンセルしました。", "");
 
     public ErrorText Unexpected => new(
         "予期しないエラーが発生しました。",

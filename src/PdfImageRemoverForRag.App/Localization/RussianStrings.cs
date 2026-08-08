@@ -69,8 +69,8 @@ internal sealed class RussianStrings : IStrings
     public string StatusAnalyzing => "Анализ PDF…";
 
     public string Cancel => "Отмена";
-    public string StatusCancelling => "Отмена…";
-    public string StatusCancelled => "Открытие отменено";
+    public string StatusCanceling => "Отмена…";
+    public string StatusCanceled => "Открытие отменено";
 
     public string ProgressReadingPages(string fileName, int page, int pageCount) =>
         $"{fileName} — анализ страницы {page} из {pageCount}";
@@ -225,7 +225,7 @@ internal sealed class RussianStrings : IStrings
         "Проверка после сохранения не пройдена, поэтому файл PDF не был сохранён.",
         "Исходный файл PDF не изменён. Скопируйте сведения и сообщите о проблеме.");
 
-    public ErrorText UserCancelled => new("Операция отменена.", "");
+    public ErrorText UserCanceled => new("Операция отменена.", "");
 
     public ErrorText Unexpected => new(
         "Произошла непредвиденная ошибка.",

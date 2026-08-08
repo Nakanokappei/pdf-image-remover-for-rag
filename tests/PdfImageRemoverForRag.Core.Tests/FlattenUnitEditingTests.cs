@@ -77,7 +77,7 @@ public class FlattenUnitEditingTests
         var merged = FlattenUnitEditing.Merge(units, new[] { left, right });
         var unit = Assert.Single(merged, u => u.Members.Count == 2);
 
-        // The rectangle is what gets rasterised, so it has to reach both.
+        // The rectangle is what gets rasterized, so it has to reach both.
         Assert.True(unit.X <= left.X && unit.Y <= right.Y);
         Assert.True(unit.X + unit.Width >= right.X + right.Width);
         Assert.True(unit.Y + unit.Height >= left.Y + left.Height);

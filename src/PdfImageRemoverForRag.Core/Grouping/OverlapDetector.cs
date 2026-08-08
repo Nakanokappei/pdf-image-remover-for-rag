@@ -247,7 +247,7 @@ public static class OverlapDetector
     /// <summary>
     /// The object's edges, with any extent below <see cref="MinimumExtent"/>
     /// grown symmetrically to it. Negative width or height (a rectangle given
-    /// by its far corner) is normalised here too.
+    /// by its far corner) is normalized here too.
     /// </summary>
     static (double Left, double Bottom, double Right, double Top) Padded(PlacedObject o)
     {
@@ -258,15 +258,15 @@ public static class OverlapDetector
 
         if (right - left < MinimumExtent)
         {
-            double centre = (left + right) / 2;
-            left = centre - (MinimumExtent / 2);
-            right = centre + (MinimumExtent / 2);
+            double center = (left + right) / 2;
+            left = center - (MinimumExtent / 2);
+            right = center + (MinimumExtent / 2);
         }
         if (top - bottom < MinimumExtent)
         {
-            double centre = (bottom + top) / 2;
-            bottom = centre - (MinimumExtent / 2);
-            top = centre + (MinimumExtent / 2);
+            double center = (bottom + top) / 2;
+            bottom = center - (MinimumExtent / 2);
+            top = center + (MinimumExtent / 2);
         }
         return (left, bottom, right, top);
     }

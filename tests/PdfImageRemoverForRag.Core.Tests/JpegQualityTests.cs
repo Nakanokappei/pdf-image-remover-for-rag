@@ -51,7 +51,7 @@ public class JpegQualityTests
     }
 
     [Fact]
-    public void APictureBelowTheCeilingIsRecognisedAsBelowIt()
+    public void APictureBelowTheCeilingIsRecognizedAsBelowIt()
     {
         // The question this is asked in practice: may it be encoded at 85, or
         // would that be an increase?

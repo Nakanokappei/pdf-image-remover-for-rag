@@ -56,8 +56,8 @@ internal sealed class KoreanStrings : IStrings
     public string StatusAnalyzing => "PDF를 분석하는 중…";
 
     public string Cancel => "취소";
-    public string StatusCancelling => "취소하는 중…";
-    public string StatusCancelled => "열기를 취소했습니다";
+    public string StatusCanceling => "취소하는 중…";
+    public string StatusCanceled => "열기를 취소했습니다";
 
     public string ProgressReadingPages(string fileName, int page, int pageCount) =>
         $"{fileName} — {pageCount}페이지 중 {page}페이지 분석 중";
@@ -211,7 +211,7 @@ internal sealed class KoreanStrings : IStrings
         "저장 후 검증에 실패하여 PDF가 저장되지 않았습니다.",
         "원본 PDF는 변경되지 않았습니다. 자세한 내용을 복사하여 문제를 보고해 주십시오.");
 
-    public ErrorText UserCancelled => new("작업이 취소되었습니다.", "");
+    public ErrorText UserCanceled => new("작업이 취소되었습니다.", "");
 
     public ErrorText Unexpected => new(
         "예기치 않은 오류가 발생했습니다.",

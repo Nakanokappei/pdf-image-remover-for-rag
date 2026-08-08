@@ -8,7 +8,7 @@ namespace PdfImageRemoverForRag.Core.Validation;
 /// hand to GDI+ come out of a PDF the user opened, and a "decompression bomb"
 /// — a few kilobytes that declare 40000x40000 pixels — costs about 6 GB the
 /// moment it is decoded. Catching the resulting out-of-memory afterwards is
-/// not a defence: the allocation has already been attempted. So the size is
+/// not a defense: the allocation has already been attempted. So the size is
 /// read from the header first and absurd images are simply never decoded.
 ///
 /// Only PNG and JPEG are understood, which is exactly what the thumbnail
@@ -35,7 +35,7 @@ public static class RasterImageHeader
 
     /// <summary>
     /// True when these bytes are a readable image of a sane size. False for
-    /// anything unrecognised, truncated, zero-sized, or over
+    /// anything unrecognized, truncated, zero-sized, or over
     /// <see cref="MaxPixelCount"/>.
     /// </summary>
     public static bool IsSafeToDecode(ReadOnlySpan<byte> bytes)

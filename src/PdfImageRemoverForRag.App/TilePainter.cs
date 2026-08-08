@@ -74,7 +74,7 @@ internal static class TilePainter
         ControlPaint.DrawBorder3D(g, bounds,
             tile.IsChecked ? Border3DStyle.Sunken : Border3DStyle.Raised);
 
-        // Content centred in the padded area. A pressed tile shifts it down-right,
+        // Content centered in the padded area. A pressed tile shifts it down-right,
         // like a real button.
         var contentArea = Rectangle.Inflate(bounds, -dip(ContentInset), -dip(ContentInset));
         if (tile.IsChecked) contentArea.Offset(dip(1), dip(1));
@@ -104,7 +104,7 @@ internal static class TilePainter
             var flags = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter
                       | TextFormatFlags.WordBreak | TextFormatFlags.EndEllipsis;
             using var font = new Font(baseFont.FontFamily, 8.5f);
-            // DimGray (#696969), not Gray (#808080): grey-on-white at #808080 is
+            // DimGray (#696969), not Gray (#808080): gray-on-white at #808080 is
             // 3.95:1, just under the 4.5:1 WCAG AA minimum for normal text;
             // #696969 is 5.49:1. High contrast uses the theme's disabled color.
             TextRenderer.DrawText(g, L10n.ThumbnailPending, font, contentArea,

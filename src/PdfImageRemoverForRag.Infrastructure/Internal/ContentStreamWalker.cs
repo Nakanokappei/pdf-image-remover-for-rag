@@ -351,7 +351,7 @@ internal static class ContentStreamWalker
     /// in force is not the page's own.
     ///
     /// Answers -1 when the page applies a <c>cm</c> outside any <c>q…Q</c> pair:
-    /// that changes what "absolute" means for everything after it, and honouring
+    /// that changes what "absolute" means for everything after it, and honoring
     /// it would mean carrying the transform in. Rare enough to be worth
     /// refusing rather than guessing at — the caller draws the picture last, as
     /// it always did.

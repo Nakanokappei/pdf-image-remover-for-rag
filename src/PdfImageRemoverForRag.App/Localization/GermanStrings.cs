@@ -62,8 +62,8 @@ internal sealed class GermanStrings : IStrings
     public string StatusAnalyzing => "PDF wird analysiert…";
 
     public string Cancel => "Abbrechen";
-    public string StatusCancelling => "Wird abgebrochen…";
-    public string StatusCancelled => "Öffnen abgebrochen";
+    public string StatusCanceling => "Wird abgebrochen…";
+    public string StatusCanceled => "Öffnen abgebrochen";
 
     public string ProgressReadingPages(string fileName, int page, int pageCount) =>
         $"{fileName} — Seite {page} von {pageCount} wird analysiert";
@@ -218,7 +218,7 @@ internal sealed class GermanStrings : IStrings
         "Die Prüfung nach dem Speichern ist fehlgeschlagen, daher wurde die PDF-Datei nicht gespeichert.",
         "Die Quell-PDF ist unverändert. Kopieren Sie die Details und melden Sie das Problem.");
 
-    public ErrorText UserCancelled => new("Der Vorgang wurde abgebrochen.", "");
+    public ErrorText UserCanceled => new("Der Vorgang wurde abgebrochen.", "");
 
     public ErrorText Unexpected => new(
         "Ein unerwarteter Fehler ist aufgetreten.",

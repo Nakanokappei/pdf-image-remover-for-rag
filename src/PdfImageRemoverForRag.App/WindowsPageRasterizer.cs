@@ -156,7 +156,7 @@ internal sealed class WindowsPageRasterizer : IPageRasterizer
             }
         }
 
-        // Last line of defence: the ceiling is about memory and file size, and
+        // Last line of defense: the ceiling is about memory and file size, and
         // it has to hold even if the renderer ignores the request entirely.
         if (bitmap.Width > MaxPixelWidth || bitmap.Height > MaxPixelHeight)
         {
@@ -189,7 +189,7 @@ internal sealed class WindowsPageRasterizer : IPageRasterizer
         };
         // Alpha zero leaves the paper unpainted, so the result carries
         // transparency wherever the page draws nothing. Measured before it was
-        // relied on: the renderer honours it, and the default is opaque white.
+        // relied on: the renderer honors it, and the default is opaque white.
         if (transparentBackground)
         {
             options.BackgroundColor = Windows.UI.Color.FromArgb(0, 255, 255, 255);

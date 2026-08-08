@@ -59,8 +59,8 @@ internal sealed class ChineseTraditionalStrings : IStrings
     public string StatusAnalyzing => "正在分析 PDF…";
 
     public string Cancel => "取消";
-    public string StatusCancelling => "正在取消…";
-    public string StatusCancelled => "已取消開啟";
+    public string StatusCanceling => "正在取消…";
+    public string StatusCanceled => "已取消開啟";
 
     public string ProgressReadingPages(string fileName, int page, int pageCount) =>
         $"{fileName} — 正在分析第 {page} 頁，共 {pageCount} 頁";
@@ -213,7 +213,7 @@ internal sealed class ChineseTraditionalStrings : IStrings
         "儲存後驗證失敗，因此並未儲存該 PDF。",
         "來源 PDF 未被變更。請複製詳細資料並回報此問題。");
 
-    public ErrorText UserCancelled => new("作業已取消。", "");
+    public ErrorText UserCanceled => new("作業已取消。", "");
 
     public ErrorText Unexpected => new(
         "發生非預期的錯誤。",

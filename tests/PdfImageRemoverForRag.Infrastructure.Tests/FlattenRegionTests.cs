@@ -13,7 +13,7 @@ namespace PdfImageRemoverForRag.Infrastructure.Tests;
 // End-to-end flattening: an overlap region is replaced by a picture of itself,
 // so the text stops being text while the page still looks the same.
 //
-// The renderer is <see cref="FlatColourRasterizer"/>, which explains there why
+// The renderer is <see cref="FlatColorRasterizer"/>, which explains there why
 // standing in for the real one is the arrangement rather than a shortcut.
 public class FlattenRegionTests : IClassFixture<SamplePdfFixture>
 {
@@ -43,7 +43,7 @@ public class FlattenRegionTests : IClassFixture<SamplePdfFixture>
         Assert.NotEmpty(flattenedStrings);
 
         var dest = Destination("image-and-text_flattened.pdf");
-        var result = await new PdfSharpDocumentCleaner(new FlatColourRasterizer())
+        var result = await new PdfSharpDocumentCleaner(new FlatColorRasterizer())
             .CleanAsync(_samples.ImageAndTextPath, dest, NothingToRemove(), new[] { region });
 
         Assert.Equal(1, result.RegionsFlattened);
@@ -74,7 +74,7 @@ public class FlattenRegionTests : IClassFixture<SamplePdfFixture>
         var region = Assert.Single(info.OverlapRegions);
 
         var dest = Destination("image-and-text_flattened_only.pdf");
-        await new PdfSharpDocumentCleaner(new FlatColourRasterizer())
+        await new PdfSharpDocumentCleaner(new FlatColorRasterizer())
             .CleanAsync(_samples.ImageAndTextPath, dest, NothingToRemove(), new[] { region });
 
         var reanalyzed = await NewAnalyzer().AnalyzeAsync(dest);
@@ -107,7 +107,7 @@ public class FlattenRegionTests : IClassFixture<SamplePdfFixture>
         var originalImageHash = detected.Members.First(m => m.Kind == RemovableKind.Image).Identity;
 
         var dest = Destination("image-and-text_flattened_text_only.pdf");
-        var result = await new PdfSharpDocumentCleaner(new FlatColourRasterizer())
+        var result = await new PdfSharpDocumentCleaner(new FlatColorRasterizer())
             .CleanAsync(_samples.ImageAndTextPath, dest, NothingToRemove(), new[] { textOnly });
 
         Assert.Equal(1, result.RegionsFlattened);
@@ -123,7 +123,7 @@ public class FlattenRegionTests : IClassFixture<SamplePdfFixture>
     {
         var info = await NewAnalyzer().AnalyzeAsync(_samples.ImageAndTextPath);
         var region = Assert.Single(info.OverlapRegions);
-        var rasterizer = new FlatColourRasterizer();
+        var rasterizer = new FlatColorRasterizer();
 
         var dest = Destination("image-and-text_render_request.pdf");
         await new PdfSharpDocumentCleaner(rasterizer)
@@ -152,7 +152,7 @@ public class FlattenRegionTests : IClassFixture<SamplePdfFixture>
             .ToArray();
 
         var dest = Destination("image-and-text_render_failed.pdf");
-        var result = await new PdfSharpDocumentCleaner(new FlatColourRasterizer(succeeds: false))
+        var result = await new PdfSharpDocumentCleaner(new FlatColorRasterizer(succeeds: false))
             .CleanAsync(_samples.ImageAndTextPath, dest, NothingToRemove(), new[] { region });
 
         Assert.Equal(0, result.RegionsFlattened);
@@ -173,7 +173,7 @@ public class FlattenRegionTests : IClassFixture<SamplePdfFixture>
         var region = Assert.Single(info.OverlapRegions);
 
         var dest = Destination("image-and-text_flattened_hashes.pdf");
-        var result = await new PdfSharpDocumentCleaner(new FlatColourRasterizer())
+        var result = await new PdfSharpDocumentCleaner(new FlatColorRasterizer())
             .CleanAsync(_samples.ImageAndTextPath, dest, NothingToRemove(), new[] { region });
 
         Assert.Empty(result.RemovedGroupHashes);
@@ -219,7 +219,7 @@ public class FlattenRegionTests : IClassFixture<SamplePdfFixture>
         // The sample draws a logo near the top of the page, then a second logo
         // lower down. Flattening the upper one has to leave the lower one drawn
         // AFTER the picture, or anything the user kept over that place — the
-        // second logo here — ends up behind a picture of its neighbours.
+        // second logo here — ends up behind a picture of its neighbors.
         //
         // The page's y grows upward, so the unit drawn first is the one higher
         // up the paper.
@@ -228,7 +228,7 @@ public class FlattenRegionTests : IClassFixture<SamplePdfFixture>
 
         var before = DrawCallOrder(_samples.FlattenUnitsPath, region.PageNumber);
         var dest = Destination("flatten-units_z-order.pdf");
-        await new PdfSharpDocumentCleaner(new FlatColourRasterizer())
+        await new PdfSharpDocumentCleaner(new FlatColorRasterizer())
             .CleanAsync(_samples.FlattenUnitsPath, dest, NothingToRemove(), new[] { region });
 
         var after = DrawCallOrder(dest, region.PageNumber);
@@ -256,7 +256,7 @@ public class FlattenRegionTests : IClassFixture<SamplePdfFixture>
     public async Task ASaveThatNeitherFlattensNorRemoves_IsStillRefused()
     {
         await Assert.ThrowsAsync<PdfCleanerException>(() =>
-            new PdfSharpDocumentCleaner(new FlatColourRasterizer()).CleanAsync(
+            new PdfSharpDocumentCleaner(new FlatColorRasterizer()).CleanAsync(
                 _samples.ImageAndTextPath, Destination("never-written-2.pdf"),
                 NothingToRemove(), Array.Empty<OverlapRegion>()));
     }

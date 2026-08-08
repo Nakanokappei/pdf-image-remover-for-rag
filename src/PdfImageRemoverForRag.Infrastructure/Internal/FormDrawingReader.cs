@@ -88,7 +88,7 @@ internal static class FormDrawingReader
         if (minX > maxX || minY > maxY) return null;
 
         // Second pass: slide the shared box to the origin, rewriting each point
-        // where it lies. Each part keeps its own paint operator and colours, so
+        // where it lies. Each part keeps its own paint operator and colors, so
         // a drawing may mix fills and strokes the way the silhouette and its
         // speech bubble do, and its width and height are re-measured here
         // because the hit's own were taken before the matrix applied.

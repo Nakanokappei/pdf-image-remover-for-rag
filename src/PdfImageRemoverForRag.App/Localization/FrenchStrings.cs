@@ -64,8 +64,8 @@ internal sealed class FrenchStrings : IStrings
     public string StatusAnalyzing => "Analyse du PDF…";
 
     public string Cancel => "Annuler";
-    public string StatusCancelling => "Annulation…";
-    public string StatusCancelled => "Ouverture annulée";
+    public string StatusCanceling => "Annulation…";
+    public string StatusCanceled => "Ouverture annulée";
 
     public string ProgressReadingPages(string fileName, int page, int pageCount) =>
         $"{fileName} — analyse de la page {page} sur {pageCount}";
@@ -220,7 +220,7 @@ internal sealed class FrenchStrings : IStrings
         "La vérification après enregistrement a échoué ; le PDF n'a donc pas été enregistré.",
         "Le PDF source est inchangé. Copiez les détails et signalez le problème.");
 
-    public ErrorText UserCancelled => new("L'opération a été annulée.", "");
+    public ErrorText UserCanceled => new("L'opération a été annulée.", "");
 
     public ErrorText Unexpected => new(
         "Une erreur inattendue s'est produite.",

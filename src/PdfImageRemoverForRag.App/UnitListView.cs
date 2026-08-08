@@ -319,7 +319,7 @@ internal sealed class UnitListView : Panel
             DrawThumbnail(g, icon, visual, muted);
         }
 
-        // A hidden object is greyed, the way an image editor greys one out: the
+        // A hidden object is grayed, the way an image editor grays one out: the
         // eye alone is a small mark to read a whole list by.
         if (visual.Visibility == RowVisibility.Hidden && !selected) text = SystemColors.GrayText;
 
@@ -392,8 +392,8 @@ internal sealed class UnitListView : Panel
     }
 
     /// <summary>
-    /// Draw an icon-font glyph centred in a box. Grayscale antialiasing rather
-    /// than ClearType, the same choice <see cref="ToolbarIcons"/> makes: colour
+    /// Draw an icon-font glyph centered in a box. Grayscale antialiasing rather
+    /// than ClearType, the same choice <see cref="ToolbarIcons"/> makes: color
     /// fringing on a glyph this small reads as a smudge.
     /// </summary>
     void DrawGlyph(Graphics g, Rectangle box, string glyph, Color color)
@@ -417,7 +417,7 @@ internal sealed class UnitListView : Panel
     }
 
     /// <summary>
-    /// The eye: shown, struck through when hidden, and greyed when a folder's
+    /// The eye: shown, struck through when hidden, and grayed when a folder's
     /// objects disagree — which is a state the objects themselves never have.
     /// </summary>
     void DrawEye(Graphics g, Rectangle box, RowVisibility visibility, Color color)
@@ -433,8 +433,8 @@ internal sealed class UnitListView : Panel
         // navigation controls draw one, and at this size a solid wedge is a blot
         // where a line reads as a direction. Down when open, right when closed —
         // the convention every file tree and layers panel keeps.
-        float centreX = box.Left + (box.Width / 2f);
-        float centreY = box.Top + (box.Height / 2f);
+        float centerX = box.Left + (box.Width / 2f);
+        float centerY = box.Top + (box.Height / 2f);
         // Long arm across the chevron's back, short arm to its point: the ratio
         // is what makes it a chevron rather than a corner.
         float across = box.Width * 0.30f;
@@ -442,15 +442,15 @@ internal sealed class UnitListView : Panel
         var points = expanded
             ? new[]
             {
-                new PointF(centreX - across, centreY - depth),
-                new PointF(centreX, centreY + depth),
-                new PointF(centreX + across, centreY - depth),
+                new PointF(centerX - across, centerY - depth),
+                new PointF(centerX, centerY + depth),
+                new PointF(centerX + across, centerY - depth),
             }
             : new[]
             {
-                new PointF(centreX - depth, centreY - across),
-                new PointF(centreX + depth, centreY),
-                new PointF(centreX - depth, centreY + across),
+                new PointF(centerX - depth, centerY - across),
+                new PointF(centerX + depth, centerY),
+                new PointF(centerX - depth, centerY + across),
             };
 
         // Rounded cap and join, and a width tied to the box, so the mark keeps

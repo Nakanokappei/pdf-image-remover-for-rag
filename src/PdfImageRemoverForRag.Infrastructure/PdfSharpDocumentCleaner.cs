@@ -158,8 +158,8 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
             // Rendered from a copy holding only the ticked objects, on a
             // transparent background — see FlattenSourceIsolator for what
             // rendering the page as it stands did instead. Falling back to the
-            // page itself keeps the old behaviour when the copy cannot be
-            // written, which is a cropped neighbour in the picture rather than
+            // page itself keeps the old behavior when the copy cannot be
+            // written, which is a cropped neighbor in the picture rather than
             // no picture at all.
             var isolatedPath = Path.Combine(
                 Path.GetTempPath(), $"pdfimageremover-flatten-{Guid.NewGuid():N}.pdf");
@@ -496,7 +496,7 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
     ///
     /// It used to be appended to the page as a stream of its own, which drew it
     /// last and so over everything: an object the user had kept inside the
-    /// region disappeared behind the picture of its neighbours.
+    /// region disappeared behind the picture of its neighbors.
     ///
     /// The image is added to <paramref name="keepAlive"/> rather than disposed
     /// here because PDFsharp reads its stream when the document is saved.
@@ -509,7 +509,7 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
 
         // Where the block may go without landing inside somebody else's saved
         // state. -1 means the page transforms its whole top level, which this
-        // cannot honour — there the picture goes last, as it always did.
+        // cannot honor — there the picture goes last, as it always did.
         int at = ContentStreamWalker.InsertionPointFor(sequence, firstIndex);
         if (at < 0) at = sequence.Count;
 
@@ -619,7 +619,7 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
 
     /// <summary>
     /// The image objects an image depends on: its soft mask, its stencil mask,
-    /// or both. A <c>/Mask</c> may instead be an array of colour-key ranges,
+    /// or both. A <c>/Mask</c> may instead be an array of color-key ranges,
     /// which is not an object and has nothing to delete.
     /// </summary>
     static IEnumerable<PdfDictionary> MasksOf(PdfDictionary image)

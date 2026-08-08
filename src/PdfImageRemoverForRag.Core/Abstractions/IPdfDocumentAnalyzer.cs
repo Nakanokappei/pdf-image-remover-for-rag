@@ -23,7 +23,7 @@ public interface IPdfDocumentAnalyzer
     /// Large PDFs take minutes, so the UI needs something better than a static
     /// "analyzing…" label; pass null when nobody is watching.
     /// </param>
-    /// <param name="ct">Cancellation token, honoured for long files.</param>
+    /// <param name="ct">Cancellation token, honored for long files.</param>
     Task<PdfDocumentInfo> AnalyzeAsync(
         string pdfFilePath,
         int thumbnailMaxWidth = 160,

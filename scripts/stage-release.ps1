@@ -4,7 +4,7 @@
 
 .DESCRIPTION
     Reads the dotnet publish output for x64 and arm64, drops the debug symbols,
-    adds the licence files that have to travel with the binaries, and writes one
+    adds the license files that have to travel with the binaries, and writes one
     zip per architecture.
 
     The zip entries are built by hand. Compress-Archive and

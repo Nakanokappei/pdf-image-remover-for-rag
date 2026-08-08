@@ -35,7 +35,7 @@ public class FlattenIsolationTests : IClassFixture<SamplePdfFixture>
             detected.Page,
             detected.Members.Where(m => m.Kind == RemovableKind.Text).ToArray());
 
-        var rasterizer = new FlatColourRasterizer();
+        var rasterizer = new FlatColorRasterizer();
         await new PdfSharpDocumentCleaner(rasterizer).CleanAsync(
             _samples.ImageAndTextPath,
             Path.Combine(_samples.TempDirectory, "isolated-render.pdf"),
@@ -55,7 +55,7 @@ public class FlattenIsolationTests : IClassFixture<SamplePdfFixture>
     [Fact]
     public async Task TheTickedObjectsAreStillInThePictureThatReplacesThem()
     {
-        // The other half: taking the neighbours out must not take the members
+        // The other half: taking the neighbors out must not take the members
         // with them, or the rendering would be blank.
         var info = await NewAnalyzer().AnalyzeAsync(_samples.ImageAndTextPath);
         var detected = Assert.Single(info.OverlapRegions);
@@ -65,7 +65,7 @@ public class FlattenIsolationTests : IClassFixture<SamplePdfFixture>
             .ToArray();
         Assert.NotEmpty(flattenedText);
 
-        var rasterizer = new FlatColourRasterizer();
+        var rasterizer = new FlatColorRasterizer();
         await new PdfSharpDocumentCleaner(rasterizer).CleanAsync(
             _samples.ImageAndTextPath,
             Path.Combine(_samples.TempDirectory, "isolated-render-keeps.pdf"),
@@ -82,12 +82,12 @@ public class FlattenIsolationTests : IClassFixture<SamplePdfFixture>
     public async Task ThePictureIsAskedForOnATransparentBackground()
     {
         // It holds only some of what was in the rectangle, so the paper has to
-        // stay unpainted — an opaque background would hide the neighbours the
+        // stay unpainted — an opaque background would hide the neighbors the
         // user kept, which is the very thing being fixed.
         var info = await NewAnalyzer().AnalyzeAsync(_samples.ImageAndTextPath);
         var region = Assert.Single(info.OverlapRegions);
 
-        var rasterizer = new FlatColourRasterizer();
+        var rasterizer = new FlatColorRasterizer();
         await new PdfSharpDocumentCleaner(rasterizer).CleanAsync(
             _samples.ImageAndTextPath,
             Path.Combine(_samples.TempDirectory, "isolated-render-alpha.pdf"),

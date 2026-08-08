@@ -6,7 +6,7 @@ namespace PdfImageRemoverForRag.Core.Tests;
 /// <summary>
 /// The guard that keeps a hostile image away from the decoder. The cases that
 /// matter are the ones a normal file never produces: a tiny header declaring an
-/// enormous picture, and a format nobody recognises.
+/// enormous picture, and a format nobody recognizes.
 /// </summary>
 public class RasterImageHeaderTests
 {

@@ -16,7 +16,7 @@ namespace PdfImageRemoverForRag.Core.Grouping;
 /// its own, split takes what is checked out of the unit it sits in. Whatever is
 /// not checked stays where it was.
 ///
-/// One page at a time. A unit is a rectangle to rasterise from one page, and
+/// One page at a time. A unit is a rectangle to rasterize from one page, and
 /// there is no such rectangle across two.
 /// </summary>
 public static class FlattenUnitEditing

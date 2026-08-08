@@ -65,7 +65,7 @@ public class RotatedPageTests : IClassFixture<SamplePdfFixture>
         // would turn it twice.
         var info = await NewAnalyzer().AnalyzeAsync(_samples.RotatedPagePath);
         var region = Assert.Single(info.OverlapRegions);
-        var rasterizer = new FlatColourRasterizer();
+        var rasterizer = new FlatColorRasterizer();
 
         await new PdfSharpDocumentCleaner(rasterizer).CleanAsync(
             _samples.RotatedPagePath, Destination("rotated_render_request.pdf"),
@@ -89,7 +89,7 @@ public class RotatedPageTests : IClassFixture<SamplePdfFixture>
         var region = Assert.Single(info.OverlapRegions);
 
         var dest = Destination("rotated_flattened.pdf");
-        var result = await new PdfSharpDocumentCleaner(new FlatColourRasterizer()).CleanAsync(
+        var result = await new PdfSharpDocumentCleaner(new FlatColorRasterizer()).CleanAsync(
             _samples.RotatedPagePath, dest,
             Array.Empty<ObjectRemovalSelection>(), new[] { region });
         Assert.Equal(1, result.RegionsFlattened);
@@ -112,7 +112,7 @@ public class RotatedPageTests : IClassFixture<SamplePdfFixture>
         var region = Assert.Single(info.OverlapRegions);
 
         var dest = Destination("rotated_keeps_rotation.pdf");
-        await new PdfSharpDocumentCleaner(new FlatColourRasterizer()).CleanAsync(
+        await new PdfSharpDocumentCleaner(new FlatColorRasterizer()).CleanAsync(
             _samples.RotatedPagePath, dest,
             Array.Empty<ObjectRemovalSelection>(), new[] { region });
 

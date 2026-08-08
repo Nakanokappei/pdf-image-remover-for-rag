@@ -29,8 +29,8 @@ public enum RemovableKind
 
     /// <summary>
     /// A shadow layer — "Shadow" in the UI. An Image XObject holding ONE flat
-    /// colour, shaped entirely by its soft mask. That is how a drop shadow
-    /// survives being exported to PDF: PowerPoint keeps the shadow's colour in
+    /// color, shaped entirely by its soft mask. That is how a drop shadow
+    /// survives being exported to PDF: PowerPoint keeps the shadow's color in
     /// the picture and its blurred outline in the mask, because PDF has no
     /// blur operator to draw it with.
     ///

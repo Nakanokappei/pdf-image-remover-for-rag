@@ -36,8 +36,8 @@ internal sealed class AnalysisProgressDialog : Form
         MinimizeBox = false;
         MaximizeBox = false;
         ShowInTaskbar = false;
-        // No close box: cancelling must go through the button so the token is
-        // always signalled. ControlBox off also removes Alt+F4's silent exit.
+        // No close box: canceling must go through the button so the token is
+        // always signaled. ControlBox off also removes Alt+F4's silent exit.
         ControlBox = false;
         BackColor = SystemColors.Window;
         AutoScaleMode = AutoScaleMode.Font;
@@ -123,7 +123,7 @@ internal sealed class AnalysisProgressDialog : Form
         // pages — so the button reports that the request was heard rather than
         // appearing to do nothing.
         _cancelButton.Enabled = false;
-        _statusLabel.Text = L10n.StatusCancelling;
+        _statusLabel.Text = L10n.StatusCanceling;
         _progressBar.Style = ProgressBarStyle.Marquee;
         _cancellation.Cancel();
     }

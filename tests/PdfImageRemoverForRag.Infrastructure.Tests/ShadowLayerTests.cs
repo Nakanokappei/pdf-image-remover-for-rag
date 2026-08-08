@@ -24,13 +24,13 @@ public class ShadowLayerTests : IClassFixture<SamplePdfFixture>
     static PdfSharpDocumentAnalyzer NewAnalyzer() => new(new PdfPigThumbnailProvider());
 
     [Fact]
-    public async Task OnlyTheFlatColouredLayer_IsCalledAShadow()
+    public async Task OnlyTheFlatColoredLayer_IsCalledAShadow()
     {
         var info = await NewAnalyzer().AnalyzeAsync(_samples.ShadowLayerPath);
 
         // One of the three drawn images is a shadow. The other two are what
         // the rule must NOT catch: a picture that happens to carry a mask,
-        // and a flat colour with no mask at all.
+        // and a flat color with no mask at all.
         var shadow = Assert.Single(info.ObjectGroups, g => g.Kind == RemovableKind.Shadow);
         Assert.Equal("SHD_001", shadow.GroupId);
         Assert.Equal(2, info.ObjectGroups.Count(g => g.Kind == RemovableKind.Image));
@@ -102,7 +102,7 @@ public class ShadowLayerTests : IClassFixture<SamplePdfFixture>
     {
         // The first attempt at a rule judged the mask, and the sample it would
         // have caught is this one: a picture whose mask is nowhere near opaque
-        // is still a picture. What decides is the colour count.
+        // is still a picture. What decides is the color count.
         var info = await NewAnalyzer().AnalyzeAsync(_samples.SoftMaskedImagePath);
 
         var image = Assert.Single(info.ObjectGroups, g => g.Kind == RemovableKind.Image);

@@ -34,7 +34,7 @@ internal sealed partial class MainForm
     }
 
     /// <summary>
-    /// Rebuild the table and tile views from the current workspace, honouring
+    /// Rebuild the table and tile views from the current workspace, honoring
     /// the 表示する種類 filter and the active sort. Thumbnails are assumed
     /// already current (see <see cref="RefreshThumbnailImages"/>).
     /// </summary>
@@ -455,15 +455,15 @@ internal sealed partial class MainForm
                 {
                     // Only this warning goes red: checking such a row blanks a
                     // whole page. 「削除不可」 is a state, not a hazard, so it
-                    // stays in the row's normal (grayed) colour.
+                    // stays in the row's normal (grayed) color.
                     //
-                    // It keeps its own colours while the row is selected, and
+                    // It keeps its own colors while the row is selected, and
                     // that is not a flourish: a selected cell is painted in
                     // SelectionForeColor — white on the blue highlight — so the
                     // red was simply gone, and a file holding ONE object is
                     // selected from the moment it opens. Red on that blue is
                     // illegible (about 1.2:1), so the cell stays out of the
-                    // highlight rather than joining it in a colour nobody can
+                    // highlight rather than joining it in a color nobody can
                     // read.
                     var warning = row.Cells[_warningColumn.Index].Style;
                     warning.ForeColor = WarningText;

@@ -259,7 +259,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
 
     /// <summary>
     /// The file to render a page from: the document with the hidden objects
-    /// actually taken out. Greying them on top of the page was tried first and
+    /// actually taken out. Graying them on top of the page was tried first and
     /// was hard to read.
     /// </summary>
     public Func<string, Task<string>>? PreviewSourceFor { get; set; }
@@ -328,7 +328,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
         _list.ViewportChanged += (_, e) => ViewportChanged?.Invoke(this, e);
 
         _preview.AccessibleName = L10n.AccessibleFlattenPreview;
-        _wholePageWarning.ForeColor = MainForm.WarningTextColour;
+        _wholePageWarning.ForeColor = MainForm.WarningTextColor;
         _title.Font = new Font(Font, FontStyle.Bold);
 
         _mergeButton.AccessibleName = $"{L10n.FlattenMerge} ({L10n.GraphicsObjectsTitle})";
@@ -915,7 +915,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
 
     /// <summary>
     /// Repaint: what is hidden has changed under the rows, and under the page
-    /// preview, where it is what the greying answers.
+    /// preview, where it is what the graying answers.
     /// </summary>
     public void RefreshVisibility()
     {

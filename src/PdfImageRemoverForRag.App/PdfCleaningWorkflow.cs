@@ -231,7 +231,7 @@ internal sealed class PdfCleaningWorkflow
 
     /// <summary>
     /// The file to render a page from so that hidden layers are actually
-    /// absent: the document with them taken out. Greying them on top of the
+    /// absent: the document with them taken out. Graying them on top of the
     /// page was tried first and was hard to read — this shows the page as the
     /// save will write it, which is the question the preview is being asked.
     ///
@@ -375,7 +375,7 @@ internal sealed class PdfCleaningWorkflow
     /// flatten it swallows.
     ///
     /// The picture an earlier flatten drew is an object like any other, so the
-    /// user can tick it and flatten it again together with a neighbour. Its
+    /// user can tick it and flatten it again together with a neighbor. Its
     /// bytes exist only in the working copy, and the copy is always rebuilt from
     /// the user's own file — so a place naming it would find nothing there. What
     /// the new place really covers is the objects the earlier one covered, and
@@ -651,7 +651,7 @@ internal sealed class PdfCleaningWorkflow
     }
 
     /// <summary>First few warnings, plus a count of the rest.</summary>
-    static string SummariseWarnings(IReadOnlyList<string> warnings)
+    static string SummarizeWarnings(IReadOnlyList<string> warnings)
     {
         const int shown = 4;
         if (warnings.Count <= shown) return string.Join(" / ", warnings);
@@ -746,7 +746,7 @@ internal sealed class PdfCleaningWorkflow
                 throw new PdfCleanerException(PdfCleanerErrorKind.PostSaveVerificationFailed,
                     L10n.ErrorVerificationFailedPrefix
                     + L10n.VerificationCleanerSummary(result.PagesModified, result.DrawCallsRemoved)
-                    + SummariseWarnings(report.Warnings));
+                    + SummarizeWarnings(report.Warnings));
             }
 
             File.Move(tempPath, destinationPath, overwrite: true);

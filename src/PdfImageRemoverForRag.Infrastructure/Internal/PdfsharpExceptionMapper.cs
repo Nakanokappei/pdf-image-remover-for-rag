@@ -60,7 +60,7 @@ internal static class PdfsharpExceptionMapper
                     $"{context}: 入出力エラー: {ioe.Message}", ex),
 
             OperationCanceledException
-                => new PdfCleanerException(PdfCleanerErrorKind.UserCancelled,
+                => new PdfCleanerException(PdfCleanerErrorKind.UserCanceled,
                     $"{context}: 処理がキャンセルされました。", ex),
 
             _ => new PdfCleanerException(PdfCleanerErrorKind.Unexpected,

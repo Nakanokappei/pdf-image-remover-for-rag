@@ -7,7 +7,7 @@ namespace PdfImageRemoverForRag.App;
 /// <summary>
 /// Draws a rendered PDF page with certain places on it picked out: everything
 /// outside them desaturated and darkened, the places themselves left in full
-/// colour and outlined.
+/// color and outlined.
 ///
 /// Two windows point at a place on a page — the usage-locations window ("where
 /// is this object drawn?") and the objects panel's preview ("what would be baked
@@ -19,7 +19,7 @@ namespace PdfImageRemoverForRag.App;
 internal static class PageHighlightPainter
 {
     // Row = input channel, column = output channel; the luminance weights are
-    // the usual 0.3086/0.6094/0.0820, mixed toward grey by KeptSaturation and
+    // the usual 0.3086/0.6094/0.0820, mixed toward gray by KeptSaturation and
     // then scaled by Dimming.
     const float KeptSaturation = 0.12f;
     const float Dimming = 0.7f;
@@ -54,7 +54,7 @@ internal static class PageHighlightPainter
     /// True to hold everything but the marked places back, which is how the
     /// usage window says "here, on this page". The objects panel's preview
     /// passes false: the page it shows is the page as the save will write it,
-    /// and dimming most of it would read as a judgement on the rest.
+    /// and dimming most of it would read as a judgment on the rest.
     /// </param>
     public static void DrawMarkedPage(
         Graphics g,
@@ -110,7 +110,7 @@ internal static class PageHighlightPainter
     /// <summary>
     /// Outline each place in light blue (the theme's Highlight under high
     /// contrast). No translucent fill: the area inside the outline is the one
-    /// part still in full colour, and a wash over it would undo that.
+    /// part still in full color, and a wash over it would undo that.
     /// </summary>
     /// <param name="maxPenWidth">
     /// Widest pen to use, in device pixels. A single line of text is only a few
@@ -123,7 +123,7 @@ internal static class PageHighlightPainter
     {
         if (boxes.Count == 0) return;
 
-        var color = HighlightColour;
+        var color = HighlightColor;
         var saved = g.SmoothingMode;
         g.SmoothingMode = SmoothingMode.AntiAlias;
         foreach (var box in boxes)
@@ -136,12 +136,12 @@ internal static class PageHighlightPainter
     }
 
     /// <summary>The one light blue, so an outline and an arrow cannot differ.</summary>
-    static Color HighlightColour => SystemInformation.HighContrast
+    static Color HighlightColor => SystemInformation.HighContrast
         ? SystemColors.Highlight : Color.FromArgb(0x1E, 0x90, 0xFF);
 
     /// <summary>
     /// How small a box has to be before it is pointed at as well as outlined,
-    /// as a fraction of the page's longer side. Two centimetres on A4 is 6.7 %
+    /// as a fraction of the page's longer side. Two centimeters on A4 is 6.7 %
     /// of its height, and that is the size a reader reported not being able to
     /// find on a page this size — so the threshold is a shade above it.
     ///
@@ -179,7 +179,7 @@ internal static class PageHighlightPainter
         // size the page happens to be drawn at.
         float length = Math.Max(8f, Math.Min(page.Width, page.Height) * 0.12f);
 
-        var colour = HighlightColour;
+        var color = HighlightColor;
         var saved = g.SmoothingMode;
         g.SmoothingMode = SmoothingMode.AntiAlias;
 
@@ -202,7 +202,7 @@ internal static class PageHighlightPainter
                 continue;
             }
             pointedAt.Add(tip);
-            DrawPointer(g, page, box, colour, length, small);
+            DrawPointer(g, page, box, color, length, small);
         }
         g.SmoothingMode = saved;
     }
@@ -236,7 +236,7 @@ internal static class PageHighlightPainter
 
     /// <summary>One arrow: a shaft out from the box and a head back at it.</summary>
     static void DrawPointer(
-        Graphics g, Rectangle page, RectangleF box, Color colour, float length, float small)
+        Graphics g, Rectangle page, RectangleF box, Color color, float length, float small)
     {
         var side = Side(page, box, small);
         float dx = side.X;
@@ -260,10 +260,10 @@ internal static class PageHighlightPainter
         float head = length * 0.4f;
         float norm = MathF.Sqrt((dx * dx) + (dy * dy));
 
-        // Along the shaft towards the box, and across it.
+        // Along the shaft toward the box, and across it.
         var along = new PointF(-dx / norm, -dy / norm);
         var across = new PointF(-along.Y, along.X);
-        var baseCentre = new PointF(tip.X - (along.X * head), tip.Y - (along.Y * head));
+        var baseCenter = new PointF(tip.X - (along.X * head), tip.Y - (along.Y * head));
 
         float shaft = thickness / 2;
         float barb = head * 0.45f;
@@ -273,20 +273,20 @@ internal static class PageHighlightPainter
         using var arrow = new GraphicsPath();
         arrow.AddPolygon(new[]
         {
-            At(tail, shaft), At(baseCentre, shaft), At(baseCentre, barb),
+            At(tail, shaft), At(baseCenter, shaft), At(baseCenter, barb),
             tip,
-            At(baseCentre, -barb), At(baseCentre, -shaft), At(tail, -shaft),
+            At(baseCenter, -barb), At(baseCenter, -shaft), At(tail, -shaft),
         });
 
-        // One pixel of white, centred on the boundary, so half of it lies
-        // outside the arrow. Its job is to stop the blue meeting a colour like
+        // One pixel of white, centered on the boundary, so half of it lies
+        // outside the arrow. Its job is to stop the blue meeting a color like
         // itself — anything wider draws a second, white arrow.
         const float halo = 1f;
         using (var edge = new Pen(Color.White, halo * 2) { LineJoin = LineJoin.Round })
         {
             g.DrawPath(edge, arrow);
         }
-        using (var brush = new SolidBrush(colour))
+        using (var brush = new SolidBrush(color))
         {
             g.FillPath(brush, arrow);
         }

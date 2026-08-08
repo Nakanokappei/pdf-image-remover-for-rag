@@ -58,7 +58,7 @@ internal sealed partial class MainForm
     }
 
     /// <summary>
-    /// Draw one image or shape row's thumbnail, scaled to fit and centred.
+    /// Draw one image or shape row's thumbnail, scaled to fit and centered.
     /// A row whose bitmap is not loaded yet simply stays empty — it fills in
     /// within the settle interval — while one the store gave up on shows the
     /// placeholder icon, so "not ready" and "cannot be shown" never look alike.

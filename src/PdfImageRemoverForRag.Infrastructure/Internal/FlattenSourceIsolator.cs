@@ -12,7 +12,7 @@ namespace PdfImageRemoverForRag.Infrastructure.Internal;
 ///
 /// Flattening renders a rectangle of the page. Rendering it from the document
 /// as it stands photographs whatever else reaches into that rectangle — a
-/// neighbouring image the user chose to KEEP ends up in the picture, cropped at
+/// neighboring image the user chose to KEEP ends up in the picture, cropped at
 /// its edge, while the original goes on being drawn. On the page the two sit
 /// exactly on top of each other and nobody notices; a reader that pulls images
 /// out of the file gets the same picture twice. A customer reported precisely
@@ -20,7 +20,7 @@ namespace PdfImageRemoverForRag.Infrastructure.Internal;
 ///
 /// So the picture is rendered from this copy instead: everything else that
 /// reaches into the rectangle is taken out first, and the render is asked for a
-/// transparent background, which leaves the kept neighbours showing through
+/// transparent background, which leaves the kept neighbors showing through
 /// from the page underneath.
 ///
 /// One page rather than the whole document because it is written to disk for
@@ -58,8 +58,8 @@ internal static class FlattenSourceIsolator
         }
         catch (Exception)
         {
-            // Rendering from the original is the old behaviour, not a failure:
-            // the picture then holds a neighbour's edge, which is what this
+            // Rendering from the original is the old behavior, not a failure:
+            // the picture then holds a neighbor's edge, which is what this
             // exists to avoid but is far better than no picture at all.
             return null;
         }

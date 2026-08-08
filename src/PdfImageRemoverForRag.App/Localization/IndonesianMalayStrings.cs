@@ -66,8 +66,8 @@ internal sealed class IndonesianMalayStrings : IStrings
     public string StatusAnalyzing => "Menganalisis PDF…";
 
     public string Cancel => "Batal";
-    public string StatusCancelling => "Membatalkan…";
-    public string StatusCancelled => "Pembukaan dibatalkan";
+    public string StatusCanceling => "Membatalkan…";
+    public string StatusCanceled => "Pembukaan dibatalkan";
 
     public string ProgressReadingPages(string fileName, int page, int pageCount) =>
         $"{fileName} — menganalisis halaman {page} dari {pageCount}";
@@ -222,7 +222,7 @@ internal sealed class IndonesianMalayStrings : IStrings
         "Verifikasi setelah penyimpanan gagal, jadi PDF tidak disimpan.",
         "PDF sumber tidak berubah. Salin detailnya dan laporkan masalah ini.");
 
-    public ErrorText UserCancelled => new("Operasi dibatalkan.", "");
+    public ErrorText UserCanceled => new("Operasi dibatalkan.", "");
 
     public ErrorText Unexpected => new(
         "Terjadi kesalahan yang tidak terduga.",

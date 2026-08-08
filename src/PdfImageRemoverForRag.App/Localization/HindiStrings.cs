@@ -61,8 +61,8 @@ internal sealed class HindiStrings : IStrings
     public string StatusAnalyzing => "PDF का विश्लेषण हो रहा है…";
 
     public string Cancel => "रद्द करें";
-    public string StatusCancelling => "रद्द किया जा रहा है…";
-    public string StatusCancelled => "खोलना रद्द किया गया";
+    public string StatusCanceling => "रद्द किया जा रहा है…";
+    public string StatusCanceled => "खोलना रद्द किया गया";
 
     public string ProgressReadingPages(string fileName, int page, int pageCount) =>
         $"{fileName} — पेज {page} / {pageCount} का विश्लेषण हो रहा है";
@@ -216,7 +216,7 @@ internal sealed class HindiStrings : IStrings
         "सहेजने के बाद का सत्यापन विफल रहा, इसलिए PDF सहेजी नहीं गई।",
         "स्रोत PDF अपरिवर्तित है। विवरण कॉपी करके समस्या की रिपोर्ट करें।");
 
-    public ErrorText UserCancelled => new("कार्रवाई रद्द कर दी गई।", "");
+    public ErrorText UserCanceled => new("कार्रवाई रद्द कर दी गई।", "");
 
     public ErrorText Unexpected => new(
         "एक अप्रत्याशित त्रुटि हुई।",

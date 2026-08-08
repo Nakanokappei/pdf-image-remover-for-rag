@@ -308,13 +308,13 @@ internal sealed partial class MainForm : Form
     // the warning cell keeps a light background when its row is selected. High
     // contrast drops the red: the theme owns all colors there, and the warning
     // text carries the meaning.
-    static Color WarningText => WarningTextColour;
+    static Color WarningText => WarningTextColor;
 
     /// <summary>
     /// The one red in the app. Shared with the graphics objects panel so the two places
     /// that warn about losing a whole page of content look like one warning.
     /// </summary>
-    internal static Color WarningTextColour =>
+    internal static Color WarningTextColor =>
         HighContrast ? SystemColors.WindowText : Color.FromArgb(0xC4, 0x2B, 0x1C);
 
     // Width reserved at the right of every header for the sort glyph, so any

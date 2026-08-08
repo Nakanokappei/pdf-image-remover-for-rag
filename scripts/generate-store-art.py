@@ -63,17 +63,17 @@ def backdrop(size: tuple[int, int]) -> Image.Image:
     # pulling in a gradient dependency.
     for y in range(height):
         blend = y / max(height - 1, 1)
-        colour = tuple(
+        color = tuple(
             round(top + (bottom - top) * blend)
             for top, bottom in zip(BACKDROP_TOP, BACKDROP_BOTTOM)
         )
-        draw.line([(0, y), (width, y)], fill=colour)
+        draw.line([(0, y), (width, y)], fill=color)
     return image
 
 
-def draw_centred_text(canvas: Image.Image, text: str, font: ImageFont.FreeTypeFont,
+def draw_centerd_text(canvas: Image.Image, text: str, font: ImageFont.FreeTypeFont,
                       top: int, line_gap: int) -> int:
-    """Draw pre-broken lines centred horizontally; returns the y below the block."""
+    """Draw pre-broken lines centered horizontally; returns the y below the block."""
     draw = ImageDraw.Draw(canvas)
     y = top
     for line in text.split("\n"):
@@ -86,7 +86,7 @@ def draw_centred_text(canvas: Image.Image, text: str, font: ImageFont.FreeTypeFo
 
 def compose(size: tuple[int, int], master: Image.Image, name: str,
             icon_fraction: float, font_size: int) -> Image.Image:
-    """Icon above, product name below, both centred on the wash."""
+    """Icon above, product name below, both centered on the wash."""
     canvas = backdrop(size)
     width, height = size
 
@@ -98,12 +98,12 @@ def compose(size: tuple[int, int], master: Image.Image, name: str,
     line_count = name.count("\n") + 1
     text_height = line_count * (font_size + line_gap)
 
-    # Centre the icon-plus-text block as a whole, so neither floats alone.
+    # Center the icon-plus-text block as a whole, so neither floats alone.
     block_height = icon_edge + round(font_size * 0.9) + text_height
     icon_top = (height - block_height) // 2
     canvas.paste(icon, ((width - icon_edge) // 2, icon_top), icon)
 
-    draw_centred_text(canvas, name, font,
+    draw_centerd_text(canvas, name, font,
                       icon_top + icon_edge + round(font_size * 0.9), line_gap)
     return canvas
 

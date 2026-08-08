@@ -131,7 +131,7 @@ internal static class ObjectDisplay
         // Read the declared dimensions before decoding. These bytes came out of
         // a PDF the user opened, and a few kilobytes can legally declare
         // 40000x40000 pixels — about 6 GB once decoded. Catching the
-        // out-of-memory afterwards is no defence, because by then the
+        // out-of-memory afterwards is no defense, because by then the
         // allocation has been attempted.
         if (!RasterImageHeader.IsSafeToDecode(bytes)) return null;
 
@@ -226,7 +226,7 @@ internal static class ObjectDisplay
     /// </summary>
     public static Image CreateDrawingThumbnail(DrawingGeometry drawing, int width, int height)
     {
-        // A dark backing only when EVERY painted colour would vanish on white;
+        // A dark backing only when EVERY painted color would vanish on white;
         // one dark part is enough to make the drawing readable as it is.
         bool needsDarkBackground = drawing.Parts.Count > 0 && drawing.Parts.All(part =>
             (part.IsFilled ? part.FillColor : part.StrokeColor) is { } c
@@ -248,7 +248,7 @@ internal static class ObjectDisplay
         if (drawing.Height > 0) scale = Math.Min(scale, area.Height / drawing.Height);
         if (scale <= 0 || double.IsInfinity(scale)) scale = 1;
 
-        // Centre the scaled box; flip Y so the drawing stands upright.
+        // Center the scaled box; flip Y so the drawing stands upright.
         float offsetX = area.X + (float)(area.Width - drawing.Width * scale) / 2;
         float offsetY = area.Y + (float)(area.Height - drawing.Height * scale) / 2;
         PointF Map(PointD p) => new(

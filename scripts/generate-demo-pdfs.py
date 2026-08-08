@@ -12,7 +12,7 @@ long list of removable objects, a shared logo whose usage count runs into the
 dozens, repeated footers, and ruling lines. Real-world PDFs would show that,
 but their logos and text are somebody else's copyright, and the screenshots go
 out on the Microsoft Store. So we generate documents for a clearly fictitious
-organisation instead.
+organization instead.
 
 What it produces
 ----------------
@@ -21,7 +21,7 @@ share content so the cross-file grouping is visible:
 
   * one logo bitmap, drawn on every page of all three files (24 occurrences)
   * one footer string, repeated on every page (24 occurrences)
-  * header/footer rules with identical width and colour (48 occurrences)
+  * header/footer rules with identical width and color (48 occurrences)
   * per-file chart images and tables, so each file also has unique rows
 
 The generated PDFs are NOT committed (demo-pdfs/ is gitignored): they embed a
@@ -29,7 +29,7 @@ subset of MS PGothic, and redistributing font data is a licensing question we
 do not need to have. The script is committed so anyone can regenerate them.
 
 Rows the app finds per file: 3 images (shared logo + 2 charts), 4 repeated
-strings (organisation, title, footer), 9 table labels, 3 shapes — 19 in all.
+strings (organization, title, footer), 9 table labels, 3 shapes — 19 in all.
 Open all three at once and the shared logo, strings and rules merge into one
 row each, with usage counts in the twenties and forties.
 """
@@ -65,7 +65,7 @@ FONT_CANDIDATES = [
 ]
 FONT_REGULAR, FONT_BOLD = "JaRegular", "JaBold"
 
-# A fictitious organisation. Nothing here refers to a real company.
+# A fictitious organization. Nothing here refers to a real company.
 ORG_JA = "サンプル総合研究所"
 ORG_EN = "Sample Research Institute"
 
@@ -90,9 +90,9 @@ def make_logo() -> Image.Image:
     accent = (0, 168, 200)
     # Outer ring.
     d.ellipse([10, 10, size - 10, size - 10], outline=brand, width=22)
-    # A quadrant of the ring in the accent colour, so the mark is not symmetric.
+    # A quadrant of the ring in the accent color, so the mark is not symmetric.
     d.arc([10, 10, size - 10, size - 10], start=-40, end=50, fill=accent, width=22)
-    # Inner bar, offset from centre.
+    # Inner bar, offset from center.
     d.rectangle([70, 108, size - 70, 132], fill=brand)
     return image
 
@@ -190,7 +190,7 @@ class DemoDocument:
         c.setFillColor(BODY)
         c.drawString(MARGIN + 56, PAGE_H - 80, self.title)
 
-        # Header rule and footer rule: identical geometry, width and colour, so
+        # Header rule and footer rule: identical geometry, width and color, so
         # they collapse into one shape group with a high usage count.
         c.setStrokeColor(RULE)
         c.setLineWidth(0.8)
@@ -240,7 +240,7 @@ class DemoDocument:
         for i, head in enumerate(headers):
             c.drawString(MARGIN + 6 + i * col_w, y - 14, head)
 
-        # Body rows, each closed by a rule of identical width and colour.
+        # Body rows, each closed by a rule of identical width and color.
         c.setFont(FONT_REGULAR, 8.5)
         for r, row in enumerate(rows):
             row_y = y - row_h * (r + 2)
@@ -269,7 +269,7 @@ class DemoDocument:
 # paragraph on every page, and the app duly listed each body sentence as
 # "repeated text" — 28 rows of it. No real document repeats its body, so the
 # screenshots looked wrong and oversold what the text detector is for. Varying
-# the figures per page leaves only the genuine furniture (organisation name,
+# the figures per page leaves only the genuine furniture (organization name,
 # document title, footer) repeating, which is exactly what users remove.
 BODY_TEMPLATES = {
     "quarterly": {
@@ -375,7 +375,7 @@ def register_japanese_font() -> None:
     """Register the first usable candidate under both font names.
 
     There is no separate bold face available, so headings rely on size and
-    colour instead; FONT_BOLD is registered against the same outlines to keep
+    color instead; FONT_BOLD is registered against the same outlines to keep
     the drawing code readable.
     """
     for path, index in FONT_CANDIDATES:
@@ -396,7 +396,7 @@ def build(path: Path, title: str, kind: str, logo: ImageReader,
           table_headers: list[str], table_rows: list[list[str]]) -> None:
     """Write one 8-page document.
 
-    Every page carries the same furniture (logo, organisation name, footer,
+    Every page carries the same furniture (logo, organization name, footer,
     rules) but different body content, so the repeated-object list the app
     produces reflects a real document rather than the generator's laziness.
     """

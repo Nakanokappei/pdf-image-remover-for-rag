@@ -2,11 +2,11 @@ namespace PdfImageRemoverForRag.App;
 
 /// <summary>
 /// The About dialog: app icon and name at the top, one paragraph of what the
-/// app does, then the copyright and licence notices.
+/// app does, then the copyright and license notices.
 ///
 /// A custom form rather than a MessageBox because a MessageBox cannot show the
 /// app icon (its icon slot only takes the system alert glyphs) and cannot host
-/// the licence link.
+/// the license link.
 ///
 /// Layout uses nested auto-sizing panels, NOT absolute coordinates. An earlier
 /// version positioned every control by hand and clipped every string at 200%
@@ -129,9 +129,9 @@ internal sealed class AboutDialog : Form
             Margin = new Padding(0, 0, 0, 14),
         };
 
-        // --- footer: licence link on the left, OK on the right ---------------
+        // --- footer: license link on the left, OK on the right ---------------
         // Full notices live in the repository; the dialog links rather than
-        // reproducing two library licences inside a small window.
+        // reproducing two library licenses inside a small window.
         var licenseLink = new LinkLabel
         {
             Text = L10n.AboutLicenseLink,

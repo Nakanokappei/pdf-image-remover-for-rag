@@ -592,7 +592,7 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
             _streamByteCount = dict.Stream?.Length ?? 0;
             _isImageMask = dict.Elements.GetBoolean("/ImageMask");
             // Decided once, here, from the bytes: a shadow layer carries one
-            // flat colour and gets its shape from a mask. Every placement of
+            // flat color and gets its shape from a mask. Every placement of
             // the same stream is the same kind, so the question is asked per
             // object and never per occurrence.
             Kind = ShadowLayerDetector.IsShadowLayer(dict)

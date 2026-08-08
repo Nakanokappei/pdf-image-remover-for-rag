@@ -43,7 +43,7 @@ internal sealed class UsageLocationsDialog : Form
 
     // Logical (96-DPI) window size. Kept as it was when the page grew to fill
     // the row: the window is a comfortable size to open on, and the page is
-    // centred in whatever width it is given.
+    // centered in whatever width it is given.
     static readonly Size LogicalClientSize = new(622, 680);
     static readonly Size LogicalMinimumSize = new(420, 360);
 
@@ -220,7 +220,7 @@ internal sealed class UsageLocationsDialog : Form
             var row = _rows[index];
             var bounds = RowBounds(index);
 
-            // Centred: the page is the row now, and it is as big as the window
+            // Centered: the page is the row now, and it is as big as the window
             // allows.
             var box = PageBox();
             var thumbBox = new Rectangle(
@@ -233,7 +233,7 @@ internal sealed class UsageLocationsDialog : Form
             {
                 // Never enlarged: a page that would not render is held as a
                 // one-pixel stand-in, and blowing that up would fill the row
-                // with a grey rectangle.
+                // with a gray rectangle.
                 var disp = Fit.Inside(page.Bitmap.Size, thumbBox, mayEnlarge: false);
                 PageHighlightPainter.DrawMarkedPage(
                     g, page.Bitmap, disp, LocationRects(disp, page, row),
@@ -252,7 +252,7 @@ internal sealed class UsageLocationsDialog : Form
             }
 
             // The caption: file name (no extension) on top, page number under
-            // it, both centred on the page above them. It spans the whole row
+            // it, both centered on the page above them. It spans the whole row
             // rather than the picture, so a long file name has the width to
             // show itself before the ellipsis takes over.
             var nameLine = new Rectangle(

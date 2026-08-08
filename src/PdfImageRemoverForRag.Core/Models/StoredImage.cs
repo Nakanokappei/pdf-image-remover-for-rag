@@ -20,11 +20,11 @@ public enum StoredImageEncoding
 /// has one.
 /// </summary>
 /// <param name="Components">
-/// 1 for grey, 3 for colour. Meaningless for <see cref="StoredImageEncoding.Jpeg"/>,
+/// 1 for gray, 3 for color. Meaningless for <see cref="StoredImageEncoding.Jpeg"/>,
 /// where the file says so itself.
 /// </param>
 /// <param name="SoftMask">
-/// The image's transparency, as raw 8-bit grey samples of its own size. PDF
+/// The image's transparency, as raw 8-bit gray samples of its own size. PDF
 /// keeps it in a separate stream and allows it a different resolution, so it
 /// carries its own dimensions. Null when the image is opaque.
 /// </param>
@@ -36,5 +36,5 @@ public sealed record StoredImage(
     int Components,
     StoredMask? SoftMask = null);
 
-/// <summary>An image's soft mask: 8-bit grey samples and their size.</summary>
+/// <summary>An image's soft mask: 8-bit gray samples and their size.</summary>
 public sealed record StoredMask(int Width, int Height, byte[] Data);

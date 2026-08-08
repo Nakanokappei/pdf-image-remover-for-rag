@@ -136,8 +136,8 @@ internal interface IStrings
     // tell a slow file from a hung app.
 
     string Cancel { get; }
-    string StatusCancelling { get; }
-    string StatusCancelled { get; }
+    string StatusCanceling { get; }
+    string StatusCanceled { get; }
 
     /// <summary>Reading pages, e.g. "report.pdf — analyzing page 12 of 48".</summary>
     string ProgressReadingPages(string fileName, int page, int pageCount);
@@ -360,6 +360,6 @@ internal interface IStrings
     ErrorText FileInUse { get; }
     ErrorText DiskFull { get; }
     ErrorText PostSaveVerificationFailed { get; }
-    ErrorText UserCancelled { get; }
+    ErrorText UserCanceled { get; }
     ErrorText Unexpected { get; }
 }

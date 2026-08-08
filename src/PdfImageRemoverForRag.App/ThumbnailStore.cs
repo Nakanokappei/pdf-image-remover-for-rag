@@ -30,7 +30,7 @@ internal sealed class ThumbnailStore : IDisposable
     public ThumbnailStore()
     {
         // One folder per run. The process id makes an abandoned folder
-        // recognisable as belonging to a process that is no longer alive.
+        // recognizable as belonging to a process that is no longer alive.
         _sessionFolder = Path.Combine(CacheRoot, $"session-{Environment.ProcessId}");
         Directory.CreateDirectory(_sessionFolder);
     }

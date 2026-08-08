@@ -74,7 +74,7 @@ public sealed class PdfSharpDocumentVerifier : IPdfDocumentVerifier
                 {
                     ct.ThrowIfCancellationRequested();
                     var page = cleaned.Pages[i];
-                    var (removedNames, retainedNames) = CategoriseNames(
+                    var (removedNames, retainedNames) = CategorizeNames(
                         page.Resources, removedHashSet, retainedHashSet);
 
                     if (retainedNames.Count > 0) retainedFoundAny = true;
@@ -128,7 +128,7 @@ public sealed class PdfSharpDocumentVerifier : IPdfDocumentVerifier
             Warnings: warnings);
     }
 
-    static (HashSet<string> Removed, HashSet<string> Retained) CategoriseNames(
+    static (HashSet<string> Removed, HashSet<string> Retained) CategorizeNames(
         PdfResources? resources, HashSet<string> removed, HashSet<string> retained)
     {
         // Walk /XObject once per page, classifying each Image entry against

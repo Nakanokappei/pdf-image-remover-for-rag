@@ -195,8 +195,8 @@ internal static class L10n
     public static string StatusOpenPrompt => S.StatusOpenPrompt;
     public static string StatusAnalyzing => S.StatusAnalyzing;
     public static string Cancel => S.Cancel;
-    public static string StatusCancelling => S.StatusCancelling;
-    public static string StatusCancelled => S.StatusCancelled;
+    public static string StatusCanceling => S.StatusCanceling;
+    public static string StatusCanceled => S.StatusCanceled;
 
     public static string ProgressReadingPages(string fileName, int page, int pageCount) =>
         S.ProgressReadingPages(fileName, page, pageCount);

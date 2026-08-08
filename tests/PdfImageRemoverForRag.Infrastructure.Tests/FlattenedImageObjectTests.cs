@@ -57,7 +57,7 @@ public class FlattenedImageObjectTests : IClassFixture<SamplePdfFixture>
         Assert.Contains(flattenedHash, ImageHashesInFile(_samples.ImageAndTextPath));
 
         var dest = Destination("image-and-text_flattened_object.pdf");
-        await new PdfSharpDocumentCleaner(new FlatColourRasterizer())
+        await new PdfSharpDocumentCleaner(new FlatColorRasterizer())
             .CleanAsync(_samples.ImageAndTextPath, dest, Array.Empty<ObjectRemovalSelection>(),
                 new[] { region });
 
@@ -95,7 +95,7 @@ public class FlattenedImageObjectTests : IClassFixture<SamplePdfFixture>
             });
 
         var dest = Destination("repeated-logo_flattened_page1.pdf");
-        await new PdfSharpDocumentCleaner(new FlatColourRasterizer())
+        await new PdfSharpDocumentCleaner(new FlatColorRasterizer())
             .CleanAsync(_samples.RepeatedLogoPath, dest, Array.Empty<ObjectRemovalSelection>(),
                 new[] { region });
 

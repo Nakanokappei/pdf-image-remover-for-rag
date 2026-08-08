@@ -5,7 +5,7 @@ using Xunit;
 namespace PdfImageRemoverForRag.Core.Tests;
 
 // Grouping behavior specific to shadows (RemovableKind.Shadow): the flat
-// coloured layer a drop shadow becomes when it is exported to PDF. A shadow is
+// colored layer a drop shadow becomes when it is exported to PDF. A shadow is
 // an Image XObject, so it groups by stream hash exactly as an image does; what
 // it must not do is share an image's id sequence, because the whole point of
 // the kind is that a user can pick the shadows out of a list of pictures.

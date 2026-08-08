@@ -65,8 +65,8 @@ internal sealed class SpanishStrings : IStrings
     public string StatusAnalyzing => "Analizando el PDF…";
 
     public string Cancel => "Cancelar";
-    public string StatusCancelling => "Cancelando…";
-    public string StatusCancelled => "Apertura cancelada";
+    public string StatusCanceling => "Cancelando…";
+    public string StatusCanceled => "Apertura cancelada";
 
     public string ProgressReadingPages(string fileName, int page, int pageCount) =>
         $"{fileName} — analizando la página {page} de {pageCount}";
@@ -221,7 +221,7 @@ internal sealed class SpanishStrings : IStrings
         "Falló la verificación posterior al guardado, por lo que el PDF no se guardó.",
         "El PDF de origen no se modificó. Copie los detalles y notifique el problema.");
 
-    public ErrorText UserCancelled => new("Se canceló la operación.", "");
+    public ErrorText UserCanceled => new("Se canceló la operación.", "");
 
     public ErrorText Unexpected => new(
         "Se produjo un error inesperado.",

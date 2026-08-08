@@ -61,8 +61,8 @@ internal sealed class ItalianStrings : IStrings
     public string StatusAnalyzing => "Analisi del PDF in corso…";
 
     public string Cancel => "Annulla";
-    public string StatusCancelling => "Annullamento…";
-    public string StatusCancelled => "Apertura annullata";
+    public string StatusCanceling => "Annullamento…";
+    public string StatusCanceled => "Apertura annullata";
 
     public string ProgressReadingPages(string fileName, int page, int pageCount) =>
         $"{fileName} — analisi della pagina {page} di {pageCount}";
@@ -217,7 +217,7 @@ internal sealed class ItalianStrings : IStrings
         "La verifica successiva al salvataggio non è riuscita, quindi il PDF non è stato salvato.",
         "Il PDF di origine è invariato. Copiare i dettagli e segnalare il problema.");
 
-    public ErrorText UserCancelled => new("L'operazione è stata annullata.", "");
+    public ErrorText UserCanceled => new("L'operazione è stata annullata.", "");
 
     public ErrorText Unexpected => new(
         "Si è verificato un errore imprevisto.",

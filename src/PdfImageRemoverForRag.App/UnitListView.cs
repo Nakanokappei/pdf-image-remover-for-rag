@@ -687,14 +687,15 @@ internal sealed class UnitListView : Panel
     }
 
     /// <summary>
-    /// Open a unit's menu from the keyboard, on the folder the cursor is in —
-    /// which for an object row is the folder above it, because that is the unit
-    /// the user is looking at.
+    /// Ask for a menu from the keyboard, on the row the cursor is in. WHICH
+    /// unit that names — an object row belongs to the folder above it, and some
+    /// rows belong to no unit at all — is not this control's to decide: it draws
+    /// rows and knows nothing of units, and the walk it used to do sent Enter on
+    /// a unitless row to whatever folder happened to be above.
     /// </summary>
     void OpenUnitMenu(int row)
     {
-        while (row >= 0 && !_isGroupRow(row)) row--;
-        if (row < 0) return;
+        if (row < 0 || row >= _rowCount) return;
 
         // Again without touching the selection — see the mouse path.
         var at = MenuRect(BoundsOf(row));

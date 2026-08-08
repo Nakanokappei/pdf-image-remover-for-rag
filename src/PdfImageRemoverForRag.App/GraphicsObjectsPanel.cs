@@ -82,7 +82,16 @@ internal sealed class GraphicsObjectsPanel : UserControl
     /// </summary>
     readonly record struct Row(int UnitIndex, PlacedObject? Object, int LoneIndex = -1)
     {
+        /// <summary>A drawing of the selected object that no unit holds.</summary>
         public bool IsLone => LoneIndex >= 0;
+
+        /// <summary>
+        /// The folder for a unit. Asked by name because "no object on the row"
+        /// used to mean this and now also describes a lone placement — which is
+        /// how a lone row came to be drawn as a folder, and a menu came to be
+        /// opened on a unit that does not exist.
+        /// </summary>
+        public bool IsUnitHeader => LoneIndex < 0 && Object is null;
     }
 
     // Every unit in the open workspace, and the subset currently listed.
@@ -794,7 +803,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
     // =======================================================================
 
     bool IsGroupRow(int index) =>
-        index >= 0 && index < _rows.Count && _rows[index].Object is null;
+        index >= 0 && index < _rows.Count && _rows[index].IsUnitHeader;
 
     RowVisual VisualForRow(int index)
     {
@@ -992,7 +1001,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
     {
         for (int i = 0; i < _rows.Count; i++)
         {
-            if (_rows[i].Object is null && !_rows[i].IsLone) continue;
+            if (_rows[i].IsUnitHeader) continue;
             _list.SelectOnly(i);
             return;
         }
@@ -1073,7 +1082,8 @@ internal sealed class GraphicsObjectsPanel : UserControl
         if (unit is null) return Array.Empty<PlacedObject>();
 
         var picked = _list.SelectedRows
-            .Where(index => index < _rows.Count && ReferenceEquals(_units[_rows[index].UnitIndex], unit))
+            .Where(index => index < _rows.Count && !_rows[index].IsLone
+                            && ReferenceEquals(_units[_rows[index].UnitIndex], unit))
             .Select(index => _rows[index].Object)
             .Where(o => o is not null)
             .ToArray();
@@ -1111,10 +1121,22 @@ internal sealed class GraphicsObjectsPanel : UserControl
                 _menuUnit.FilePath, _menuUnit.Region.Page, leftOut, hide: false)));
     }
 
-    /// <summary>Open a unit's own menu, on the unit whose row it came from.</summary>
+    /// <summary>
+    /// Open a unit's own menu, on the unit the row belongs to: the folder itself
+    /// when the row is one, otherwise the folder above it. A row that belongs to
+    /// no unit — a placement of its own — has no menu, and asking for one there
+    /// does nothing rather than opening somebody else's.
+    /// </summary>
     void OnUnitMenuRequested(int row, Point at)
     {
-        if (row < 0 || row >= _rows.Count) return;
+        if (row < 0 || row >= _rows.Count || _rows[row].IsLone) return;
+        while (row >= 0 && !_rows[row].IsUnitHeader)
+        {
+            if (_rows[row].IsLone) return;
+            row--;
+        }
+        if (row < 0) return;
+
         _menuUnit = _units[_rows[row].UnitIndex];
         _unitMenu.Show(_list, at);
     }
@@ -1219,7 +1241,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
         RebuildRows(resetScroll: false);
         for (int i = 0; i < _rows.Count; i++)
         {
-            if (_rows[i].Object is not null) continue;
+            if (!_rows[i].IsUnitHeader) continue;
             if (!_pinnedUnits.Any(r => ReferenceEquals(r, _units[_rows[i].UnitIndex].Region))) continue;
 
             _list.SelectOnly(i);
@@ -1340,6 +1362,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
     /// </summary>
     IEnumerable<PlacedObject> OutlinedIn(UnitEntry unit) => _list.SelectedRows
         .Where(index => index < _rows.Count
+                        && !_rows[index].IsLone
                         && _rows[index].Object is not null
                         && ReferenceEquals(_units[_rows[index].UnitIndex], unit))
         .Select(index => _rows[index].Object!);

@@ -490,7 +490,7 @@ internal sealed class LayerListView : Panel
         {
             var saved = g.InterpolationMode;
             g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-            g.DrawImage(visual.Thumbnail, FitInside(visual.Thumbnail.Size, inner));
+            g.DrawImage(visual.Thumbnail, Fit.Inside(visual.Thumbnail.Size, inner, mayEnlarge: true));
             g.InterpolationMode = saved;
             return;
         }
@@ -500,14 +500,6 @@ internal sealed class LayerListView : Panel
             TextRenderer.DrawText(g, "…", Font, inner, muted,
                 TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
         }
-    }
-
-    static Rectangle FitInside(Size image, Rectangle area)
-    {
-        double scale = Math.Min((double)area.Width / image.Width, (double)area.Height / image.Height);
-        int w = Math.Max(1, (int)(image.Width * scale));
-        int h = Math.Max(1, (int)(image.Height * scale));
-        return new Rectangle(area.X + ((area.Width - w) / 2), area.Y + ((area.Height - h) / 2), w, h);
     }
 
     // =======================================================================

@@ -102,13 +102,6 @@ internal static class L10n
     public static string ColumnDelete => S.ColumnDelete;
 
     /// <summary>
-    /// The layers panel's heading. Just the word: the row's first column is an
-    /// eye, not a tick, and a glyph in the heading would be describing a column
-    /// that is no longer there.
-    /// </summary>
-    public static string FlattenPanelHeader => S.FlattenPanelTitle;
-
-    /// <summary>
     /// The hamburger, and the only one in the panel: it belongs to a UNIT's own
     /// row, which is the only place with a menu. Not translated — it is a
     /// symbol.

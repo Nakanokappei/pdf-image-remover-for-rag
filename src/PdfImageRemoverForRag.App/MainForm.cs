@@ -179,15 +179,11 @@ internal sealed partial class MainForm : Form
     // in the absence of a choice, not a correction of one.
     bool _flattenPanelWidthIsTheUsersChoice;
 
-    // The share: the golden section. The list and the panel stand as φ to 1,
-    // which makes the panel 1/φ² — a shade over a third — of the width.
-    //
-    // A proportion rather than a number of pixels answers the question the
-    // number could not: what IS the right width for a panel beside a list, at
-    // whatever size the window happens to be. The floor is there because below
-    // it the unit labels wrap, and no proportion is worth an unreadable panel.
-    const double GoldenRatio = 1.6180339887;
-    static readonly double DefaultFlattenPanelShare = 1 / (GoldenRatio * GoldenRatio);
+    // The share is the golden section (see GoldenSection): a proportion rather
+    // than a number of pixels answers the question the number could not — what
+    // IS the right width for a panel beside a list, at whatever size the window
+    // happens to be. The floor is there because below it the unit labels wrap,
+    // and no proportion is worth an unreadable panel.
     const int MinimumSharedPanelWidth = 260;
 
     // Set by SplitterMoving, which ONLY fires while the user is dragging, and

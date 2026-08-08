@@ -1,6 +1,3 @@
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
-
 namespace PdfImageRemoverForRag.App;
 
 /// <summary>
@@ -234,19 +231,13 @@ internal sealed class UsageLocationsDialog : Form
             // location(s) outlined once the page is available.
             if (_rendered.TryGetValue(index, out var page))
             {
-                var disp = FitInside(page.Bitmap.Size, thumbBox);
-                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                var boxes = LocationRects(disp, page, row);
-                PageHighlightPainter.DrawPage(g, page.Bitmap, disp, boxes);
-                using (var frame = new Pen(SystemColors.ControlDark))
-                {
-                    g.DrawRectangle(frame, disp.X, disp.Y, disp.Width - 1, disp.Height - 1);
-                }
-                PageHighlightPainter.DrawOutlines(g, boxes, Dip(2));
-                // An outline this small is findable only if something points at
-                // it: at this size a 2 cm square on A4 is a few millimetres of
-                // screen, and the reader is looking for it on a whole page.
-                PageHighlightPainter.DrawPointers(g, disp, boxes);
+                // Never enlarged: a page that would not render is held as a
+                // one-pixel stand-in, and blowing that up would fill the row
+                // with a grey rectangle.
+                var disp = Fit.Inside(page.Bitmap.Size, thumbBox, mayEnlarge: false);
+                PageHighlightPainter.DrawMarkedPage(
+                    g, page.Bitmap, disp, LocationRects(disp, page, row),
+                    Dip(2), dimOutsideBoxes: true);
             }
             else
             {
@@ -291,17 +282,6 @@ internal sealed class UsageLocationsDialog : Form
             PageHighlightPainter.MapToDisplay(
                 disp, page.PageWidthPoints, page.PageHeightPoints, page.RotationDegrees,
                 row.BoxesInPoints, Dip(4));
-
-        static Rectangle FitInside(Size imageSize, Rectangle area)
-        {
-            double scale = Math.Min(1.0, Math.Min(
-                (double)area.Width / imageSize.Width,
-                (double)area.Height / imageSize.Height));
-            int w = Math.Max(1, (int)(imageSize.Width * scale));
-            int h = Math.Max(1, (int)(imageSize.Height * scale));
-            return new Rectangle(
-                area.X + ((area.Width - w) / 2), area.Y + ((area.Height - h) / 2), w, h);
-        }
 
         /// <summary>
         /// Render the visible rows that have no bitmap yet, one at a time, and

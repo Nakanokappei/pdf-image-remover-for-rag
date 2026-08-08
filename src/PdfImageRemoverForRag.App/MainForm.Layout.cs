@@ -246,7 +246,7 @@ internal sealed partial class MainForm
     /// </summary>
     int GoldenPanelWidth()
     {
-        int golden = (int)(_workspaceSplit.Width * DefaultFlattenPanelShare);
+        int golden = (int)(_workspaceSplit.Width * GoldenSection.MinorShare);
         int sparedByTheList = _workspaceSplit.Width
                             - PreferredObjectListWidth() - _workspaceSplit.SplitterWidth;
         return Math.Max(Dip(MinimumSharedPanelWidth), Math.Min(golden, sparedByTheList));

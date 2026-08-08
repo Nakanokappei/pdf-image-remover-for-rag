@@ -43,12 +43,45 @@ internal static class PageHighlightPainter
     }
 
     /// <summary>
+    /// Draw a page and mark places on it: the picture, a frame around it, an
+    /// outline per place, and an arrow at each place too small to find. This
+    /// whole sequence is what the two windows share — running it from one place
+    /// is what stops them drifting into two visual languages for the same
+    /// question.
+    /// </summary>
+    /// <param name="maxPenWidth">See <see cref="DrawOutlines"/>.</param>
+    /// <param name="dimOutsideBoxes">
+    /// True to hold everything but the marked places back, which is how the
+    /// usage window says "here, on this page". The objects panel's preview
+    /// passes false: the page it shows is the page as the save will write it,
+    /// and dimming most of it would read as a judgement on the rest.
+    /// </param>
+    public static void DrawMarkedPage(
+        Graphics g,
+        Bitmap page,
+        Rectangle display,
+        IReadOnlyList<RectangleF> boxes,
+        float maxPenWidth,
+        bool dimOutsideBoxes)
+    {
+        g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+        DrawPage(g, page, display, dimOutsideBoxes ? boxes : Array.Empty<RectangleF>());
+
+        using (var frame = new Pen(SystemColors.ControlDark))
+        {
+            g.DrawRectangle(frame, display.X, display.Y, display.Width - 1, display.Height - 1);
+        }
+        DrawOutlines(g, boxes, maxPenWidth);
+        DrawPointers(g, display, boxes);
+    }
+
+    /// <summary>
     /// Draw the page into <paramref name="destination"/>, dimmed everywhere
     /// except inside <paramref name="boxes"/>. With no boxes the page is drawn
     /// normally: there is nothing to point at, and dimming the whole thing would
     /// only say "nothing here".
     /// </summary>
-    public static void DrawPage(
+    static void DrawPage(
         Graphics g, Bitmap page, Rectangle destination, IReadOnlyList<RectangleF> boxes)
     {
         if (boxes.Count == 0)
@@ -85,7 +118,7 @@ internal static class PageHighlightPainter
     /// it fills the box solid — hiding the very thing being pointed at, so thin
     /// boxes get a thinner pen.
     /// </param>
-    public static void DrawOutlines(
+    static void DrawOutlines(
         Graphics g, IReadOnlyList<RectangleF> boxes, float maxPenWidth)
     {
         if (boxes.Count == 0) return;
@@ -137,7 +170,7 @@ internal static class PageHighlightPainter
     /// because it needs no help being found from side to side.
     /// </summary>
     /// <param name="page">The page as displayed, which the halves divide.</param>
-    public static void DrawPointers(Graphics g, Rectangle page, IReadOnlyList<RectangleF> boxes)
+    static void DrawPointers(Graphics g, Rectangle page, IReadOnlyList<RectangleF> boxes)
     {
         if (boxes.Count == 0 || page.Width <= 0 || page.Height <= 0) return;
 
@@ -175,35 +208,39 @@ internal static class PageHighlightPainter
     }
 
     /// <summary>
+    /// Which side of the box the arrow lies on: +1 means to the right of / below
+    /// it. Which side has more room is the same question as which half of the
+    /// page the box sits in, and it is the one that still answers for a box
+    /// spanning the page. Zero means the box is long that way and needs no
+    /// offset — the arrow meets it at its middle instead.
+    /// </summary>
+    static PointF Side(Rectangle page, RectangleF box, float small) => new(
+        box.Width >= small ? 0
+            : page.Right - box.Right > box.Left - page.Left ? 1 : -1,
+        box.Height >= small ? 0
+            : page.Bottom - box.Bottom > box.Top - page.Top ? 1 : -1);
+
+    /// <summary>
     /// Where the arrow's tip would go for this box — the same arithmetic the
     /// drawing does, so "have I already pointed here" is asked of the answer
     /// rather than of a guess at it.
     /// </summary>
     static PointF Aim(Rectangle page, RectangleF box, float length, float small)
     {
-        float dx = box.Width >= small ? 0
-            : page.Right - box.Right > box.Left - page.Left ? 1 : -1;
-        float dy = box.Height >= small ? 0
-            : page.Bottom - box.Bottom > box.Top - page.Top ? 1 : -1;
+        var side = Side(page, box, small);
         float gap = length / 5f;
         return new PointF(
-            dx > 0 ? box.Right + gap : dx < 0 ? box.Left - gap : box.X + (box.Width / 2f),
-            dy > 0 ? box.Bottom + gap : dy < 0 ? box.Top - gap : box.Y + (box.Height / 2f));
+            side.X > 0 ? box.Right + gap : side.X < 0 ? box.Left - gap : box.X + (box.Width / 2f),
+            side.Y > 0 ? box.Bottom + gap : side.Y < 0 ? box.Top - gap : box.Y + (box.Height / 2f));
     }
 
     /// <summary>One arrow: a shaft out from the box and a head back at it.</summary>
     static void DrawPointer(
         Graphics g, Rectangle page, RectangleF box, Color colour, float length, float small)
     {
-        // +1 means the arrow lies to the right of / below the box. Which side
-        // has more room is the same question as which half of the page the box
-        // sits in, and it is the one that still answers for a box spanning the
-        // page. Zero means the box is long that way and needs no offset: the
-        // arrow meets it at its middle instead.
-        float dx = box.Width >= small ? 0
-            : page.Right - box.Right > box.Left - page.Left ? 1 : -1;
-        float dy = box.Height >= small ? 0
-            : page.Bottom - box.Bottom > box.Top - page.Top ? 1 : -1;
+        var side = Side(page, box, small);
+        float dx = side.X;
+        float dy = side.Y;
 
         // The tip stops short of the box so the outline stays readable, and the
         // tail runs out from there.

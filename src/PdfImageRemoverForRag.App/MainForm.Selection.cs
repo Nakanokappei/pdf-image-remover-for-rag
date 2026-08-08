@@ -75,15 +75,7 @@ internal sealed partial class MainForm
         var area = Rectangle.Inflate(e.CellBounds, -Dip(2), -Dip(2));
         if (area.Width <= 0 || area.Height <= 0) return;
 
-        // Fit inside the cell without ever enlarging the bitmap.
-        double scale = Math.Min(1.0, Math.Min(
-            (double)area.Width / bitmap.Width, (double)area.Height / bitmap.Height));
-        int width = Math.Max(1, (int)(bitmap.Width * scale));
-        int height = Math.Max(1, (int)(bitmap.Height * scale));
-        e.Graphics!.DrawImage(bitmap, new Rectangle(
-            area.X + ((area.Width - width) / 2),
-            area.Y + ((area.Height - height) / 2),
-            width, height));
+        e.Graphics!.DrawImage(bitmap, Fit.Inside(bitmap.Size, area, mayEnlarge: false));
     }
 
     /// <summary>

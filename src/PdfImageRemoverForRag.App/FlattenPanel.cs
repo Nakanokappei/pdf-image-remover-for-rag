@@ -74,7 +74,7 @@ internal sealed class FlattenPanel : UserControl
     {
         Dock = DockStyle.Fill,
         AutoSize = false,
-        Text = L10n.FlattenPanelHeader,
+        Text = L10n.FlattenPanelTitle,
         TextAlign = ContentAlignment.MiddleLeft,
         UseMnemonic = false,
     };
@@ -93,7 +93,7 @@ internal sealed class FlattenPanel : UserControl
     // splitting a selection off. Nothing in it needs the words "in the selected
     // unit", because the row it was opened from is the answer — which is the
     // whole reason it is not one menu at the top of the panel.
-    readonly ContextMenuStrip _unitMenu = new();
+    readonly ContextMenuStrip _unitMenu = new() { AccessibleName = L10n.FlattenUnitMenu };
     readonly ToolStripMenuItem _flattenVisible = new(L10n.FlattenVisible);
     readonly ToolStripMenuItem _flattenSelected = new(L10n.FlattenSelected);
     readonly ToolStripMenuItem _splitSelection = new(L10n.FlattenSplit);
@@ -248,9 +248,6 @@ internal sealed class FlattenPanel : UserControl
     /// </summary>
     bool _previewHeightIsTheUsersChoice;
 
-    const double GoldenRatio = 1.6180339887;
-    static readonly double PreviewShare = 1 / (GoldenRatio * GoldenRatio);
-
     // Set by SplitterMoving, which ONLY fires while the user is dragging, and
     // consumed by the SplitterMoved that ends the drag. SplitterMoved alone is
     // not a signal that anything was chosen: the layout engine raises it too,
@@ -368,7 +365,7 @@ internal sealed class FlattenPanel : UserControl
 
         int wantedListHeight = _previewHeightIsTheUsersChoice
             ? available - Dip(_previewHeight) - _split.SplitterWidth
-            : (int)(available * (1 - PreviewShare));
+            : (int)(available * (1 - GoldenSection.MinorShare));
 
         _split.SplitterDistance = Math.Clamp(
             wantedListHeight,
@@ -1175,33 +1172,16 @@ internal sealed class FlattenPanel : UserControl
                 return;
             }
 
-            var display = FitInside(_page.Bitmap.Size, area);
+            // Enlarging is allowed: this page was rendered for this pane, so it
+            // is already the right size — until the pane grows a little, where
+            // filling it is better than a gap that shrinks again on the next
+            // render.
+            var display = Fit.Inside(_page.Bitmap.Size, area, mayEnlarge: true);
             var boxes = PageHighlightPainter.MapToDisplay(
                 display, _page.PageWidthPoints, _page.PageHeightPoints, _page.RotationDegrees,
                 _boxesInPoints, Dip(4));
-            e.Graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-            PageHighlightPainter.DrawPage(
-                e.Graphics, _page.Bitmap, display, Array.Empty<RectangleF>());
-            using (var frame = new Pen(SystemColors.ControlDark))
-            {
-                e.Graphics.DrawRectangle(frame, display.X, display.Y, display.Width - 1, display.Height - 1);
-            }
-            PageHighlightPainter.DrawOutlines(e.Graphics, boxes, Dip(3));
-            // The same arrows the usage window draws: a thin or small object is
-            // as hard to find here, and the two windows answer the same
-            // question about a page.
-            PageHighlightPainter.DrawPointers(e.Graphics, display, boxes);
-        }
-
-        static Rectangle FitInside(Size imageSize, Rectangle area)
-        {
-            double scale = Math.Min(
-                (double)area.Width / imageSize.Width,
-                (double)area.Height / imageSize.Height);
-            int w = Math.Max(1, (int)(imageSize.Width * scale));
-            int h = Math.Max(1, (int)(imageSize.Height * scale));
-            return new Rectangle(
-                area.X + ((area.Width - w) / 2), area.Y + ((area.Height - h) / 2), w, h);
+            PageHighlightPainter.DrawMarkedPage(
+                e.Graphics, _page.Bitmap, display, boxes, Dip(3), dimOutsideBoxes: false);
         }
 
         protected override void Dispose(bool disposing)

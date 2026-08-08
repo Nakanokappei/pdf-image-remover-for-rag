@@ -210,10 +210,6 @@ internal static class PageHighlightPainter
         var tip = Aim(page, box, length, small);
         var tail = new PointF(tip.X + (dx * length), tip.Y + (dy * length));
 
-        float thickness = Math.Max(1.5f, length / 12f);
-        using var pen = new Pen(colour, thickness);
-        g.DrawLine(pen, tail, tip);
-
         // The head, pointing the way the shaft runs: back towards the box. The
         // shaft is a diagonal or an axis depending on how the box is thin, so
         // the direction is normalised rather than assumed.
@@ -223,13 +219,42 @@ internal static class PageHighlightPainter
         var across = new PointF(-along.Y, along.X);
         var baseCentre = new PointF(tip.X - (along.X * head), tip.Y - (along.Y * head));
         float halfWidth = head * 0.45f;
-        using var brush = new SolidBrush(colour);
-        g.FillPolygon(brush, new[]
+        var headPoints = new[]
         {
             tip,
             new PointF(baseCentre.X + (across.X * halfWidth), baseCentre.Y + (across.Y * halfWidth)),
             new PointF(baseCentre.X - (across.X * halfWidth), baseCentre.Y - (across.Y * halfWidth)),
-        });
+        };
+
+        // Twice over: a white arrow, wider, and then the blue one on top of it.
+        // Light blue over a light photograph disappears, and this arrow exists
+        // to be found. The edge is paper-white rather than a theme colour
+        // because what it is drawn on is the PAGE, not the application.
+        float thickness = Math.Max(1.5f, length / 12f);
+        float halo = Math.Max(2f, thickness * 0.9f);
+
+        using (var edge = new Pen(Color.White, thickness + (halo * 2))
+        {
+            StartCap = LineCap.Round,
+            EndCap = LineCap.Round,
+            LineJoin = LineJoin.Round,
+        })
+        {
+            // Both parts before either is filled, or the head's own edge would
+            // cut a white notch across the shaft where they meet.
+            g.DrawLine(edge, tail, tip);
+            g.DrawPolygon(edge, headPoints);
+            g.FillPolygon(Brushes.White, headPoints);
+        }
+
+        using (var pen = new Pen(colour, thickness))
+        {
+            g.DrawLine(pen, tail, tip);
+        }
+        using (var brush = new SolidBrush(colour))
+        {
+            g.FillPolygon(brush, headPoints);
+        }
     }
 
     /// <summary>

@@ -4,7 +4,7 @@ A Windows 11 desktop tool that removes unnecessary images, repeated text, vector
 
 Company logos, headers, footers, watermarks, and page rules degrade retrieval quality and inflate preprocessing cost once a PDF lands in a RAG / Dify pipeline. This tool lists every removable object in your PDFs, lets you check what you want gone, and writes new PDFs without them. A removed image is taken out of the file itself, not merely stopped from being painted — otherwise a pipeline that reads a PDF by enumerating its objects still finds it. **The original files are never overwritten.**
 
-Some text cannot simply be deleted — a chart's axis labels, a caption over a photograph — because the picture breaks without it. For those, the **Flatten** panel bakes the overlapping objects into a single image: the page looks exactly the same, and the text in that place stops being text.
+Some text cannot simply be deleted — a chart's axis labels, a caption over a photograph — because the picture breaks without it. For those, the **Graphics objects** panel flattens the overlapping objects into a single image: the page looks exactly the same, and the text in that place stops being text.
 
 Everything runs locally — files never leave your PC, and no data is collected.
 
@@ -18,19 +18,19 @@ Everything runs locally — files never leave your PC, and no data is collected.
 | **Text** | Strings with at least one visible character, shown 2+ times in a file | Headers, footers, watermarks — a one-letter confidentiality marking counts. Whitespace-only strings are never listed. CJK/composite fonts are decoded via `/ToUnicode` |
 | **Shapes** | Every drawn line, rectangle, and curve | Identity is shape + line width + color; position is ignored |
 | **Drawings** | Artwork a Form XObject paints, listed as one object | A silhouette with a speech bubble is one row, not one row per path. Identity is the form's stream hash, so one form on eleven pages is one row |
-| **Shadows** | Images holding one flat colour, shaped by a soft mask | What a drop shadow becomes when a document is exported to PDF. Barely visible on the page, but a reader that walks the file's objects writes the colour out and drops the mask, so each one arrives as a solid black rectangle |
+| **Shadows** | Images holding one flat color, shaped by a soft mask | What a drop shadow becomes when a document is exported to PDF. Barely visible on the page, but a reader that walks the file's objects writes the color out and drops the mask, so each one arrives as a solid black rectangle |
 
 ## Features
 
-- **Open several PDFs at once.** Identical objects are merged into one row across files — one checkbox removes a shared logo from every file.
+- **Open several PDFs at once.** Identical objects are merged into one row across files — one check box removes a shared logo from every file.
 - **Two views.** A spreadsheet-style table (sortable on any column, resizable columns) and a thumbnail tile view, always in the same order.
-- **Flatten overlaps into an image** (the Flatten panel, docked beside the object list). Where objects of different kinds overlap — image + text, image + shape, text + shape — the place can be replaced by a rendering of itself, so the page keeps its appearance while that text leaves the text layer. Selecting a row in the object list shows the units that object takes part in, laid out like an image editor's layers panel: a unit is a layer group and the objects inside it are its layers, each with a thumbnail, a name and a checkbox. A preview underneath shows where on the page it is. One save flattens and then removes, in that order.
+- **Flatten overlaps into an image** (the Graphics objects panel, beside the object list). Select a row in the object list and the panel lists every place that object is drawn, laid out like an image editor's layers panel: a unit is a layer group, and the graphics objects inside it are its layers, each with a thumbnail, a name and an eye. Close one eye and that single drawing goes on the next save, on that page only. Where objects overlap — image + text, image + shape, text + shape — you can turn the place into a picture of exactly what was there, so the page keeps its appearance while the text in it leaves the text layer. Flattening takes effect when you press it and can be undone. A preview underneath shows where on the page you are working.
 - **Thumbnails for everything.** Images are decoded, text is drawn as text, shapes are rendered from their actual path in their actual color, and a drawing's paths are rendered together so it looks like what sits on the page.
 - **Filter by kind** — check boxes on the toolbar, or View → Shown Types — to work on one kind at a time.
 - **Safety first.** Saves go through a temp file that is verified (re-opens, page count matches, removed images absent from both the content streams and the page resources, kept objects present) before it becomes the final `_cleaned.pdf`. Objects inside a shared Form XObject are marked unremovable; full-page (scanned) images are flagged with a warning.
 - **16 UI languages**, following the OS display language: English, Japanese, Simplified Chinese, Traditional Chinese, Korean, German, French, Spanish, Italian, Portuguese, Russian, Indonesian, Malay, Hindi, Turkish, Vietnamese. There is no in-app language switch — it follows Windows. The manual exists in English and Japanese only; every other language opens the English page.
 - **Handles large documents.** A 31 MB, 176-page file with 2,015 removable objects opens in seconds. Thumbnails are cached on disk and only the ones on screen are held in memory, so opening many large PDFs costs disk rather than RAM.
-- **High-DPI aware** (PerMonitorV2), verified at 200 % scaling.
+- **High-DPI aware** (PerMonitorV2), verified at 200% scaling.
 
 ## What it does *not* do
 
@@ -54,24 +54,20 @@ Requires Windows 11 (x64 or arm64). Either way the app is self-contained — no 
 
 ## Build from source
 
-The app is developed on macOS (Apple Silicon) and cross-published for Windows. Building the WinForms
-project from macOS requires the **official Microsoft .NET 8 SDK** — the Homebrew source-build lacks
-the Windows Desktop targets.
+The app is developed and built on Windows 11 with the **.NET 8 SDK**. The WinForms project needs the
+Windows Desktop targets, which that SDK installs.
 
-```bash
-export DOTNET_ROOT="$HOME/.dotnet"
-DOTNET="$HOME/.dotnet/dotnet"
+```powershell
+dotnet build PdfImageRemoverForRag.sln -c Release   # 0 warnings
+dotnet test PdfImageRemoverForRag.sln -c Release    # 270 tests (145 Core + 125 Infrastructure)
+dotnet run --project scripts/GenerateSamples -c Release -- samples/   # regenerate the sample PDFs
 
-"$DOTNET" build PdfImageRemoverForRag.sln -c Release   # build (0 warnings)
-"$DOTNET" test  PdfImageRemoverForRag.sln -c Release   # 197 tests (107 Core + 90 Infrastructure)
-"$DOTNET" run --project scripts/GenerateSamples -c Release -- samples/   # regenerate sample PDFs
-
-# Windows binaries from macOS:
-"$DOTNET" publish src/PdfImageRemoverForRag.App/PdfImageRemoverForRag.App.csproj \
-  -c Release -r win-arm64 --self-contained true -o artifacts/win-arm64
+# Self-contained binaries, one architecture at a time:
+dotnet publish src/PdfImageRemoverForRag.App/PdfImageRemoverForRag.App.csproj -c Release -r win-arm64 --self-contained true -o artifacts/win-arm64
 ```
 
-The app runs on Windows only — never try to launch it on macOS.
+Three `CleanedFileNamerTests` cases assert POSIX paths and fail on Windows. That is expected, not a
+broken checkout.
 
 ## Repository layout
 
@@ -79,7 +75,7 @@ The app runs on Windows only — never try to launch it on macOS.
 src/PdfImageRemoverForRag.Core/            net8.0          Models, grouping, formatting, validation, abstractions
 src/PdfImageRemoverForRag.Infrastructure/  net8.0          PDFsharp / PdfPig implementations (GDI-free)
 src/PdfImageRemoverForRag.App/             net8.0-windows  WinForms UI (all GDI+ drawing lives here)
-tests/                                     xunit           107 unit + 90 integration tests
+tests/                                     xunit           145 unit + 125 integration tests
 scripts/GenerateSamples/                   Sample-PDF generator (shared with the test fixture)
 scripts/PdfImageRemoverForRag.Poc/         Technical-verification driver over Infrastructure
 ```

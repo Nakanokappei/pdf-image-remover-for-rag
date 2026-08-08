@@ -21,7 +21,7 @@ Company logos, headers, footers, watermarks, and ruling lines are ingested along
 | **Text** | Strings with at least one visible character, shown **2+ times** in a file | One character is enough — a confidentiality marking such as "S". Whitespace-only strings are never listed. For headers, footers, watermarks; CJK / double-byte text is decoded correctly |
 | **Shape** | Every drawn line, rectangle, and curve | Same **shape + line width + color** = one row (position is ignored) |
 | **Drawing** | Artwork placed as a unit | A person silhouette with a speech bubble, and the like: several lines that sit together. The whole picture is removed, not one line at a time |
-| **Shadow** | The picture a drop shadow leaves behind | Word processors and presentation tools export a shadow as a picture of one flat colour with the blurred outline kept separately. On the page it is a faint shadow; pulled out of the file by other software it is a solid black rectangle. See below |
+| **Shadow** | The picture a drop shadow leaves behind | Word processors and presentation tools export a shadow as a picture of one flat color with the blurred outline kept separately. On the page it is a faint shadow; pulled out of the file by other software it is a solid black rectangle. See below |
 
 Only **Text** has an occurrence filter. Images, shapes, drawings and shadows are
 listed in full.
@@ -32,15 +32,15 @@ If black rectangles turn up where you expected a diagram, these are almost
 always what they are.
 
 PDF has no way to draw a blur, so a shadow has to be exported as a picture. The
-picture is one flat colour — usually pure black — and the shape of the shadow is
-kept apart from it, in a channel that says how much of that colour to let
+picture is one flat color — usually pure black — and the shape of the shadow is
+kept apart from it, in a channel that says how much of that color to let
 through at each point. Software that reads a PDF page renders the two together
 and you see a soft shadow. Software that pulls images out of the file object by
 object often keeps only the picture, and a picture of pure black is a black
 rectangle.
 
 Removing them costs the page almost nothing, which is why they are listed
-separately: tick **Shadow** on its own and you can clear them in one pass
+separately: check **Shadow** on its own and you can clear them in one pass
 without going through the real pictures. Only shadows are affected — a glow,
 soft edges or a reflection is exported together with the object it belongs to,
 so it stays an ordinary **Image**.
@@ -124,11 +124,11 @@ To work on several files together, **select them all in one Open action.**
 
 Below the toolbar the window is split left and right.
 
-- **Left — the object list.** The main thing this app does. It switches between a table and tiles, and the removal ticks go here.
+- **Left — the object list.** The main thing this app does. It switches between a table and tiles, and the removal check boxes go here.
 - **Right — the Graphics objects panel.** It shows where the object on the **currently selected row** overlaps something else. It takes a share of the width until you drag the divider; after that the width is yours and resizing the window leaves it alone.
 
 - **The toolbar's Select All and Clear Selection act on the object list only.** Merging is done a unit at a time in the panel — there is no one-click "flatten every overlap in the document", because that would make the target of an irreversible operation impossible to predict. In the panel, clicking another row is what moves its selection.
-- **Remove & Save is available as soon as there is something to write** — an object ticked for removal, an eye closed, or a place already merged.
+- **Remove & Save is available as soon as there is something to write** — an object checked for removal, an eye closed, or a place already merged.
 - The status bar reports **both** counts, e.g. `3 object(s) selected for removal / 4 object(s) to flatten`.
 
 ### Toolbar
@@ -205,7 +205,7 @@ Three things separate it from deleting:
 | How the page looks | That much less on it | Unchanged |
 | Number of images | Fewer | The same, or one more |
 
-> **Flattening takes effect when you press it**, not when you save. Ticking things for removal takes effect on the save, so the order does not matter. To take a flatten back, use **Undo Flatten**.
+> **Flattening takes effect when you press it**, not when you save. Checking things for removal takes effect on the save, so the order does not matter. To take a flatten back, use **Undo Flatten**.
 
 ### What counts as an overlap
 
@@ -229,7 +229,7 @@ Only places where objects of *different* kinds overlap are listed. That gives fo
    - With no row selected the panel is empty.
 2. The panel is laid out **like an image editor's layers panel**: a **folder is a unit** (`Doc:01 P.02 Unit 01` reads "the first file, its second page, the first unit on it") and the **graphics objects** sit under it. The chevron at a folder's left folds it away.
 3. **The eye at the left says whether the object is drawn.** Close it and the object goes from that place on that page — **it leaves the preview as well**, and it will not be in the PDF you save. **Only that one place goes**: the same image on other pages stays. A folder's eye acts on everything inside it.
-   - **This is how you take out one drawing and keep the others.** The tick in the list on the left removes the object from **everywhere it appears**; when you want this page's heading gone but not the next page's, close the eye on that place here.
+   - **This is how you take out one drawing and keep the others.** The check box in the list on the left removes the object from **everywhere it appears**; when you want this page's heading gone but not the next page's, close the eye on that place here.
 4. **Clicking a row selects it** (Ctrl to add or remove, Shift for a range). What is selected says which UNIT the commands act on.
 5. **The commands are under the ☰ at the right of a unit's own row**, and act on that unit (from the keyboard: Enter, Shift+F10 or the Menu key on that row).
    - **Turn the visible objects into a picture** — makes one picture of them, there and then. **Anything whose eye is closed stays out of it**, since the save is going to take it away. **The closed eyes open again afterwards**: "not in this picture" is an instruction that has been carried out once the picture exists.
@@ -237,7 +237,7 @@ Only places where objects of *different* kinds overlap are listed. That gives fo
    - **Split the selected objects off** — correct a unit by hand when what was detected does not match the document, by moving what you picked into a unit of its own.
    - **Merge units** (the button at the panel's top right) — puts several units of one page together. Select across them, then press it.
    - **Undo the picture** — **right-click the picture's row in the list on the left**. Merging ends the unit its objects came from, so the command lives on the row of what the merge drew.
-6. **The preview underneath is that page, actually drawn.** Objects whose eye is closed are not in it. **The selected graphics object is outlined in light blue**, and a small or thin one gets **an arrow in the same colour** beside it.
+6. **The preview underneath is that page, actually drawn.** Objects whose eye is closed are not in it. **The selected graphics object is outlined in light blue**, and a small or thin one gets **an arrow in the same color** beside it.
 7. **Saving is the same as for deleting** (**Remove & Save** on the toolbar, or **File → Remove Selected & Save…**). The merging has already happened, so the save writes it out. A save with nothing but flattening works fine.
 
 ### Worth knowing

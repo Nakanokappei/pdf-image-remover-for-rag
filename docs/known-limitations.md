@@ -31,23 +31,23 @@ Almost all of them are shadows, which the tool now lists as a kind of their own
 (**Shadow**). Filter to that kind, select all, save, and they are gone. What
 follows is why they exist, and what is left over that the kind does not cover.
 
-PDF cannot draw a blur, so a producer exporting a drop shadow has to rasterise
-it: a picture holding **one flat colour**, plus a soft mask holding the blurred
+PDF cannot draw a blur, so a producer exporting a drop shadow has to rasterize
+it: a picture holding **one flat color**, plus a soft mask holding the blurred
 outline. Rendering the page composites the two and you see a shadow. A reader
 that enumerates objects rather than rendering pages sees two images, and either
 one arrives as a rectangle:
 
 | What such a reader writes out | Why it is dark |
 | --- | --- |
-| **The picture** | It is one flat colour, usually pure black. There is nothing else in it to draw |
-| **The mask** | A `/SMask` is one 8-bit sample per pixel, 0 transparent to 255 opaque. Written out as grey levels, **transparency becomes darkness**, so a mostly-transparent mask is a mostly black rectangle |
+| **The picture** | It is one flat color, usually pure black. There is nothing else in it to draw |
+| **The mask** | A `/SMask` is one 8-bit sample per pixel, 0 transparent to 255 opaque. Written out as gray levels, **transparency becomes darkness**, so a mostly-transparent mask is a mostly black rectangle |
 
 Both are removed together, because a mask goes with its parent. Measured on the
 document this was worked out from: 39 shadows, 50 objects, and the customer
 reported 3 black rectangles on a page that holds exactly 3 of them.
 
 Only shadows are exported this way. A glow, soft edges or a reflection is
-rasterised **together with the object it belongs to**, so the resulting image
+rasterized **together with the object it belongs to**, so the resulting image
 holds real pixels, is listed as an ordinary Image, and extracts as a picture
 rather than a rectangle. That was checked by exporting one slide per effect.
 
@@ -63,7 +63,7 @@ that removes the artwork too, so weigh it per page.
 | Limitation | Description |
 | --- | --- |
 | **Scope** | Strings drawn by `Tj`/`TJ`/`'`/`"` directly in the page content stream, holding **at least one visible character** and shown **2+ times within one file** (repeated noise: headers, footers, watermarks). One character is enough, so a single-letter confidentiality marking in the corner of every page can be removed. |
-| **Whitespace** | Whitespace and control characters do not count towards that one character, so a string of spaces is never listed. Such a row would show nothing, and removing it would join the words on either side. |
+| **Whitespace** | Whitespace and control characters do not count toward that one character, so a string of spaces is never listed. Such a row would show nothing, and removing it would join the words on either side. |
 | **How the characters are counted** | On the **actual decoded characters**, using the font's `/ToUnicode` CMap. Identity-H (CID) text such as Japanese decodes correctly, so the threshold behaves as expected. Fonts without a ToUnicode map are matched on raw values (WinAnsi and similar are readable as-is). |
 | **Garbled text** | Composite fonts (Type0 / Identity-H) store 2-byte code sequences; these are decoded via the `/ToUnicode` CMap, so the list, thumbnails, and removal keys all show and match real characters. Fonts with no ToUnicode CMap cannot be decoded and are handled on raw values (matching and removal still work, but the display may be garbled). |
 | **Text inside Form XObjects** | Not detected and not removed (shared Forms are never rewritten — the same safety policy as for images). |
@@ -93,17 +93,17 @@ that removes the artwork too, so weigh it per page.
 | **How it is removed** | The page's own `Do` call for the form is deleted, along with the form's entry in that page's `/XObject` resources. The form's content stream is **never rewritten** — that is what keeps other pages intact. The form object itself is deleted once nothing in the document still points at it. |
 | **Text inside a form** | Not detected, as a drawing or as text. Only paths are read. |
 | **Images inside a form** | Still handled as images (listed, marked not removable), not as part of the drawing. |
-| **Thumbnails** | Every path is drawn through one mapping of the drawing's bounding box, so the parts keep the arrangement they have on the page. Each part keeps its own fill or stroke and its own colour. |
+| **Thumbnails** | Every path is drawn through one mapping of the drawing's bounding box, so the parts keep the arrangement they have on the page. Each part keeps its own fill or stroke and its own color. |
 | **Flattening** | Drawings never join an overlap region. A caption sitting on a form-painted figure is not offered for flattening. |
 
 ## Shadow removal
 
 | Limitation | Description |
 | --- | --- |
-| **Scope** | An Image XObject whose samples are **one flat colour** and which carries a soft mask. That is what a producer has to write when it exports a drop shadow, because PDF has no blur operator. **No occurrence-count filter**, like images. |
-| **What is not a shadow** | A picture that merely has a mask (it has a picture in it), and a flat colour with no mask (a filled rectangle the page shows as itself). Glow, soft edges and reflection are rasterised together with their object, so they are pictures too. |
+| **Scope** | An Image XObject whose samples are **one flat color** and which carries a soft mask. That is what a producer has to write when it exports a drop shadow, because PDF has no blur operator. **No occurrence-count filter**, like images. |
+| **What is not a shadow** | A picture that merely has a mask (it has a picture in it), and a flat color with no mask (a filled rectangle the page shows as itself). Glow, soft edges and reflection are rasterized together with their object, so they are pictures too. |
 | **Encodings** | Only samples that can be read plainly are judged — 8 bits per component, DeviceRGB or DeviceGray, unencoded or Flate. A JPEG is never called a shadow; producers generate shadows rather than photograph them, so this has not been seen to matter. |
-| **A black silhouette** | An icon drawn as one flat colour through a mask is indistinguishable from a shadow by these measurements, and is listed as one. It extracts as a black rectangle downstream just the same, so the classification matches the symptom even where it does not match the intent. |
+| **A black silhouette** | An icon drawn as one flat color through a mask is indistinguishable from a shadow by these measurements, and is listed as one. It extracts as a black rectangle downstream just the same, so the classification matches the symptom even where it does not match the intent. |
 | **How it is removed** | Exactly as an image: the `Do` call goes, the resource entry goes, and the object and its mask go once nothing still points at them. |
 
 ## Flattening overlaps into an image
@@ -111,14 +111,14 @@ that removes the artwork too, so weigh it per page.
 | Limitation | Description |
 | --- | --- |
 | **Scope** | Places on one page where objects of **two or more different kinds** overlap: image + text, image + text + shape, image + shape, text + shape. **Text over text is excluded** — rasterizing it would turn words into a picture and gain nothing. "Overlap" covers containment and partial overlap alike. |
-| **Connection rule** | A shape that **only strokes** its path joins a region solely when it lies **entirely inside** the other object; a **filled** shape joins as soon as it touches. Without this split, a page border — which crosses every paragraph on the page — pulled 77 % × 81 % of the paper into a single region. |
-| **Page backgrounds** | A **shape** covering 90 % or more of the page in both dimensions is treated as the page itself, joins nothing, and is never part of a region. A slide background is such a shape and it is filled, so without this it touched every object on the page: one deck reported a single 118-object "region" per page, which was the page. **Images are not affected** — a scan or a full-bleed photograph with text over it is what flattening is for. |
+| **Connection rule** | A shape that **only strokes** its path joins a region solely when it lies **entirely inside** the other object; a **filled** shape joins as soon as it touches. Without this split, a page border — which crosses every paragraph on the page — pulled 77% × 81% of the paper into a single region. |
+| **Page backgrounds** | A **shape** covering 90% or more of the page in both dimensions is treated as the page itself, joins nothing, and is never part of a region. A slide background is such a shape and it is filled, so without this it touched every object on the page: one deck reported a single 118-object "region" per page, which was the page. **Images are not affected** — a scan or a full-bleed photograph with text over it is what flattening is for. |
 | **Objects inside Form XObjects** | Never part of a region (shared Forms are never rewritten — the same policy as removal). |
 | **Granularity** | The rasterized area is the bounding box of the objects the user **checked**, and only those **instances** are deleted. The same string shown elsewhere in the file survives, which is the whole difference between this and removal. |
 | **Rendering** | 200 dpi through the operating system's PDF renderer (`Windows.Data.Pdf`), capped at 4000 px on the long side. The result is a raster image, so text inside a flattened area can no longer be selected, copied, or searched — that is the purpose, not a side effect. File size grows accordingly. |
 | **Failure handling** | A region that cannot be rendered, or where nothing matched at the place analysis found it, is left **exactly as it was** and reported as not flattened. Deleting the objects and then failing to draw their replacement would punch a hole in the page. |
 | **Rotated pages** | Supported. A `/Rotate` entry turns the page for a viewer but not for its content stream, so finding objects and rewriting them are unaffected. The operating system's renderer *does* turn the page, so the area to rasterize is mapped into its space and the rendering turned back — checked against that renderer at every rotation. Before this was done, flattening a quarter-turned page rasterized the wrong part of the paper. |
-| **Whole-page regions** | Warned about, not prevented. When what you have ticked covers 90 % or more of the page in both dimensions, the panel says so in red: flattening it turns that page into a single image and none of its text stays text. It remains a legitimate thing to ask for — a scan with a caption typed over it is exactly that — so the warning is a warning and the tick still works. |
+| **Whole-page regions** | Warned about, not prevented. When what you have selected covers 90% or more of the page in both dimensions, the panel says so in red: flattening it turns that page into a single image and none of its text stays text. It remains a legitimate thing to ask for — a scan with a caption typed over it is exactly that — so the warning is a warning and the check box still works. |
 | **Post-save verification** | The saved file is verified to re-open with a matching page count, and flattened images are deliberately **not** claimed as removed (their bytes are still in the document). That a flattened area has actually left the text layer is covered by the unit tests, not by the automatic check. |
 
 ## Features that are out of scope
@@ -182,12 +182,12 @@ including Narrator.
   Its rows are painted onto one control, so it carries the same custom
   `AccessibleObject`: a List with one CheckButton per row, each named after the
   unit or object it stands for, and reporting checked, **mixed** (a unit with
-  only some of its objects ticked) and expanded / collapsed.
+  only some of its objects checked) and expanded / collapsed.
   - **NVDA and JAWS can read and operate it**, verified on real hardware through
     the MSAA tree: taking focus and invoking a row's default action move the
-    cursor and tick the row, and a part-ticked unit reports `STATE_SYSTEM_MIXED`.
+    cursor and check the row, and a partly checked unit reports `STATE_SYSTEM_MIXED`.
   - **The keyboard operates it fully** — Tab to enter, up/down/Home/End/PageUp/
-    PageDown to move, Space to tick, left/right to fold a unit (left from an
+    PageDown to move, Space to check, left/right to fold a unit (left from an
     object row goes up to its unit), with a visible focus rectangle.
   - **Narrator has no equivalent alternative here**, unlike the tile view: the
     Flatten panel is the only way to reach flattening. Removal — what the app is

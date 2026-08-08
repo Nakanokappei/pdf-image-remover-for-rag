@@ -93,7 +93,7 @@ internal interface IStrings
     string TypeDrawing { get; }
 
     /// <summary>
-    /// A shadow layer: the flat-coloured picture a drop shadow becomes when it
+    /// A shadow layer: the flat-colored picture a drop shadow becomes when it
     /// is exported to PDF. Translate it as the drawing effect a reader knows
     /// from a word processor or presentation tool ("drop shadow"), not as the
     /// dark area an object casts in a photograph.
@@ -108,9 +108,10 @@ internal interface IStrings
     /// <summary>
     /// The delete column's header, and what a screen reader calls it. Use the
     /// same remove/delete verb the language uses elsewhere in the app: the
-    /// column's ticks are what a save removes, and the panel on the other side
-    /// of the window ticks things to flatten, so each side has to say which it
-    /// is. The ☑ glyph in front of it is added in code, not translated.
+    /// column's check boxes are what a save removes, and the panel on the
+    /// other side of the window checks things to flatten, so each side has to
+    /// say which it is. The ☑ glyph in front of it is added in code, not
+    /// translated.
     /// </summary>
     string ColumnDelete { get; }
 
@@ -179,7 +180,7 @@ internal interface IStrings
     string StatusFlattenUndone { get; }
 
     /// <summary>
-    /// How many rows of the object list are ticked for removal. Say "objects",
+    /// How many rows of the object list are checked for removal. Say "objects",
     /// not "images" — the list holds images, repeated text and shapes alike.
     /// </summary>
     string StatusSelection(int selectedCount);

@@ -57,58 +57,43 @@ internal sealed class GraphicsObjectsPanel : UserControl
     }
 
     /// <summary>
-    /// One drawing of the selected object with nothing overlapping it. Most of
-    /// what a document draws is like this — a header printed on every page
-    /// overlaps nothing on thirty-nine of them — and until these were listed
-    /// there was no way to say "that one goes and this one stays": the tick on
-    /// the left takes all forty-one at once, and the eye lived only inside a
-    /// unit.
-    ///
-    /// Two numbers, not a copy: which of the selected object's files, and which
-    /// of its drawings in that file. The workspace already holds every
-    /// occurrence of every object, and describing them a second time here cost
-    /// 332 KB on a document that draws one picture two thousand times, against
-    /// 16 KB for the numbers. <see cref="LoneAt"/> spells one out when a row is
-    /// painted or acted on.
+    /// A line in the list: a unit's folder, or one of its objects. Every object
+    /// has a folder over it — a drawing that overlaps nothing gets a unit of its
+    /// own (see <see cref="_looseUnits"/>) rather than a row at the top level,
+    /// which is what stopped the thumbnails lining up.
     /// </summary>
-    readonly record struct LonePlace(int File, int Occurrence);
-
-    /// <summary>
-    /// A line in the list. Three kinds, told apart by which index is set: a unit
-    /// header (<see cref="UnitIndex"/>), one of that unit's objects (the same
-    /// index plus <see cref="Object"/>), or a lone placement
-    /// (<see cref="LoneIndex"/>). Kept as indices so the rows stay cheap to
-    /// rebuild on every expand.
-    /// </summary>
-    readonly record struct Row(int UnitIndex, PlacedObject? Object, int LoneIndex = -1)
+    readonly record struct Row(int UnitIndex, PlacedObject? Object)
     {
-        /// <summary>A drawing of the selected object that no unit holds.</summary>
-        public bool IsLone => LoneIndex >= 0;
-
-        /// <summary>
-        /// The folder for a unit. Asked by name because "no object on the row"
-        /// used to mean this and now also describes a lone placement — which is
-        /// how a lone row came to be drawn as a folder, and a menu came to be
-        /// opened on a unit that does not exist.
-        /// </summary>
-        public bool IsUnitHeader => LoneIndex < 0 && Object is null;
+        public bool IsUnitHeader => Object is null;
     }
 
     // Every unit in the open workspace, and the subset currently listed.
     readonly List<UnitEntry> _units = new();
     readonly List<Row> _rows = new();
 
-    // The open documents, kept for their page sizes: a lone placement needs the
-    // page it is on to become a region, and only the document knows how big
-    // that page is.
+    // The open documents, kept for their page sizes: a unit of one needs the
+    // page it is on, and only the document knows how big that page is.
     IReadOnlyList<PdfDocumentInfo> _documents = Array.Empty<PdfDocumentInfo>();
 
-    // Rebuilt whenever the panel comes to describe another object, because that
-    // is what they are: the places THAT object is drawn alone. Beside them,
-    // which open document each of the object's files is, resolved once per
-    // rebuild rather than once per row.
-    readonly List<LonePlace> _lonePlaces = new();
-    readonly Dictionary<int, int> _loneFiles = new();
+    /// <summary>
+    /// A unit apiece for the drawings of the selected object that overlap
+    /// nothing. Most of what a document draws is like this — a header printed on
+    /// every page overlaps nothing on thirty-nine of them — and until they were
+    /// listed there was no way to say "that one goes and this one stays": the
+    /// tick on the left takes all forty-one at once, and the eye lived only
+    /// inside a unit.
+    ///
+    /// They are units so that everything else stays one shape: a folder with an
+    /// eye, an object indented under it, one menu, one set of commands. Listing
+    /// them at the top level instead left their thumbnails in a column of their
+    /// own.
+    ///
+    /// Rebuilt whenever the panel comes to describe another object, because that
+    /// is what they are: the places THAT object is drawn alone. Indices into
+    /// them continue past <see cref="_units"/>; <see cref="UnitAt"/> is what
+    /// hides the seam.
+    /// </summary>
+    readonly List<UnitEntry> _looseUnits = new();
 
     CrossFileObjectGroup? _selectedGroup;
     bool _anyDocuments;
@@ -531,6 +516,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
         // under a selection that may compare equal to the new one, and that is
         // exactly the case ShowFor's guard is there to skip.
         _selectedGroup = null;
+        CollectLooseUnits();
         ResetExpansion();
         RebuildRows(resetScroll: true);
         _preview.Clear();
@@ -554,6 +540,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
         _selectedGroup = group;
         // Looking at another object ends the edit that was being shown.
         _pinnedUnits = Array.Empty<OverlapRegion>();
+        CollectLooseUnits();
         ResetExpansion();
         RebuildRows(resetScroll: true);
 
@@ -586,7 +573,18 @@ internal sealed class GraphicsObjectsPanel : UserControl
             _units[index].Expanded = first;
             first = false;
         }
+        // A unit of one is not a pile to bury: opening it costs a single line
+        // and is the line that shows the object.
+        foreach (var loose in _looseUnits) loose.Expanded = true;
     }
+
+    /// <summary>
+    /// One unit by index. The workspace's own come first and the units made for
+    /// drawings that overlap nothing follow, so a row can name either with one
+    /// number.
+    /// </summary>
+    UnitEntry UnitAt(int index) =>
+        index < _units.Count ? _units[index] : _looseUnits[index - _units.Count];
 
     /// <summary>The units the panel lists, in workspace order.</summary>
     IEnumerable<int> ListedUnitIndices()
@@ -603,33 +601,28 @@ internal sealed class GraphicsObjectsPanel : UserControl
     {
         _rows.Clear();
         var listedUnits = ListedUnitIndices().ToArray();
-        CollectLonePlaces(listedUnits);
 
-        // Units and lone placements interleaved in reading order — document,
-        // then page. They are the same question ("where is this drawn?") asked
-        // of one object, and splitting them into two blocks would make the user
-        // read the document twice to find page 12.
+        // The workspace's units and the ones made for lone drawings, interleaved
+        // in reading order — document, then page. They answer the same question
+        // ("where is this drawn?"), and two blocks would make the user read the
+        // document twice to find page 12.
         //
         // Merged rather than sorted: both sides already run in page order (the
-        // units as the workspace built them, the placements as the analyzer
+        // units as the workspace built them, the loose ones as the analyzer
         // swept the pages), and a document that draws one picture two thousand
-        // times is exactly where an unnecessary sort per keystroke would show.
-        int nextUnit = 0, nextLone = 0;
-        while (nextUnit < listedUnits.Length || nextLone < _lonePlaces.Count)
+        // times is where an unnecessary sort per keystroke would show.
+        int nextUnit = 0, nextLoose = 0;
+        while (nextUnit < listedUnits.Length || nextLoose < _looseUnits.Count)
         {
-            bool takeLone = nextUnit >= listedUnits.Length
-                || (nextLone < _lonePlaces.Count && LoneComesFirst(listedUnits[nextUnit], nextLone));
+            int unit = nextUnit >= listedUnits.Length
+                || (nextLoose < _looseUnits.Count
+                    && ComesFirst(_looseUnits[nextLoose], _units[listedUnits[nextUnit]]))
+                ? _units.Count + nextLoose++
+                : listedUnits[nextUnit++];
 
-            if (takeLone)
-            {
-                _rows.Add(new Row(-1, null, nextLone++));
-                continue;
-            }
-
-            int unit = listedUnits[nextUnit++];
             _rows.Add(new Row(unit, null));
-            if (!_units[unit].Expanded) continue;
-            foreach (var member in _units[unit].Region.Members)
+            if (!UnitAt(unit).Expanded) continue;
+            foreach (var member in UnitAt(unit).Region.Members)
             {
                 _rows.Add(new Row(unit, member));
             }
@@ -675,26 +668,30 @@ internal sealed class GraphicsObjectsPanel : UserControl
     /// other forty were unreachable: nothing here named them, so nothing could
     /// act on one.
     /// </summary>
-    void CollectLonePlaces(IReadOnlyList<int> listedUnits)
+    /// <summary>
+    /// Make the units of one. Called when the panel comes to describe another
+    /// object, and NOT from the row rebuild: a folder rebuilt from scratch would
+    /// forget that the user had just closed it.
+    /// </summary>
+    void CollectLooseUnits()
     {
-        _lonePlaces.Clear();
-        _loneFiles.Clear();
+        _looseUnits.Clear();
         if (_selectedGroup is null) return;
+        var listedUnits = ListedUnitIndices().ToArray();
 
-        for (int file = 0; file < _selectedGroup.FileOccurrences.Count; file++)
+        // The highest unit number handed out per page, as the sweep goes.
+        var taken = new Dictionary<int, int>();
+
+        foreach (var occurrences in _selectedGroup.FileOccurrences)
         {
-            var occurrences = _selectedGroup.FileOccurrences[file];
             int document = IndexOfDocument(occurrences.FilePath);
             if (document < 0) continue;
-            _loneFiles[file] = document;
+            taken.Clear();
 
-            for (int at = 0; at < occurrences.Occurrences.Count; at++)
+            foreach (var occurrence in occurrences.Occurrences)
             {
-                var occurrence = occurrences.Occurrences[at];
-
-                // A drawing a unit already lists is not lone: it would be the
-                // same object twice in the same panel, once with a folder and
-                // once without.
+                // A drawing a unit already holds is not loose: it would be the
+                // same object twice in the same panel, under two folders.
                 bool inAUnit = listedUnits.Any(i =>
                     _units[i].Region.PageNumber == occurrence.PageNumber
                     && string.Equals(_units[i].FilePath, occurrences.FilePath,
@@ -702,37 +699,39 @@ internal sealed class GraphicsObjectsPanel : UserControl
                     && _units[i].Region.Members.Any(m => Covers(m, occurrence)));
                 if (inAUnit) continue;
 
-                _lonePlaces.Add(new LonePlace(file, at));
+                var page = PageOf(_documents[document], occurrence.PageNumber);
+                var placed = new PlacedObject(
+                    _selectedGroup.Kind, _selectedGroup.MatchKey,
+                    occurrence.X, occurrence.Y, occurrence.Width, occurrence.Height);
+
+                // What to call it: after the units the analyzer found on that
+                // page, and after any loose ones already made there, so two
+                // folders on a page never carry the same heading. Counted as we
+                // go — asking the lists each time is quadratic on a document
+                // that draws one picture two thousand times.
+                int number = taken.TryGetValue(occurrence.PageNumber, out int used)
+                    ? used + 1
+                    : DetectedOnPage(occurrences.FilePath, occurrence.PageNumber) + 1;
+                taken[occurrence.PageNumber] = number;
+
+                _looseUnits.Add(new UnitEntry(
+                    occurrences.FilePath, document + 1,
+                    OverlapDetector.RegionCovering(page, new[] { placed }),
+                    number));
             }
         }
     }
 
-    /// <summary>
-    /// Which of the two comes first on paper: the document, then the page. A
-    /// unit and a lone placement on the same page put the unit first, because
-    /// the unit is the more particular answer.
-    /// </summary>
-    bool LoneComesFirst(int unitIndex, int loneIndex)
-    {
-        var unit = _units[unitIndex];
-        var (document, page) = LoneOrderOf(loneIndex);
-        // The document number the panel shows is one-based; this compares the
-        // index it came from, which orders the same way.
-        if (document != unit.DocumentNumber - 1) return document < unit.DocumentNumber - 1;
-        return page < unit.Region.PageNumber;
-    }
+    /// <summary>How many units the analyzer found on one page of one file.</summary>
+    int DetectedOnPage(string filePath, int pageNumber) =>
+        _units.Count(u => u.Region.PageNumber == pageNumber
+                          && string.Equals(u.FilePath, filePath, StringComparison.OrdinalIgnoreCase));
 
-    /// <summary>
-    /// Where a lone place belongs in reading order. Kept apart from
-    /// <see cref="LoneAt"/> because sorting asks it of every place, and it must
-    /// not build a drawing to answer.
-    /// </summary>
-    (int Document, int Page) LoneOrderOf(int index)
-    {
-        var place = _lonePlaces[index];
-        return (_loneFiles[place.File],
-                _selectedGroup!.FileOccurrences[place.File].Occurrences[place.Occurrence].PageNumber);
-    }
+    /// <summary>Which of two units comes first on paper: document, then page.</summary>
+    static bool ComesFirst(UnitEntry left, UnitEntry right) =>
+        left.DocumentNumber != right.DocumentNumber
+            ? left.DocumentNumber < right.DocumentNumber
+            : left.Region.PageNumber < right.Region.PageNumber;
 
     int IndexOfDocument(string filePath)
     {
@@ -744,27 +743,6 @@ internal sealed class GraphicsObjectsPanel : UserControl
             }
         }
         return -1;
-    }
-
-    /// <summary>
-    /// One lone place, spelled out: which file, which page and how big it is,
-    /// and the drawing as the rest of the app names one. Built when a row is
-    /// painted or acted on rather than held, which is what keeps
-    /// <see cref="LonePlace"/> down to two numbers.
-    /// </summary>
-    (string FilePath, int DocumentNumber, PageDimensions Page, PlacedObject Object) LoneAt(int index)
-    {
-        var place = _lonePlaces[index];
-        var occurrences = _selectedGroup!.FileOccurrences[place.File];
-        var occurrence = occurrences.Occurrences[place.Occurrence];
-        int document = _loneFiles[place.File];
-
-        return (occurrences.FilePath,
-                document + 1,
-                PageOf(_documents[document], occurrence.PageNumber),
-                new PlacedObject(
-                    _selectedGroup.Kind, _selectedGroup.MatchKey,
-                    occurrence.X, occurrence.Y, occurrence.Width, occurrence.Height));
     }
 
     /// <summary>
@@ -810,31 +788,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
         if (index < 0 || index >= _rows.Count) return default;
         var row = _rows[index];
 
-        if (row.IsLone)
-        {
-            // Its own row, at the top level: there is no folder over it, so the
-            // page it is on is what names it.
-            var place = LoneAt(row.LoneIndex);
-            string? loneText = ObjectDisplay.ThumbnailText(
-                place.Object.Kind, place.Object.Identity);
-            var loneThumbnail = loneText is null
-                ? ThumbnailFor?.Invoke(place.Object) ?? default
-                : default;
-
-            return new RowVisual(
-                IsGroup: false,
-                Title: L10n.PlaceLabel(place.DocumentNumber, place.Page.PageNumber),
-                Subtitle: null,
-                Thumbnail: loneThumbnail.Bitmap,
-                TextContent: loneText,
-                IsThumbnailPending: loneText is null && loneThumbnail.Bitmap is null
-                                    && loneThumbnail.CanEverRender,
-                Visibility: Hidden(place) ? RowVisibility.Hidden : RowVisibility.Visible,
-                IsExpanded: false,
-                IsInsideAUnit: false);
-        }
-
-        var unit = _units[row.UnitIndex];
+        var unit = UnitAt(row.UnitIndex);
 
         if (row.Object is null)
         {
@@ -857,8 +811,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
                 Visibility: hidden == 0 ? RowVisibility.Visible
                     : hidden == unit.Region.Members.Count ? RowVisibility.Hidden
                     : RowVisibility.Mixed,
-                IsExpanded: unit.Expanded,
-                IsInsideAUnit: false);
+                IsExpanded: unit.Expanded);
         }
 
         var member = row.Object;
@@ -876,22 +829,17 @@ internal sealed class GraphicsObjectsPanel : UserControl
             TextContent: text,
             IsThumbnailPending: text is null && thumbnail.Bitmap is null && thumbnail.CanEverRender,
             Visibility: Hidden(unit, member) ? RowVisibility.Hidden : RowVisibility.Visible,
-            IsExpanded: false,
-            IsInsideAUnit: true);
+            IsExpanded: false);
     }
 
     bool Hidden(UnitEntry unit, PlacedObject member) =>
         IsHidden?.Invoke(unit.FilePath, unit.Region.PageNumber, member) == true;
 
-    bool Hidden((string FilePath, int DocumentNumber, PageDimensions Page, PlacedObject Object) place) =>
-        IsHidden?.Invoke(place.FilePath, place.Page.PageNumber, place.Object) == true;
-
     string? ToolTipForRow(int index)
     {
         if (index < 0 || index >= _rows.Count) return null;
         var row = _rows[index];
-        if (row.IsLone) return ObjectLabel(LoneAt(row.LoneIndex).Object);
-        if (row.Object is null) return _units[row.UnitIndex].FilePath;
+        if (row.Object is null) return UnitAt(row.UnitIndex).FilePath;
         return row.Object.Kind == RemovableKind.Text ? row.Object.Identity : ObjectLabel(row.Object);
     }
 
@@ -936,15 +884,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
         if (index < 0 || index >= _rows.Count) return;
         var row = _rows[index];
 
-        if (row.IsLone)
-        {
-            var place = LoneAt(row.LoneIndex);
-            VisibilityChangeRequested?.Invoke(this, new VisibilityChangeEventArgs(
-                place.FilePath, place.Page, new[] { place.Object }, !Hidden(place)));
-            return;
-        }
-
-        var unit = _units[row.UnitIndex];
+        var unit = UnitAt(row.UnitIndex);
 
         var objects = row.Object is null
             ? unit.Region.Members
@@ -962,8 +902,8 @@ internal sealed class GraphicsObjectsPanel : UserControl
 
     void OnExpandToggled(int index)
     {
-        if (index < 0 || index >= _rows.Count || _rows[index].IsLone) return;
-        var unit = _units[_rows[index].UnitIndex];
+        if (index < 0 || index >= _rows.Count) return;
+        var unit = UnitAt(_rows[index].UnitIndex);
         unit.Expanded = !unit.Expanded;
         RebuildRows(resetScroll: false);
     }
@@ -1008,20 +948,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
     }
 
     /// <summary>How many objects the selection covers, for the status line.</summary>
-    public int SelectedObjectCount =>
-        SelectedByUnit().Sum(x => x.Members.Count) + SelectedLonePlaces().Count;
-
-    /// <summary>
-    /// The selected placements that belong to no unit. They take no part in
-    /// flattening — there is nothing to combine where nothing overlaps — so
-    /// they are gathered apart from <see cref="SelectedByUnit"/> rather than
-    /// squeezed into it.
-    /// </summary>
-    IReadOnlyList<(string FilePath, int DocumentNumber, PageDimensions Page, PlacedObject Object)>
-        SelectedLonePlaces() => _list.SelectedRows
-            .Where(index => index < _rows.Count && _rows[index].IsLone)
-            .Select(index => LoneAt(_rows[index].LoneIndex))
-            .ToArray();
+    public int SelectedObjectCount => SelectedByUnit().Sum(x => x.Members.Count);
 
     /// <summary>
     /// The selected objects, gathered by the unit they sit in. A selected folder
@@ -1035,8 +962,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
         {
             if (index >= _rows.Count) continue;
             var row = _rows[index];
-            if (row.IsLone) continue;
-            var unit = _units[row.UnitIndex];
+            var unit = UnitAt(row.UnitIndex);
 
             var slot = byUnit.FirstOrDefault(x => ReferenceEquals(x.Unit, unit));
             if (slot.Unit is null)
@@ -1082,8 +1008,8 @@ internal sealed class GraphicsObjectsPanel : UserControl
         if (unit is null) return Array.Empty<PlacedObject>();
 
         var picked = _list.SelectedRows
-            .Where(index => index < _rows.Count && !_rows[index].IsLone
-                            && ReferenceEquals(_units[_rows[index].UnitIndex], unit))
+            .Where(index => index < _rows.Count
+                            && ReferenceEquals(UnitAt(_rows[index].UnitIndex), unit))
             .Select(index => _rows[index].Object)
             .Where(o => o is not null)
             .ToArray();
@@ -1129,15 +1055,11 @@ internal sealed class GraphicsObjectsPanel : UserControl
     /// </summary>
     void OnUnitMenuRequested(int row, Point at)
     {
-        if (row < 0 || row >= _rows.Count || _rows[row].IsLone) return;
-        while (row >= 0 && !_rows[row].IsUnitHeader)
-        {
-            if (_rows[row].IsLone) return;
-            row--;
-        }
+        if (row < 0 || row >= _rows.Count) return;
+        while (row >= 0 && !_rows[row].IsUnitHeader) row--;
         if (row < 0) return;
 
-        _menuUnit = _units[_rows[row].UnitIndex];
+        _menuUnit = UnitAt(_rows[row].UnitIndex);
         _unitMenu.Show(_list, at);
     }
 
@@ -1242,7 +1164,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
         for (int i = 0; i < _rows.Count; i++)
         {
             if (!_rows[i].IsUnitHeader) continue;
-            if (!_pinnedUnits.Any(r => ReferenceEquals(r, _units[_rows[i].UnitIndex].Region))) continue;
+            if (!_pinnedUnits.Any(r => ReferenceEquals(r, UnitAt(_rows[i].UnitIndex).Region))) continue;
 
             _list.SelectOnly(i);
             return;
@@ -1282,21 +1204,8 @@ internal sealed class GraphicsObjectsPanel : UserControl
 
         var (first, count) = _list.VisibleRange();
         var groups = new List<CrossFileObjectGroup>(count);
-        bool loneAsked = false;
         for (int i = first; i < first + count && i < _rows.Count; i++)
         {
-            // Every lone row draws the SAME object — they are its places — so
-            // one bitmap answers all of them, and asking once is the whole of
-            // what a screenful of them costs.
-            if (_rows[i].IsLone)
-            {
-                if (loneAsked || _selectedGroup is null
-                    || _selectedGroup.Kind == RemovableKind.Text) continue;
-                groups.Add(_selectedGroup);
-                loneAsked = true;
-                continue;
-            }
-
             var member = _rows[i].Object;
             // Text draws its string, so it needs nothing rendered.
             if (member is null || member.Kind == RemovableKind.Text) continue;
@@ -1326,22 +1235,6 @@ internal sealed class GraphicsObjectsPanel : UserControl
     /// </summary>
     void ShowPreviewForSelection()
     {
-        // A lone placement is its own answer: the row IS an object, so the page
-        // it is on is shown with that one outlined. Taken first because such a
-        // row belongs to no unit and would otherwise show nothing.
-        var lone = SelectedLonePlaces();
-        if (lone.Count > 0)
-        {
-            ShowPreview(
-                lone[0].FilePath, lone[0].Page.PageNumber,
-                lone.Where(p => p.Page.PageNumber == lone[0].Page.PageNumber
-                                && string.Equals(p.FilePath, lone[0].FilePath,
-                                    StringComparison.OrdinalIgnoreCase))
-                    .Select(p => RectOf(p.Object))
-                    .ToArray());
-            return;
-        }
-
         var selected = SelectedByUnit();
         if (selected.Count == 0)
         {
@@ -1362,9 +1255,8 @@ internal sealed class GraphicsObjectsPanel : UserControl
     /// </summary>
     IEnumerable<PlacedObject> OutlinedIn(UnitEntry unit) => _list.SelectedRows
         .Where(index => index < _rows.Count
-                        && !_rows[index].IsLone
                         && _rows[index].Object is not null
-                        && ReferenceEquals(_units[_rows[index].UnitIndex], unit))
+                        && ReferenceEquals(UnitAt(_rows[index].UnitIndex), unit))
         .Select(index => _rows[index].Object!);
 
     /// <summary>

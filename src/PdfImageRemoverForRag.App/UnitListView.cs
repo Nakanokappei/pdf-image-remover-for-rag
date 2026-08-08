@@ -29,12 +29,6 @@ internal enum RowVisibility
 /// Whether the object is drawn. A folder answers for everything inside it, and
 /// has a third answer when its objects disagree.
 /// </param>
-/// <param name="IsInsideAUnit">
-/// Whether the row sits under a folder. Objects of a unit are indented one
-/// level from it; a placement that belongs to no unit is a top-level row and
-/// starts where the folders do, because indenting it would promise a parent
-/// that is not there.
-/// </param>
 internal readonly record struct RowVisual(
     bool IsGroup,
     string Title,
@@ -43,8 +37,7 @@ internal readonly record struct RowVisual(
     string? TextContent,
     bool IsThumbnailPending,
     RowVisibility Visibility,
-    bool IsExpanded,
-    bool IsInsideAUnit = true);
+    bool IsExpanded);
 
 /// <summary>
 /// The graphics objects panel's list, laid out like an image editor's layers
@@ -258,12 +251,12 @@ internal sealed class UnitListView : Panel
     /// The picture column: a folder icon on a unit, the object's thumbnail on
     /// its members. Objects sit one level in from their folder.
     /// </summary>
-    Rectangle IconRect(Rectangle bounds, bool isGroup, bool insideAUnit = true)
+    Rectangle IconRect(Rectangle bounds, bool isGroup)
     {
         int size = Dip(isGroup ? FolderSize : ThumbnailSize);
         int left = isGroup
             ? DisclosureRect(bounds).Right + Dip(Gap)
-            : EyeRect(bounds).Right + Dip(Gap) + (insideAUnit ? Dip(IndentWidth) : 0);
+            : EyeRect(bounds).Right + Dip(Gap) + Dip(IndentWidth);
         return new Rectangle(left, bounds.Top + ((bounds.Height - size) / 2), size, size);
     }
 
@@ -309,7 +302,7 @@ internal sealed class UnitListView : Panel
 
         DrawEye(g, EyeRect(bounds), visual.Visibility, text);
 
-        var icon = IconRect(bounds, visual.IsGroup, visual.IsInsideAUnit);
+        var icon = IconRect(bounds, visual.IsGroup);
         if (visual.IsGroup)
         {
             DrawDisclosure(g, DisclosureRect(bounds), visual.IsExpanded, text);

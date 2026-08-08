@@ -129,7 +129,7 @@ internal sealed partial class MainForm
             }
             await work;
 
-            // Freshly opened files start sorted by 使用回数 descending.
+            // Freshly opened files start sorted by Usage descending.
             var viewStopwatch = Stopwatch.StartNew();
             ResetSortToDefault();
             RefreshWorkspace();

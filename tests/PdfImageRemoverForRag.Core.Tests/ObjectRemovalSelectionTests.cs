@@ -3,7 +3,7 @@ using Xunit;
 
 namespace PdfImageRemoverForRag.Core.Tests;
 
-// Spec §24 "削除対象選択モデル" — the record itself, independent of the validator.
+// Spec §24 "removal selection model" — the record itself, independent of the validator.
 public class ObjectRemovalSelectionTests
 {
     [Fact]

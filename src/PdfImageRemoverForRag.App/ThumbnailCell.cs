@@ -4,7 +4,7 @@ using PdfImageRemoverForRag.Core.Models;
 namespace PdfImageRemoverForRag.App;
 
 /// <summary>
-/// The サムネイル column's cell, whose only job is to give the painted
+/// The Thumbnail column's cell, whose only job is to give the painted
 /// thumbnail a spoken name.
 ///
 /// The cell deliberately holds no value — <c>PaintThumbnailCell</c> asks the

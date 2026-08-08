@@ -3,7 +3,7 @@ using Xunit;
 
 namespace PdfImageRemoverForRag.Core.Tests;
 
-// Spec §24 "使用ページ範囲の表示" and §11.3 (list vs "1〜50").
+// Spec §24 "usage page ranges" and §11.3 (list vs "1〜50").
 public class UsagePageFormatterTests
 {
     [Fact]

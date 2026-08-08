@@ -84,7 +84,7 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
         if (CleanedFileNamer.WouldOverwriteSource(sourcePath, destinationPath))
         {
             throw new PdfCleanerException(PdfCleanerErrorKind.DestinationNotWritable,
-                "元 PDF と同じパスへの保存はできません。別名を指定してください。");
+                "Cannot save over the source PDF. Choose a different name.");
         }
         // Being asked to change nothing is a caller's mistake — EXCEPT when the
         // fitting is the job. A save that only flattened has nothing left to
@@ -96,7 +96,7 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
             && !fitImagesToScreen)
         {
             throw new PdfCleanerException(PdfCleanerErrorKind.Unexpected,
-                "削除対象の画像が指定されていません。");
+                "Nothing was given to remove.");
         }
         // A caller that asks for flattening without supplying a renderer has a
         // wiring bug, and quietly saving a file with nothing flattened would
@@ -105,14 +105,14 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
         if (regions.Count > 0 && _rasterizer is null)
         {
             throw new PdfCleanerException(PdfCleanerErrorKind.Unexpected,
-                "画像に統合するための描画機能が利用できません。");
+                "No renderer is available to flatten a region into an image.");
         }
         // Re-checked rather than trusted from the open: the file has been
         // sitting on disk since it was analyzed and may have been replaced.
         if (!PdfFileSignature.LooksLikePdf(sourcePath))
         {
             throw new PdfCleanerException(PdfCleanerErrorKind.NotAPdf,
-                "選択されたファイルは PDF ではありません。");
+                "The selected file is not a PDF.");
         }
 
         // Rendering happens before anything is rewritten, and from the source
@@ -446,7 +446,7 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
         }
         catch (Exception ex)
         {
-            throw PdfsharpExceptionMapper.Map(ex, "PDF 保存");
+            throw PdfsharpExceptionMapper.Map(ex, "PDF save");
         }
         finally
         {

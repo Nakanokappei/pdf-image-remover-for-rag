@@ -32,6 +32,6 @@ public sealed record PdfDocumentInfo(
     /// <summary>How many distinct objects the file holds, one per group.</summary>
     public int ObjectGroupCount => ObjectGroups.Count;
 
-    /// <summary>Total placements across every group (spec §11 "使用箇所").</summary>
+    /// <summary>Total placements across every group (spec §11 "usage locations").</summary>
     public int TotalUsageCount => ObjectGroups.Sum(g => g.UsageCount);
 }

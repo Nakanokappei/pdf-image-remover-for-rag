@@ -26,45 +26,45 @@ internal static class PdfsharpExceptionMapper
         {
             PdfReaderException prex when prex.Message.Contains("password", StringComparison.OrdinalIgnoreCase)
                 => new PdfCleanerException(PdfCleanerErrorKind.PdfEncrypted,
-                    $"{context}: PDF が暗号化されています。パスワードが必要です。", ex),
+                    $"{context}: the PDF is encrypted and needs a password.", ex),
 
             PdfReaderException prex when prex.Message.Contains("not a PDF", StringComparison.OrdinalIgnoreCase)
                                           || prex.Message.Contains("header", StringComparison.OrdinalIgnoreCase)
                 => new PdfCleanerException(PdfCleanerErrorKind.NotAPdf,
-                    $"{context}: 指定されたファイルは PDF ではありません。", ex),
+                    $"{context}: the file is not a PDF.", ex),
 
             PdfReaderException prex
                 => new PdfCleanerException(PdfCleanerErrorKind.PdfCorrupted,
-                    $"{context}: PDF の解析中にエラー: {prex.Message}", ex),
+                    $"{context}: error while reading the PDF: {prex.Message}", ex),
 
             FileNotFoundException fnf
                 => new PdfCleanerException(PdfCleanerErrorKind.PdfCorrupted,
-                    $"{context}: ファイルが見つかりません: {fnf.FileName}", ex),
+                    $"{context}: file not found: {fnf.FileName}", ex),
 
             UnauthorizedAccessException uae
                 => new PdfCleanerException(PdfCleanerErrorKind.DestinationNotWritable,
-                    $"{context}: 保存先に書き込めません: {uae.Message}", ex),
+                    $"{context}: the destination is not writable: {uae.Message}", ex),
 
             IOException ioe when ioe.Message.Contains("space", StringComparison.OrdinalIgnoreCase)
                                  || ioe.Message.Contains("disk", StringComparison.OrdinalIgnoreCase)
                 => new PdfCleanerException(PdfCleanerErrorKind.DiskFull,
-                    $"{context}: ディスク容量が不足しています。", ex),
+                    $"{context}: not enough disk space.", ex),
 
             IOException ioe when ioe.Message.Contains("used by another", StringComparison.OrdinalIgnoreCase)
                                  || ioe.Message.Contains("being used", StringComparison.OrdinalIgnoreCase)
                 => new PdfCleanerException(PdfCleanerErrorKind.FileInUse,
-                    $"{context}: ファイルが他のプロセスで使用中です。", ex),
+                    $"{context}: the file is in use by another process.", ex),
 
             IOException ioe
                 => new PdfCleanerException(PdfCleanerErrorKind.DestinationNotWritable,
-                    $"{context}: 入出力エラー: {ioe.Message}", ex),
+                    $"{context}: I/O error: {ioe.Message}", ex),
 
             OperationCanceledException
                 => new PdfCleanerException(PdfCleanerErrorKind.UserCanceled,
-                    $"{context}: 処理がキャンセルされました。", ex),
+                    $"{context}: the operation was canceled.", ex),
 
             _ => new PdfCleanerException(PdfCleanerErrorKind.Unexpected,
-                $"{context}: 予期しないエラー: {ex.Message}", ex),
+                $"{context}: unexpected error: {ex.Message}", ex),
         };
     }
 }

@@ -11,8 +11,8 @@ namespace PdfImageRemoverForRag.Core.Selection;
 ///   <item>The group must have <c>IsSafelyRemovable = true</c> (§14.3).</item>
 /// </list>
 ///
-/// The App calls <see cref="Validate"/> before enabling the "選択画像を削除
-/// して保存" button and again just before invoking the cleaner, so any race
+/// The App calls <see cref="Validate"/> before enabling the "Remove Selected
+/// &amp; Save" button and again just before invoking the cleaner, so any race
 /// between "user checked the row" and "user hit save" is caught.
 /// </summary>
 public sealed class RemovalSelectionValidator
@@ -42,7 +42,7 @@ public sealed class RemovalSelectionValidator
             {
                 // Matches spec §14.3 wording so the UI can surface it verbatim.
                 errors.Add(
-                    $"{selection.GroupId}: 複雑なPDF構造のため、この画像は安全に削除できません。");
+                    $"{selection.GroupId}: this image cannot be removed safely because of the PDF's complex structure.");
                 continue;
             }
             accepted.Add(selection);

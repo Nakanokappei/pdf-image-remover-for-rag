@@ -33,7 +33,7 @@ internal sealed partial class MainForm : Form
     readonly ToolStripMenuItem _exitMenuItem = new(L10n.MenuExit);
     readonly ToolStripMenuItem _tableViewMenuItem = new(L10n.MenuTableView) { Checked = true, CheckOnClick = false };
     readonly ToolStripMenuItem _tileViewMenuItem = new(L10n.MenuTileView) { Checked = false, CheckOnClick = false };
-    // 表示する種類 submenu: per-kind visibility filters. Every kind starts
+    // Shown Types submenu: per-kind visibility filters. Every kind starts
     // checked; CheckOnClick is off so MainForm can veto turning off the last one.
     // The entries themselves are in _kindToggles.
     readonly ToolStripMenuItem _shownTypesMenuItem = new(L10n.MenuShownTypes);
@@ -110,9 +110,9 @@ internal sealed partial class MainForm : Form
         AccessKeyMarker.Replace(L10n.MenuShownTypes, string.Empty).Replace("&", string.Empty).Trim();
 
     /// <summary>
-    /// A trailing access-key marker, as CJK menus spell it: 表示する種類(&amp;D).
+    /// A trailing access-key marker, as CJK menus spell it: Shown Types(&amp;D).
     /// Dropping only the ampersand leaves "(D)" behind, and a screen reader reads
-    /// it out — the caption was announced as "表示する種類(D): 画像". The whole
+    /// it out — the caption was announced as "Shown Types(D): Images". The whole
     /// parenthesis has to go. Latin captions put the marker inside the word
     /// (&amp;Shown Types), where removing the ampersand is already enough.
     /// </summary>
@@ -126,7 +126,7 @@ internal sealed partial class MainForm : Form
 
     // --- table view (§11.3) ------------------------------------------------
     // No AutoSizeMode here: ConfigureObjectListGrid gives every column its mode
-    // (None for the fixed ones, Fill for 警告) and AutoSizeContentColumns then
+    // (None for the fixed ones, Fill for Warning) and AutoSizeContentColumns then
     // fits them to content. An AutoSizeMode set on the field would be silently
     // overwritten, and it would read as if the columns sized themselves — they
     // do not, and cannot: an auto-sized column is not user-resizable.
@@ -254,13 +254,13 @@ internal sealed partial class MainForm : Form
     // Supplies the file context the analyzer's reports lack.
     readonly OpenProgressReporter _openProgress = new();
 
-    // Which object kinds the table / tile view currently shows (表示する種類).
+    // Which object kinds the table / tile view currently shows (Shown Types).
     // At least one kind is always present.
     // Filled from _kindToggles in the constructor: every kind starts visible,
     // and there is one list of kinds rather than two that could disagree.
     readonly HashSet<RemovableKind> _visibleKinds = new();
 
-    // Current sort. Defaults (and resets on every open) to 使用回数 descending.
+    // Current sort. Defaults (and resets on every open) to Usage descending.
     DataGridViewColumn _sortColumn = null!;
     bool _sortAscending;
 
@@ -290,7 +290,7 @@ internal sealed partial class MainForm : Form
     const int GridThumbnailMaxWidth = 90;
     const int GridThumbnailMaxHeight = 64;
 
-    // Excel-like palette for the 表頭 / 表側 headers and gridlines: a FLAT pale
+    // Excel-like palette for the column-header row and the row-number gutter: a FLAT pale
     // gray header (Excel uses no gradient) with a thin gray separator on the
     // bottom/right edges, and pale gray cell gridlines.
     //

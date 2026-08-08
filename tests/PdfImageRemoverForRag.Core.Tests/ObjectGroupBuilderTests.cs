@@ -4,7 +4,7 @@ using Xunit;
 
 namespace PdfImageRemoverForRag.Core.Tests;
 
-// Spec §24: "同一画像のグループ化", "使用ページ一覧生成", "ページ全体画像候補判定".
+// Spec §24: "grouping identical images", "usage page lists", "full-page image detection".
 public class ObjectGroupBuilderTests
 {
     static ObjectDiscovery MakeDiscovery(string objectId, string streamHash,
@@ -136,12 +136,12 @@ public class ObjectGroupBuilderTests
                 isSafelyRemovable: true, occurrences: MakeOccurrence(page: 1)),
             MakeDiscovery("2 0 R", "HASH_SHARED",
                 isSafelyRemovable: false,
-                unsafeReason: "複雑なPDF構造のため、この画像は安全に削除できません。",
+                unsafeReason: "This image cannot be removed safely because of the PDF's complex structure.",
                 occurrences: MakeOccurrence(page: 2)),
         });
 
         var group = Assert.Single(groups);
         Assert.False(group.IsSafelyRemovable);
-        Assert.Contains("削除できません", group.WarningMessage ?? string.Empty);
+        Assert.Contains("cannot be removed safely", group.WarningMessage ?? string.Empty);
     }
 }

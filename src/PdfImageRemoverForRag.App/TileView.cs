@@ -3,7 +3,7 @@ using PdfImageRemoverForRag.Core.Models;
 namespace PdfImageRemoverForRag.App;
 
 /// <summary>
-/// The タイル形式 view: one scrolling control that paints the tiles itself.
+/// The Tiles view: one scrolling control that paints the tiles itself.
 ///
 /// It replaces a FlowLayoutPanel that held one child control per object. That
 /// worked on the sample files and fell apart on a real one — 2,015 child
@@ -47,7 +47,7 @@ internal sealed class TileView : Panel
 
     /// <summary>
     /// Raised when a tile is right-clicked, with its group and the client-space
-    /// point, so the host can show the row context menu (使用箇所を表示…).
+    /// point, so the host can show the row context menu (Show Usage Locations…).
     /// </summary>
     public event Action<CrossFileObjectGroup, Point>? TileContextRequested;
 

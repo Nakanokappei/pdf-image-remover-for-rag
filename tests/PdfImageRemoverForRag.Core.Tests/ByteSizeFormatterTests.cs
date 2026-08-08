@@ -3,7 +3,7 @@ using Xunit;
 
 namespace PdfImageRemoverForRag.Core.Tests;
 
-// "推定容量" column formatting (spec §11.3: KB or MB).
+// "Est. Size" column formatting (spec §11.3: KB or MB).
 public class ByteSizeFormatterTests
 {
     [Fact]

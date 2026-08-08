@@ -83,7 +83,7 @@ internal sealed partial class MainForm
     /// row-number gutter, or the top-left corner. Everything (background, text,
     /// sort glyph) is drawn here and the framework is NOT asked to paint content,
     /// so there is no current-row marker in the row gutter and no selected-column
-    /// highlight in the 表頭. Flat pale gray fill (no gradient) with a thin gray
+    /// highlight in the column header. Flat pale gray fill (no gradient) with a thin gray
     /// bottom/right separator, matching Excel's flat headers.
     /// </summary>
     void PaintExcelHeader(DataGridViewCellPaintingEventArgs e)
@@ -314,7 +314,7 @@ internal sealed partial class MainForm
         _graphicsObjectsPanel.RefreshVisibility();
     }
 
-    // --- row/tile context menu (使用箇所を表示…) --------------------------------
+    // --- row/tile context menu (Show Usage Locations…) --------------------------------
 
     /// <summary>
     /// Capture the right-clicked grid row's group and show the menu at the
@@ -373,7 +373,7 @@ internal sealed partial class MainForm
         // Flattening is asked for one unit at a time, from that unit's own
         // menu, which is the granularity it acts at.
         //
-        // Select only what the list currently shows: the 表示する種類 filter scopes
+        // Select only what the list currently shows: the Shown Types filter scopes
         // "select all" so hidden kinds are never silently marked for removal.
         foreach (var group in _workflow.ObjectGroups
                      .Where(g => g.IsSafelyRemovable && _visibleKinds.Contains(g.Kind)))
@@ -417,8 +417,8 @@ internal sealed partial class MainForm
     /// Enable/disable the menu items and toolbar buttons that depend on the
     /// current selection and open documents. Status text is handled by
     /// <see cref="RefreshSelectionStatus"/> so the busy → idle transition in
-    /// <see cref="SetBusy"/> does not clobber a just-set message (e.g. "保存
-    /// しました") with the selection count.
+    /// <see cref="SetBusy"/> does not clobber a just-set message (e.g. "Saved
+    /// …") with the selection count.
     /// </summary>
     void UpdateSelectionState()
     {
@@ -444,7 +444,7 @@ internal sealed partial class MainForm
 
     /// <summary>
     /// Reflect the current selection count in the status bar. Called from
-    /// every selection-changing handler so the "N 件を選択中" text stays live
+    /// every selection-changing handler so the "N object(s) selected for removal" text stays live
     /// — including when the count drops back to zero, where it falls back to
     /// the workspace state message. No-op while busy so an in-progress
     /// message is preserved.

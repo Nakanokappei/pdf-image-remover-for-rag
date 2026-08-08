@@ -35,7 +35,7 @@ internal sealed partial class MainForm
 
     /// <summary>
     /// Rebuild the table and tile views from the current workspace, honoring
-    /// the 表示する種類 filter and the active sort. Thumbnails are assumed
+    /// the Shown Types filter and the active sort. Thumbnails are assumed
     /// already current (see <see cref="RefreshThumbnailImages"/>).
     /// </summary>
     void RebuildDisplay()
@@ -70,7 +70,7 @@ internal sealed partial class MainForm
             // Whichever view is showing, fetch the bitmaps its viewport needs.
             ScheduleThumbnailLoad();
             // Re-assert which view is on screen: a rebuild must never leave the
-            // 表示 menu claiming one view while the other is showing.
+            // View menu claiming one view while the other is showing.
             ApplyViewVisibility();
             // The sort glyph is drawn by PaintExcelHeader from _sortColumn /
             // _sortAscending; the rebuild's invalidate repaints the headers.
@@ -111,13 +111,13 @@ internal sealed partial class MainForm
         return group.UsageCount; // thumbnail column and any fallback
     }
 
-    // サイズ compares by pixel area for images/shapes and character count for
+    // Size compares by pixel area for images/shapes and character count for
     // text — the same magnitude the cell conveys.
     static double SizeSortValue(CrossFileObjectGroup group) => group.Kind == RemovableKind.Text
         ? group.TextValue?.Length ?? 0
         : (double)group.PixelWidth * group.PixelHeight;
 
-    // 警告 ordering: not-removable first, then possible full-page, then clear.
+    // Warning ordering: not-removable first, then possible full-page, then clear.
     static int WarningSortValue(CrossFileObjectGroup group)
     {
         if (!group.IsSafelyRemovable) return 0;
@@ -425,7 +425,7 @@ internal sealed partial class MainForm
 
                 var row = _objectListGrid.Rows[rowIndex];
                 row.Tag = group;
-                // 表側 row number = display position (1-based), reassigned every
+                // Row-gutter number = display position (1-based), reassigned every
                 // rebuild so it stays sequential top-to-bottom under any sort.
                 row.HeaderCell.Value = (rowIndex + 1).ToString();
                 if (group.Kind == RemovableKind.Text)
@@ -454,7 +454,7 @@ internal sealed partial class MainForm
                 else if (group.IsPossibleFullPageImage)
                 {
                     // Only this warning goes red: checking such a row blanks a
-                    // whole page. 「削除不可」 is a state, not a hazard, so it
+                    // whole page. "Not removable" is a state, not a hazard, so it
                     // stays in the row's normal (grayed) color.
                     //
                     // It keeps its own colors while the row is selected, and
@@ -556,7 +556,7 @@ internal sealed partial class MainForm
     }
 
     // =======================================================================
-    // Usage-locations window (right-click 使用箇所を表示…)
+    // Usage-locations window (right-click Show Usage Locations…)
     // =======================================================================
 
     /// <summary>
@@ -611,7 +611,7 @@ internal sealed partial class MainForm
     }
 
     // =======================================================================
-    // View switching (表示 menu)
+    // View switching (View menu)
     // =======================================================================
 
     void SetViewMode(bool tileView)
@@ -625,12 +625,12 @@ internal sealed partial class MainForm
 
     /// <summary>
     /// Make the visible view match <see cref="_isTileView"/> — which is what
-    /// the 表示 menu's check marks report.
+    /// the View menu's check marks report.
     ///
     /// Called from <see cref="SetViewMode"/> and again from every
     /// <see cref="RebuildDisplay"/>, because opening a file while the tile view
     /// was showing has been observed to leave the table on screen with the menu
-    /// still checked on タイル形式. The mechanism is not understood — nothing in
+    /// still checked on Tiles. The mechanism is not understood — nothing in
     /// this code sets either Visible outside this method — so rather than guess
     /// at it, the invariant is simply re-asserted after every rebuild. It is two
     /// property writes; WinForms ignores both when the value is unchanged.

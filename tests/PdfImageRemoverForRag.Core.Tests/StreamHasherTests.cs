@@ -4,7 +4,7 @@ using Xunit;
 
 namespace PdfImageRemoverForRag.Core.Tests;
 
-// Spec §24: "SHA-256ハッシュ生成".
+// Spec §24: "SHA-256 hash generation".
 // Uses well-known NIST vectors so the test does not depend on library internals.
 public class StreamHasherTests
 {

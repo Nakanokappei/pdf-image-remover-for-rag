@@ -15,7 +15,7 @@ namespace PdfImageRemoverForRag.App;
 internal static class ObjectDisplay
 {
     /// <summary>
-    /// Short text for the 警告 column. Unsafe wins over full-page because it
+    /// Short text for the Warning column. Unsafe wins over full-page because it
     /// changes what the user can do (the checkbox is disabled).
     /// </summary>
     public static string WarningLabel(CrossFileObjectGroup group)
@@ -25,7 +25,7 @@ internal static class ObjectDisplay
         return string.Empty;
     }
 
-    /// <summary>Hover text for the 警告 column; both §7 and §14.3 texts can apply.</summary>
+    /// <summary>Hover text for the Warning column; both §7 and §14.3 texts can apply.</summary>
     public static string WarningToolTip(CrossFileObjectGroup group)
     {
         var parts = new List<string>(2);
@@ -63,7 +63,7 @@ internal static class ObjectDisplay
         return string.IsNullOrWhiteSpace(text) ? $"\"{text}\"" : text;
     }
 
-    /// <summary>タイプ cell: image / text / shape / drawing, localized.</summary>
+    /// <summary>Type cell: image / text / shape / drawing, localized.</summary>
     public static string TypeLabel(CrossFileObjectGroup group) => TypeLabel(group.Kind);
 
     /// <summary>
@@ -80,7 +80,7 @@ internal static class ObjectDisplay
         _ => L10n.TypeImage,
     };
 
-    /// <summary>サイズ cell: "W×H" px (image), char count (text), or "W×H pt" (shape).</summary>
+    /// <summary>Size cell: "W×H" px (image), char count (text), or "W×H pt" (shape).</summary>
     public static string SizeLabel(CrossFileObjectGroup group) => group.Kind switch
     {
         RemovableKind.Text => L10n.TextSize(group.TextValue?.Length ?? 0),
@@ -90,7 +90,7 @@ internal static class ObjectDisplay
         _ => $"{group.PixelWidth}×{group.PixelHeight}",
     };
 
-    /// <summary>圧縮 cell: filter label for images, "N/A" for text and shapes
+    /// <summary>Compression cell: filter label for images, "N/A" for text and shapes
     /// (compression is an image-only attribute). A shadow is an image, and its
     /// stream is filtered like any other, so it gets the filter label too.</summary>
     public static string CompressionLabel(CrossFileObjectGroup group) => group.Kind.IsImageXObject()
@@ -98,8 +98,8 @@ internal static class ObjectDisplay
         : L10n.CompressionNotApplicable;
 
     /// <summary>
-    /// Map PDF filter names to the short labels the 圧縮 column shows
-    /// ("JPEG、Flateなど" per spec §11.3). Chained filters keep the "+".
+    /// Map PDF filter names to the short labels the Compression column shows
+    /// ("JPEG", "Flate" and so on, per spec §11.3). Chained filters keep the "+".
     /// </summary>
     public static string CompressionLabel(string filterName)
     {
@@ -147,7 +147,7 @@ internal static class ObjectDisplay
         catch
         {
             // Malformed bytes must not break the list — fall back to the
-            // placeholder icon (§12: サムネイル失敗だけで解析を中止しない).
+            // placeholder icon (§12: a failed thumbnail alone must not abort the analysis).
             return null;
         }
     }

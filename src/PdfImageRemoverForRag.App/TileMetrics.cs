@@ -1,7 +1,7 @@
 namespace PdfImageRemoverForRag.App;
 
 /// <summary>
-/// The タイル形式 view's measurements, in LOGICAL (96-DPI) pixels.
+/// The Tiles view's measurements, in LOGICAL (96-DPI) pixels.
 ///
 /// Every one of these must be put through <c>Dip()</c> before it reaches a
 /// coordinate. The tile view is measured entirely by hand — it paints its own

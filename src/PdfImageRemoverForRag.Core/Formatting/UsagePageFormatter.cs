@@ -1,7 +1,7 @@
 namespace PdfImageRemoverForRag.Core.Formatting;
 
 /// <summary>
-/// Compact display of a set of page numbers — the UI "使用ページ" column
+/// Compact display of a set of page numbers — the UI's usage-pages column
 /// (§11.3) shows either "1, 2, 3" or "1〜50" or a mix like "1〜3, 5, 7〜9".
 /// Ranges use the Japanese wave-dash (U+FF5E) exactly as printed in the spec.
 /// </summary>

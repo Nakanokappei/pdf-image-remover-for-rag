@@ -3,7 +3,7 @@ using System.Globalization;
 namespace PdfImageRemoverForRag.Core.Formatting;
 
 /// <summary>
-/// Human-readable byte counts for the object list's "推定容量" column
+/// Human-readable byte counts for the object list's "Est. Size" column
 /// (spec §11.3: KB or MB). Kept in Core next to the other UI formatters so
 /// the App layer never invents its own numeric formatting.
 /// </summary>

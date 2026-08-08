@@ -36,7 +36,10 @@ public sealed record CrossFileObjectGroup(
     ShapeGeometry? ShapeGeometry = null,
     DrawingGeometry? DrawingGeometry = null)
 {
-    /// <summary>Total placements across every file (UI 使用回数 / tile badge).</summary>
+    /// <summary>
+    /// Total placements across every file (the UI's Usage column and the tile
+    /// badge).
+    /// </summary>
     public int UsageCount => FileOccurrences.Sum(f => f.Occurrences.Count);
 
     /// <summary>Number of files that contain this image.</summary>

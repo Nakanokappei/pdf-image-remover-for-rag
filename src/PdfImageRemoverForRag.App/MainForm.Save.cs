@@ -103,7 +103,7 @@ internal sealed partial class MainForm
     /// <summary>
     /// Choose the output path(s) before any work starts. One affected file
     /// keeps the classic save dialog (§15); several files ask for an output
-    /// folder and auto-name each as 元ファイル名_cleaned.pdf with a numeric
+    /// folder and auto-name each as <name>_cleaned.pdf with a numeric
     /// suffix on collisions.
     /// </summary>
     bool TryResolveDestinations(

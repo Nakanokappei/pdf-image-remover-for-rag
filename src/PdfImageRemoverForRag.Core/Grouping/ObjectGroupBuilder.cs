@@ -7,7 +7,7 @@ namespace PdfImageRemoverForRag.Core.Grouping;
 /// <see cref="ObjectGroup"/> instances by stream SHA-256 (spec §10).
 /// Keeping this logic in Core — separated from the PDFsharp-dependent
 /// analyzer — is what makes grouping unit-testable without touching a real
-/// PDF (spec §24 "同一画像のグループ化").
+/// PDF (spec §24 "grouping identical images").
 /// </summary>
 public sealed class ObjectGroupBuilder
 {

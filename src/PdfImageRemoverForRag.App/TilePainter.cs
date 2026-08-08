@@ -23,7 +23,7 @@ internal readonly record struct TileVisual(
     int UsageCount);
 
 /// <summary>
-/// Draws one tile of the タイル形式 view into a rectangle.
+/// Draws one tile of the Tiles view into a rectangle.
 ///
 /// This is deliberately not a control. The view used to be a FlowLayoutPanel
 /// holding one <c>ImageTile</c> control per object, and on a real document that

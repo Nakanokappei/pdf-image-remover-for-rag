@@ -124,7 +124,7 @@ internal sealed partial class MainForm
     /// Open the PDFs passed on the command line, once the window is visible.
     ///
     /// Deferred to OnShown rather than the constructor so the user sees the
-    /// window and its "解析しています…" status while the analysis runs, instead
+    /// window and its "Analyzing PDF…" status while the analysis runs, instead
     /// of a delay before anything appears. No workspace exists yet at startup,
     /// so this skips the replace-confirmation the other open paths need.
     /// </summary>
@@ -288,7 +288,7 @@ internal sealed partial class MainForm
         ConfigureObjectListGrid();
 
         // Table and tile views share one host panel; visibility is toggled
-        // by the 表示 menu. Neither needs a header of its own: what a header
+        // by the View menu. Neither needs a header of its own: what a header
         // would say about one file is wrong as soon as several are open.
         var viewHost = new Panel { Dock = DockStyle.Fill };
         viewHost.Controls.Add(_objectListGrid);
@@ -339,7 +339,7 @@ internal sealed partial class MainForm
         // double-click auto-fit is wired via ColumnDividerDoubleClick.
         _objectListGrid.AllowUserToResizeColumns = true;
 
-        // Excel-style 表頭 / 表側: the column-header row and the row-number gutter
+        // Excel-style table furniture: the column-header row and the row-number gutter
         // are custom-painted (OnGridCellPainting → PaintExcelHeader) with the
         // sampled highlight / shadow colors. Visual styles off so our painting is
         // not overdrawn; the border styles below are just the non-painted fallback.
@@ -347,7 +347,7 @@ internal sealed partial class MainForm
         _objectListGrid.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.Single;
         _objectListGrid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
 
-        // 表側 = row-number gutter (DataGridView row headers), same Excel look.
+        // Row-number gutter (DataGridView row headers), same Excel look.
         _objectListGrid.RowHeadersVisible = true;
         _objectListGrid.RowHeadersBorderStyle = DataGridViewHeaderBorderStyle.Single;
         // Width is set by hand in FitRowHeaderWidth after each rebuild.
@@ -396,13 +396,13 @@ internal sealed partial class MainForm
         SetColumnWidth(_usageCountColumn, 64);
         SetColumnWidth(_compressionColumn, 90);
         SetColumnWidth(_estimatedSizeColumn, 90);
-        // The rightmost column fills the leftover width (帳尻合わせ): on a wider
+        // The rightmost column fills the leftover width, taking up the slack: on a wider
         // window it grows, so the table always tracks the window with no gap; on
         // a narrower window the other (fixed) columns force a horizontal scroll.
         _warningColumn.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
         _warningColumn.MinimumWidth = 100;
 
-        // Column alignment: ☑ / タイプ / 圧縮 centered; サイズ / 使用回数 / 推定容量
+        // Column alignment: ☑ / Type / Compression centered; Size / Usage / Est. Size
         // right-aligned (numeric-style columns). Header cells match their body.
         SetColumnAlignment(_deleteColumn, DataGridViewContentAlignment.MiddleCenter);
         // No left/edge padding so the centered checkbox has no excess margin.
@@ -430,7 +430,7 @@ internal sealed partial class MainForm
             _deleteColumn.HeaderCell.Style.Font = _glyphHeaderFont;
         }
 
-        // Initial / reset sort order: 使用回数 descending (§ open behavior).
+        // Initial / reset sort order: Usage descending (§ open behavior).
         _sortColumn = _usageCountColumn;
         _sortAscending = false;
     }

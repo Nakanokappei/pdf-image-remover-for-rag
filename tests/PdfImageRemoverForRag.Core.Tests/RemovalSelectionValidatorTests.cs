@@ -4,7 +4,7 @@ using Xunit;
 
 namespace PdfImageRemoverForRag.Core.Tests;
 
-// Spec §24 "削除対象選択モデル" and "削除不能画像の選択禁止判定" — the two
+// Spec §24 "removal selection model" and "refusing selection of unremovable images" — the two
 // gates the App must enforce before invoking IPdfDocumentCleaner.
 public class RemovalSelectionValidatorTests
 {
@@ -52,7 +52,7 @@ public class RemovalSelectionValidatorTests
         var groups = new[]
         {
             MakeGroup("IMG_001", isSafelyRemovable: false,
-                warningMessage: "複雑なPDF構造のため、この画像は安全に削除できません。"),
+                warningMessage: "This image cannot be removed safely because of the PDF's complex structure."),
         };
         var validator = new RemovalSelectionValidator(groups);
         var outcome = validator.Validate(new[]
@@ -62,7 +62,7 @@ public class RemovalSelectionValidatorTests
         Assert.False(outcome.IsValid);
         Assert.Empty(outcome.Accepted);
         var error = Assert.Single(outcome.Errors);
-        Assert.Contains("削除できません", error);
+        Assert.Contains("cannot be removed safely", error);
     }
 
     [Fact]

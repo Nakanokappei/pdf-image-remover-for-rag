@@ -4,7 +4,7 @@ using Xunit;
 
 namespace PdfImageRemoverForRag.Core.Tests;
 
-// Spec §24 "ページ全体画像候補判定" — verifies the 90 % threshold behavior
+// Spec §24 "full-page image detection" — verifies the 90 % threshold behavior
 // including the boundary and the "coverage in only one dimension" case.
 public class FullPageImageDetectorTests
 {

@@ -4,7 +4,7 @@ namespace PdfImageRemoverForRag.App;
 
 /// <summary>
 /// Error dialog per spec §17: user-facing description, suggested remedy,
-/// and a "詳細をコピー" button that puts the technical details (exception
+/// and a "Copy Details" button that puts the technical details (exception
 /// type, message, stack trace) on the clipboard. The stack trace itself is
 /// never rendered on screen.
 /// </summary>

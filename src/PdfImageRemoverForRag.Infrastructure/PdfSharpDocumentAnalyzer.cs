@@ -40,7 +40,7 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
         if (!PdfFileSignature.LooksLikePdf(pdfFilePath))
         {
             throw new PdfCleanerException(PdfCleanerErrorKind.NotAPdf,
-                "選択されたファイルは PDF ではありません。");
+                "The selected file is not a PDF.");
         }
 
         // The PDFsharp calls themselves are synchronous; wrap in Task.Run so
@@ -209,7 +209,7 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
                         // to remove — we cannot rewrite the shared Form's
                         // content stream without side effects on other pages.
                         accumulator.MarkUnsafe(
-                            "複雑なPDF構造のため、この画像は安全に削除できません。");
+                            "This image cannot be removed safely because of the PDF's complex structure.");
                         foreach (var call in formCalls)
                         {
                             accumulator.Occurrences.Add(new ObjectOccurrence(
@@ -290,7 +290,7 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
         }
         catch (Exception ex)
         {
-            throw PdfsharpExceptionMapper.Map(ex, "PDF 解析");
+            throw PdfsharpExceptionMapper.Map(ex, "PDF analysis");
         }
     }
 

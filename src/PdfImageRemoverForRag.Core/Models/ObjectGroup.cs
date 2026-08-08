@@ -35,7 +35,7 @@ public sealed record ObjectGroup(
     ShapeGeometry? ShapeGeometry = null,
     DrawingGeometry? DrawingGeometry = null)
 {
-    /// <summary>Total number of placements across all pages (§11.3 "使用回数").</summary>
+    /// <summary>Total number of placements across all pages (§11.3 "Usage").</summary>
     public int UsageCount => Occurrences.Count;
 
     /// <summary>Distinct pages that draw this image, in ascending order.</summary>

@@ -3,7 +3,7 @@ using Xunit;
 
 namespace PdfImageRemoverForRag.Core.Tests;
 
-// Spec §24 "保存ファイル名生成", "元ファイル上書き防止" and §15.
+// Spec §24 "output file naming", "never overwrite the source" and §15.
 public class CleanedFileNamerTests
 {
     [Fact]

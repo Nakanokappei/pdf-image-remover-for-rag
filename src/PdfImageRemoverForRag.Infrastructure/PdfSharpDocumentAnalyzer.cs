@@ -88,7 +88,8 @@ public sealed class PdfSharpDocumentAnalyzer : IPdfDocumentAnalyzer
             PageCount: pageCount,
             IsEncrypted: isEncrypted,
             ObjectGroups: groups,
-            OverlapRegions: overlapRegions);
+            OverlapRegions: overlapRegions,
+            Pages: pageDimensions);
     }
 
     static (List<ObjectDiscovery> Discoveries,

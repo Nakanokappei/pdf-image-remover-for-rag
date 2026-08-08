@@ -286,9 +286,9 @@ internal interface IStrings
     string FlattenDescription { get; }
 
     /// <summary>
-    /// Shown in the panel when the object selected in the list overlaps nothing
-    /// anywhere, so there is no unit to list. States the fact — it is not an
-    /// error, and most objects in a document are like this.
+    /// Last-resort line in the panel, for a selected object with no placement in
+    /// any open file. Rare now that every place is listed, overlapping or not;
+    /// it stays because a blank panel says nothing at all.
     /// </summary>
     string FlattenObjectNotOverlapping { get; }
 

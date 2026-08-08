@@ -5,6 +5,12 @@ namespace PdfImageRemoverForRag.Core.Models;
 /// object list and to decide whether removal is safe fits inside this
 /// record — analysis runs off the UI thread and the UI reads immutable data.
 /// </summary>
+/// <param name="Pages">
+/// Every page's size, in the file's own order. Carried because a placement
+/// outside any overlap region still has to become one — the panel lists every
+/// place an object is drawn, and a region needs the page it is on — and only
+/// the analyzer has read the page to know how big it is.
+/// </param>
 /// <param name="OverlapRegions">
 /// Places where objects of different kinds overlap, per page — what the flatten
 /// side offers to turn into a single image. Deliberately NOT folded into
@@ -17,7 +23,8 @@ public sealed record PdfDocumentInfo(
     int PageCount,
     bool IsEncrypted,
     IReadOnlyList<ObjectGroup> ObjectGroups,
-    IReadOnlyList<OverlapRegion> OverlapRegions)
+    IReadOnlyList<OverlapRegion> OverlapRegions,
+    IReadOnlyList<PageDimensions> Pages)
 {
     /// <summary>File name without directory, for compact UI display.</summary>
     public string FileName => Path.GetFileName(FilePath);

@@ -122,6 +122,14 @@ internal static class L10n
     public static string FlattenUnitLabel(int document, int page, int number) =>
         $"Doc:{document:00} P.{page:00} Unit {number:00}";
 
+    /// <summary>
+    /// A place where the object is drawn with nothing overlapping it: the same
+    /// heading as a unit's, minus the unit — because there is no unit, and the
+    /// two have to line up when they are listed together.
+    /// </summary>
+    public static string PlaceLabel(int document, int page) =>
+        $"Doc:{document:00} P.{page:00}";
+
     /// <summary>Compression cell for non-image objects (they have none).</summary>
     public static string CompressionNotApplicable => "N/A";
 

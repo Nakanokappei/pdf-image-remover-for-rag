@@ -23,7 +23,7 @@ internal sealed partial class MainForm
         AllowDrop = !busy;
         _imageListGrid.Enabled = !busy;
         _tileView.Enabled = !busy;
-        _flattenPanel.Enabled = !busy;
+        _graphicsObjectsPanel.Enabled = !busy;
         _progressIndicator.Visible = busy;
         // The pointer says it too. Analysis and saving both run off the UI
         // thread, so the window keeps repainting and looks ready for input it

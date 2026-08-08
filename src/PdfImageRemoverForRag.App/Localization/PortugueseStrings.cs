@@ -141,7 +141,7 @@ internal sealed class PortugueseStrings : IStrings
     public string AboutLicenseLink => "Informações de licença";
     public string ContextMenuUsageLocations => "Mostrar &locais de utilização…";
 
-    public string FlattenPanelTitle => "Objetos gráficos";
+    public string GraphicsObjectsTitle => "Objetos gráficos";
     public string FlattenUnitMenu => "Comandos desta unidade";
     public string FlattenVisible => "Transformar os objetos visíveis em imagem";
     public string FlattenSelected => "Transformar os objetos selecionados em imagem";

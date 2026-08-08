@@ -149,7 +149,7 @@ internal sealed partial class MainForm
     protected override void OnResize(EventArgs e)
     {
         base.OnResize(e);
-        if (IsHandleCreated && !_flattenPanelWidthIsTheUsersChoice)
+        if (IsHandleCreated && !_graphicsObjectsPanelWidthIsTheUsersChoice)
         {
             ApplyWorkspaceSplitMetrics();
         }
@@ -209,7 +209,7 @@ internal sealed partial class MainForm
     }
 
     /// <summary>
-    /// Give the flatten panel the width in <see cref="_flattenPanelWidth"/>,
+    /// Give the flatten panel the width in <see cref="_graphicsObjectsPanelWidth"/>,
     /// which is in logical pixels. This SEEDS the panel — at the size the window
     /// happens to be — and from then on the splitter keeps its share of the
     /// width by itself, so resizing the window never asks the user to drag it
@@ -222,8 +222,8 @@ internal sealed partial class MainForm
         _workspaceSplit.Panel1MinSize = Dip(320);
         _workspaceSplit.Panel2MinSize = Dip(200);
 
-        int wanted = _flattenPanelWidthIsTheUsersChoice
-            ? Dip(_flattenPanelWidth)
+        int wanted = _graphicsObjectsPanelWidthIsTheUsersChoice
+            ? Dip(_graphicsObjectsPanelWidth)
             : GoldenPanelWidth();
         int room = _workspaceSplit.Width
                  - _workspaceSplit.Panel1MinSize - _workspaceSplit.SplitterWidth;
@@ -279,8 +279,8 @@ internal sealed partial class MainForm
         _workspaceSplitterDragged = false;
         int panelWidth = _workspaceSplit.Width
                        - _workspaceSplit.SplitterDistance - _workspaceSplit.SplitterWidth;
-        _flattenPanelWidth = (int)Math.Round(panelWidth * 96.0 / DeviceDpi);
-        _flattenPanelWidthIsTheUsersChoice = true;
+        _graphicsObjectsPanelWidth = (int)Math.Round(panelWidth * 96.0 / DeviceDpi);
+        _graphicsObjectsPanelWidthIsTheUsersChoice = true;
     }
 
     void BuildLayout()
@@ -299,7 +299,7 @@ internal sealed partial class MainForm
         // The tree stays put when the view switches to tiles: it describes the
         // document, not the way the objects happen to be drawn.
         _workspaceSplit.Panel1.Controls.Add(viewHost);
-        _workspaceSplit.Panel2.Controls.Add(_flattenPanel);
+        _workspaceSplit.Panel2.Controls.Add(_graphicsObjectsPanel);
 
         _statusStrip.Items.Add(_statusLabel);
         _statusStrip.Items.Add(_progressIndicator);
@@ -574,7 +574,7 @@ internal sealed partial class MainForm
         // The columns just decided how much room the list wants, and the split
         // is the answer to that question — re-asked here so opening a document
         // does not leave a scroll bar under a table the window could hold.
-        if (!_flattenPanelWidthIsTheUsersChoice) ApplyWorkspaceSplitMetrics();
+        if (!_graphicsObjectsPanelWidthIsTheUsersChoice) ApplyWorkspaceSplitMetrics();
     }
 
     /// <summary>

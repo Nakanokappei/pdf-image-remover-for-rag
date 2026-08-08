@@ -134,7 +134,7 @@ internal sealed class KoreanStrings : IStrings
     public string AboutLicenseLink => "라이선스 정보";
     public string ContextMenuUsageLocations => "사용 위치 표시(&U)…";
 
-    public string FlattenPanelTitle => "그래픽 개체";
+    public string GraphicsObjectsTitle => "그래픽 개체";
     public string FlattenUnitMenu => "이 단위의 명령";
     public string FlattenVisible => "보이는 개체를 이미지로 만들기";
     public string FlattenSelected => "선택한 개체를 이미지로 만들기";

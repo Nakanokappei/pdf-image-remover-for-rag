@@ -139,7 +139,7 @@ internal sealed class HindiStrings : IStrings
     public string AboutLicenseLink => "लाइसेंस जानकारी";
     public string ContextMenuUsageLocations => "उपयोग स्थान दिखाएँ(&U)…";
 
-    public string FlattenPanelTitle => "ग्राफ़िक ऑब्जेक्ट";
+    public string GraphicsObjectsTitle => "ग्राफ़िक ऑब्जेक्ट";
     public string FlattenUnitMenu => "इस यूनिट के कमांड";
     public string FlattenVisible => "दिख रहे ऑब्जेक्ट को चित्र बनाएँ";
     public string FlattenSelected => "चुने हुए ऑब्जेक्ट को चित्र बनाएँ";

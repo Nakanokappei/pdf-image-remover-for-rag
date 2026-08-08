@@ -14,7 +14,7 @@ namespace PdfImageRemoverForRag.App;
 /// nullable bitmap it would have to guess, and guessing is how a view comes to
 /// promise a thumbnail that is never coming.
 /// </param>
-internal readonly record struct LayerThumbnail(
+internal readonly record struct ObjectThumbnail(
     CrossFileImageGroup? Group,
     Image? Bitmap,
     bool CanEverRender);
@@ -41,7 +41,7 @@ internal readonly record struct LayerThumbnail(
 /// a row index would be lost the moment the user looked at another object. What
 /// is hidden lives in the workspace, and the panel asks.
 /// </summary>
-internal sealed class FlattenPanel : UserControl
+internal sealed class GraphicsObjectsPanel : UserControl
 {
     /// <summary>One unit on one page of one file, as the panel lists it.</summary>
     sealed record UnitEntry(
@@ -64,7 +64,7 @@ internal sealed class FlattenPanel : UserControl
     CrossFileImageGroup? _selectedGroup;
     bool _anyDocuments;
 
-    readonly LayerListView _list;
+    readonly UnitListView _list;
     // Title and one button share a bar. The button is a button and not a menu
     // because there is one command at this level — everything else belongs to a
     // unit and lives in that unit's row. A menu holding a single item asks the
@@ -74,7 +74,7 @@ internal sealed class FlattenPanel : UserControl
     {
         Dock = DockStyle.Fill,
         AutoSize = false,
-        Text = L10n.FlattenPanelTitle,
+        Text = L10n.GraphicsObjectsTitle,
         TextAlign = ContentAlignment.MiddleLeft,
         UseMnemonic = false,
     };
@@ -197,7 +197,7 @@ internal sealed class FlattenPanel : UserControl
     /// One call rather than two, so the panel cannot pair a group with a
     /// bitmap decided under different rules.
     /// </summary>
-    public Func<PlacedObject, LayerThumbnail>? ThumbnailFor { get; set; }
+    public Func<PlacedObject, ObjectThumbnail>? ThumbnailFor { get; set; }
 
     /// <summary>
     /// The file to render a page from: the document with the hidden layers
@@ -254,14 +254,14 @@ internal sealed class FlattenPanel : UserControl
     // repeatedly, while the panel is still being built.
     bool _splitterDragged;
 
-    public FlattenPanel()
+    public GraphicsObjectsPanel()
     {
-        _list = new LayerListView(VisualForRow, IsGroupRow)
+        _list = new UnitListView(VisualForRow, IsGroupRow)
         {
             Dock = DockStyle.Fill,
             Visible = false,
         };
-        _list.AccessibleName = L10n.FlattenPanelTitle;
+        _list.AccessibleName = L10n.GraphicsObjectsTitle;
         _list.AccessibleDescription = L10n.FlattenDescription;
         _list.VisibilityToggled += OnVisibilityToggled;
         _list.ExpandToggled += OnExpandToggled;
@@ -273,7 +273,7 @@ internal sealed class FlattenPanel : UserControl
         _wholePageWarning.ForeColor = MainForm.WarningTextColour;
         _title.Font = new Font(Font, FontStyle.Bold);
 
-        _mergeButton.AccessibleName = $"{L10n.FlattenMerge} ({L10n.FlattenPanelTitle})";
+        _mergeButton.AccessibleName = $"{L10n.FlattenMerge} ({L10n.GraphicsObjectsTitle})";
         _mergeButton.Click += (_, _) => EditUnits(merge: true);
         _unitMenu.Items.AddRange(new ToolStripItem[]
         {
@@ -575,7 +575,7 @@ internal sealed class FlattenPanel : UserControl
     bool IsGroupRow(int index) =>
         index >= 0 && index < _rows.Count && _rows[index].Object is null;
 
-    LayerVisual VisualForRow(int index)
+    RowVisual VisualForRow(int index)
     {
         if (index < 0 || index >= _rows.Count) return default;
         var row = _rows[index];
@@ -586,7 +586,7 @@ internal sealed class FlattenPanel : UserControl
             // The folder's eye answers for everything inside it, and has a third
             // answer when its objects disagree.
             int hidden = unit.Region.Members.Count(m => Hidden(unit, m));
-            return new LayerVisual(
+            return new RowVisual(
                 IsGroup: true,
                 Title: L10n.FlattenUnitLabel(
                         unit.DocumentNumber, unit.Region.PageNumber, unit.NumberOnPage)
@@ -599,9 +599,9 @@ internal sealed class FlattenPanel : UserControl
                 Thumbnail: null,
                 TextContent: null,
                 IsThumbnailPending: false,
-                Visibility: hidden == 0 ? LayerVisibility.Visible
-                    : hidden == unit.Region.Members.Count ? LayerVisibility.Hidden
-                    : LayerVisibility.Mixed,
+                Visibility: hidden == 0 ? RowVisibility.Visible
+                    : hidden == unit.Region.Members.Count ? RowVisibility.Hidden
+                    : RowVisibility.Mixed,
                 IsExpanded: unit.Expanded);
         }
 
@@ -612,14 +612,14 @@ internal sealed class FlattenPanel : UserControl
         string? text = ImageListRow.ThumbnailText(member.Kind, member.Identity);
         var thumbnail = text is null ? ThumbnailFor?.Invoke(member) ?? default : default;
 
-        return new LayerVisual(
+        return new RowVisual(
             IsGroup: false,
             Title: ObjectLabel(member),
             Subtitle: null,
             Thumbnail: thumbnail.Bitmap,
             TextContent: text,
             IsThumbnailPending: text is null && thumbnail.Bitmap is null && thumbnail.CanEverRender,
-            Visibility: Hidden(unit, member) ? LayerVisibility.Hidden : LayerVisibility.Visible,
+            Visibility: Hidden(unit, member) ? RowVisibility.Hidden : RowVisibility.Visible,
             IsExpanded: false);
     }
 

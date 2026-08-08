@@ -161,7 +161,7 @@ internal sealed partial class MainForm : Form
         Orientation = Orientation.Vertical,
         FixedPanel = FixedPanel.Panel2,
     };
-    readonly FlattenPanel _flattenPanel = new() { Dock = DockStyle.Fill };
+    readonly GraphicsObjectsPanel _graphicsObjectsPanel = new() { Dock = DockStyle.Fill };
 
     // Width of the 統合 panel in LOGICAL pixels: seeded from the saved layout,
     // updated as the user drags, re-applied on every DPI change, written back at
@@ -169,15 +169,15 @@ internal sealed partial class MainForm : Form
     // because re-deriving it at a new scale would move the panel every time the
     // window changed monitor. Wide enough for a file name and an indented
     // object label is the starting point.
-    int _flattenPanelWidth = DefaultFlattenPanelWidth;
-    const int DefaultFlattenPanelWidth = 300;
+    int _graphicsObjectsPanelWidth = DefaultGraphicsObjectsPanelWidth;
+    const int DefaultGraphicsObjectsPanelWidth = 300;
 
     // Whether that width is the USER's answer — dragged now or restored from a
     // session where they dragged it. Until it is, the panel takes a share of
     // the window instead, so a big window gets a big panel without anybody
     // having to ask for one. A drag is never overruled: the share is what to do
     // in the absence of a choice, not a correction of one.
-    bool _flattenPanelWidthIsTheUsersChoice;
+    bool _graphicsObjectsPanelWidthIsTheUsersChoice;
 
     // The share is the golden section (see GoldenSection): a proportion rather
     // than a number of pixels answers the question the number could not — what
@@ -385,10 +385,10 @@ internal sealed partial class MainForm : Form
             }
             if (savedLayout.FlattenPanelWidth > 0)
             {
-                _flattenPanelWidth = savedLayout.FlattenPanelWidth;
-                _flattenPanelWidthIsTheUsersChoice = true;
+                _graphicsObjectsPanelWidth = savedLayout.FlattenPanelWidth;
+                _graphicsObjectsPanelWidthIsTheUsersChoice = true;
             }
-            _flattenPanel.PreviewHeight = savedLayout.FlattenPreviewHeight;
+            _graphicsObjectsPanel.PreviewHeight = savedLayout.FlattenPreviewHeight;
         }
 
         BuildMenu();
@@ -441,37 +441,37 @@ internal sealed partial class MainForm : Form
         _tileView.RangeToggleRequested += OnTileRangeToggled;
         _tileView.TileContextRequested += OnTileContextRequested;
 
-        _flattenPanel.SelectionChanged += OnFlattenSelectionChanged;
-        _flattenPanel.FlattenRequested += OnFlattenRequested;
+        _graphicsObjectsPanel.SelectionChanged += OnGraphicsObjectsSelectionChanged;
+        _graphicsObjectsPanel.FlattenRequested += OnFlattenRequested;
         // A layer is not drawn when this one placement of it is hidden, or when
         // the object it belongs to is ticked for removal everywhere. Two marks
         // with two scopes, and the eye shows the result of both.
-        _flattenPanel.IsHidden = (filePath, pageNumber, placed) =>
+        _graphicsObjectsPanel.IsHidden = (filePath, pageNumber, placed) =>
             _workflow.IsPlacementHidden(filePath, pageNumber, placed)
             || (_workflow.ImageGroups.FirstOrDefault(g => g.Matches(placed)) is { } group
                 && _selectedHashes.Contains(group.Hash));
-        _flattenPanel.VisibilityChangeRequested += OnLayerVisibilityChangeRequested;
+        _graphicsObjectsPanel.VisibilityChangeRequested += OnObjectVisibilityChangeRequested;
         // A hidden layer is shown by not being there: the preview renders a copy
         // of the document with those layers taken out, which the workspace
         // builds and keeps until they change.
-        _flattenPanel.PreviewSourceFor = filePath => _workflow.PreviewSourceAsync(filePath);
+        _graphicsObjectsPanel.PreviewSourceFor = filePath => _workflow.PreviewSourceAsync(filePath);
         // A hand-made merge or split goes back to the workspace, and the panel
         // is rebuilt from it — the panel describes the documents, so it must
         // not be the only place a correction exists.
-        _flattenPanel.UnitsEdited += (_, e) =>
+        _graphicsObjectsPanel.UnitsEdited += (_, e) =>
         {
             _workflow.ReplaceOverlapRegions(e.FilePath, e.Units);
-            _flattenPanel.SetDocuments(_workflow.OpenDocuments);
-            ShowFlattenPanelForCurrentRow();
+            _graphicsObjectsPanel.SetDocuments(_workflow.OpenDocuments);
+            ShowGraphicsObjectsForCurrentRow();
         };
         // The panel holds no bitmaps and knows nothing of the workspace: it
         // asks while painting, so its rows can never outlive an eviction and it
         // never has to be told a thumbnail arrived.
-        _flattenPanel.ThumbnailFor = LayerThumbnailFor;
-        _flattenPanel.ViewportChanged += (_, _) => ScheduleThumbnailLoad();
+        _graphicsObjectsPanel.ThumbnailFor = ObjectThumbnailFor;
+        _graphicsObjectsPanel.ViewportChanged += (_, _) => ScheduleThumbnailLoad();
         // Whichever view is showing, moving the cursor re-aims the panel.
-        _imageListGrid.CurrentCellChanged += (_, _) => ShowFlattenPanelForCurrentRow();
-        _tileView.FocusedGroupChanged += (_, _) => ShowFlattenPanelForCurrentRow();
+        _imageListGrid.CurrentCellChanged += (_, _) => ShowGraphicsObjectsForCurrentRow();
+        _tileView.FocusedGroupChanged += (_, _) => ShowGraphicsObjectsForCurrentRow();
 
         _usageLocationsMenuItem.Click += OnUsageLocationsClicked;
         _undoFlattenMenuItem.Click += OnUndoFlattenRequested;
@@ -501,7 +501,7 @@ internal sealed partial class MainForm : Form
         {
             if (_screenshot is null)
             {
-                WindowLayoutStore.Save(this, _flattenPanelWidth, _flattenPanel.PreviewHeight);
+                WindowLayoutStore.Save(this, _graphicsObjectsPanelWidth, _graphicsObjectsPanel.PreviewHeight);
             }
         };
         FormClosed += (_, _) => DisposeThumbnailImages(disposePlaceholder: true);

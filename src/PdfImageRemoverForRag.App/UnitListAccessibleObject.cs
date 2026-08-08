@@ -1,7 +1,7 @@
 namespace PdfImageRemoverForRag.App;
 
 /// <summary>
-/// Publishes the painted rows of <see cref="LayerListView"/> to assistive
+/// Publishes the painted rows of <see cref="UnitListView"/> to assistive
 /// technology.
 ///
 /// The rows are pixels, not controls, so without this a screen reader sees one
@@ -13,18 +13,18 @@ namespace PdfImageRemoverForRag.App;
 /// and the UIA fragment API is internal to WinForms in .NET 8, so it cannot be
 /// implemented from here; the object list stays the fully accessible route.
 /// </summary>
-internal sealed class LayerListAccessibleObject : Control.ControlAccessibleObject
+internal sealed class UnitListAccessibleObject : Control.ControlAccessibleObject
 {
-    readonly LayerListView _owner;
+    readonly UnitListView _owner;
 
-    public LayerListAccessibleObject(LayerListView owner) : base(owner) => _owner = owner;
+    public UnitListAccessibleObject(UnitListView owner) : base(owner) => _owner = owner;
 
     public override AccessibleRole Role => AccessibleRole.List;
 
     public override int GetChildCount() => _owner.RowCount;
 
     public override AccessibleObject? GetChild(int index) =>
-        index >= 0 && index < _owner.RowCount ? new LayerRowAccessibleObject(_owner, index) : null;
+        index >= 0 && index < _owner.RowCount ? new UnitRowAccessibleObject(_owner, index) : null;
 
     public override AccessibleObject? GetFocused() =>
         _owner.FocusedRow >= 0 ? GetChild(_owner.FocusedRow) : null;
@@ -42,12 +42,12 @@ internal sealed class LayerListAccessibleObject : Control.ControlAccessibleObjec
 /// folder — open or closed. Toggling it hides or shows the layer, exactly as
 /// clicking its eye or pressing Space does.
 /// </summary>
-internal sealed class LayerRowAccessibleObject : AccessibleObject
+internal sealed class UnitRowAccessibleObject : AccessibleObject
 {
-    readonly LayerListView _owner;
+    readonly UnitListView _owner;
     readonly int _row;
 
-    public LayerRowAccessibleObject(LayerListView owner, int row)
+    public UnitRowAccessibleObject(UnitListView owner, int row)
     {
         _owner = owner;
         _row = row;
@@ -80,14 +80,14 @@ internal sealed class LayerRowAccessibleObject : AccessibleObject
             // rows, and several can be selected at once.
             if (_owner.IsRowSelected(_row)) states |= AccessibleStates.Selected;
 
-            var visual = _owner.RowVisual(_row);
+            var visual = _owner.VisualOfRow(_row);
             states |= visual.Visibility switch
             {
-                LayerVisibility.Visible => AccessibleStates.Checked,
+                RowVisibility.Visible => AccessibleStates.Checked,
                 // A folder holding some of each is neither shown nor hidden, and
                 // reporting it as either would be a lie the sighted user is not
                 // told — its eye shows the difference too.
-                LayerVisibility.Mixed => AccessibleStates.Mixed,
+                RowVisibility.Mixed => AccessibleStates.Mixed,
                 _ => AccessibleStates.None,
             };
 

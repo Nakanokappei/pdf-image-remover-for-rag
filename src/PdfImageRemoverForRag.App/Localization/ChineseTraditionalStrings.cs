@@ -137,7 +137,7 @@ internal sealed class ChineseTraditionalStrings : IStrings
     public string AboutLicenseLink => "授權資訊";
     public string ContextMenuUsageLocations => "顯示使用位置(&U)…";
 
-    public string FlattenPanelTitle => "圖形物件";
+    public string GraphicsObjectsTitle => "圖形物件";
     public string FlattenUnitMenu => "此單元的命令";
     public string FlattenVisible => "把可見物件變成圖片";
     public string FlattenSelected => "把所選物件變成圖片";

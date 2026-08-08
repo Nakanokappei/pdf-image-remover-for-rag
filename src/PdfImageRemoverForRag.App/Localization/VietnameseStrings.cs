@@ -143,7 +143,7 @@ internal sealed class VietnameseStrings : IStrings
     public string AboutLicenseLink => "Thông tin giấy phép";
     public string ContextMenuUsageLocations => "Hiển thị &Vị trí Sử dụng…";
 
-    public string FlattenPanelTitle => "Đối tượng đồ họa";
+    public string GraphicsObjectsTitle => "Đối tượng đồ họa";
     public string FlattenUnitMenu => "Lệnh của đơn vị này";
     public string FlattenVisible => "Biến các đối tượng hiển thị thành ảnh";
     public string FlattenSelected => "Biến các đối tượng đã chọn thành ảnh";

@@ -3,7 +3,7 @@ using System.Drawing.Drawing2D;
 namespace PdfImageRemoverForRag.App;
 
 /// <summary>Whether a layer is drawn — and, for a folder, whether all of it is.</summary>
-internal enum LayerVisibility
+internal enum RowVisibility
 {
     Visible,
     Hidden,
@@ -13,7 +13,7 @@ internal enum LayerVisibility
 }
 
 /// <summary>
-/// What one line of <see cref="LayerListView"/> shows. The view holds none of
+/// What one line of <see cref="UnitListView"/> shows. The view holds none of
 /// this: it asks for a row's visual while painting it, so the thumbnail cache
 /// stays free to dispose anything that scrolls out of its window.
 /// </summary>
@@ -29,14 +29,14 @@ internal enum LayerVisibility
 /// Whether the layer is drawn. A folder answers for everything inside it, and
 /// has a third answer when its objects disagree.
 /// </param>
-internal readonly record struct LayerVisual(
+internal readonly record struct RowVisual(
     bool IsGroup,
     string Title,
     string? Subtitle,
     Image? Thumbnail,
     string? TextContent,
     bool IsThumbnailPending,
-    LayerVisibility Visibility,
+    RowVisibility Visibility,
     bool IsExpanded);
 
 /// <summary>
@@ -66,7 +66,7 @@ internal readonly record struct LayerVisual(
 /// read; Narrator wants UIA fragments, whose API surface is internal to WinForms
 /// in .NET 8 and cannot be implemented from outside (see docs/known-limitations).
 /// </summary>
-internal sealed class LayerListView : Panel
+internal sealed class UnitListView : Panel
 {
     // Logical (96-DPI) metrics — every use goes through Dip(). Nothing painted
     // by hand in this app may assume 96 DPI; at 200 % it would come out half
@@ -82,7 +82,7 @@ internal sealed class LayerListView : Panel
     const int ThumbnailSize = 32;
     const int Gap = 6;
 
-    readonly Func<int, LayerVisual> _visualFor;
+    readonly Func<int, RowVisual> _visualFor;
     readonly Func<int, bool> _isGroupRow;
     int _rowCount;
     int _hoveredRow = -1;
@@ -129,7 +129,7 @@ internal sealed class LayerListView : Panel
 
     readonly ToolTip _toolTip = new();
 
-    public LayerListView(Func<int, LayerVisual> visualFor, Func<int, bool> isGroupRow)
+    public UnitListView(Func<int, RowVisual> visualFor, Func<int, bool> isGroupRow)
     {
         _visualFor = visualFor;
         // Asked separately from the visual because it decides the row's HEIGHT,
@@ -322,7 +322,7 @@ internal sealed class LayerListView : Panel
 
         // A hidden layer is greyed, the way an image editor greys one out: the
         // eye alone is a small mark to read a whole list by.
-        if (visual.Visibility == LayerVisibility.Hidden && !selected) text = SystemColors.GrayText;
+        if (visual.Visibility == RowVisibility.Hidden && !selected) text = SystemColors.GrayText;
 
         int x = icon.Right + Dip(Gap);
         var titleFont = visual.IsGroup ? new Font(Font, FontStyle.Bold) : Font;
@@ -421,11 +421,11 @@ internal sealed class LayerListView : Panel
     /// The eye: shown, struck through when hidden, and greyed when a folder's
     /// layers disagree — which is a state the objects themselves never have.
     /// </summary>
-    void DrawEye(Graphics g, Rectangle box, LayerVisibility visibility, Color color)
+    void DrawEye(Graphics g, Rectangle box, RowVisibility visibility, Color color)
     {
         DrawGlyph(g, box,
-            visibility == LayerVisibility.Hidden ? GlyphHidden : GlyphShown,
-            visibility == LayerVisibility.Mixed ? Color.FromArgb(128, color) : color);
+            visibility == RowVisibility.Hidden ? GlyphHidden : GlyphShown,
+            visibility == RowVisibility.Mixed ? Color.FromArgb(128, color) : color);
     }
 
     static void DrawDisclosure(Graphics g, Rectangle box, bool expanded, Color color)
@@ -468,7 +468,7 @@ internal sealed class LayerListView : Panel
         g.SmoothingMode = saved;
     }
 
-    void DrawThumbnail(Graphics g, Rectangle box, LayerVisual visual, Color muted)
+    void DrawThumbnail(Graphics g, Rectangle box, RowVisual visual, Color muted)
     {
         using (var frame = new Pen(SystemColors.ControlDark))
         {
@@ -791,7 +791,7 @@ internal sealed class LayerListView : Panel
     }
 
     // =======================================================================
-    // Accessibility surface (read by LayerListAccessibleObject)
+    // Accessibility surface (read by UnitListAccessibleObject)
     // =======================================================================
 
     internal int RowCount => _rowCount;
@@ -799,7 +799,7 @@ internal sealed class LayerListView : Panel
     internal bool IsRowSelected(int row) => _selected.Contains(row);
     internal Rectangle RowScreenBounds(int row) => RectangleToScreen(BoundsOf(row));
     internal int RowIndexAt(Point clientPoint) => RowAt(clientPoint);
-    internal LayerVisual RowVisual(int row) => _visualFor(row);
+    internal RowVisual VisualOfRow(int row) => _visualFor(row);
 
     /// <summary>
     /// What a screen reader reads for a row: its name, then the file and page
@@ -814,7 +814,7 @@ internal sealed class LayerListView : Panel
     }
 
     protected override AccessibleObject CreateAccessibilityInstance()
-        => new LayerListAccessibleObject(this);
+        => new UnitListAccessibleObject(this);
 
     protected override void OnMouseMove(MouseEventArgs e)
     {

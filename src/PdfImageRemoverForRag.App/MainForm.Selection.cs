@@ -311,7 +311,7 @@ internal sealed partial class MainForm
         // The layers panel draws the same fact as an eye, so it has to be told:
         // a tick made in the list closes the eye on the other side of the
         // window, and nothing else would keep the two in step.
-        _flattenPanel.RefreshVisibility();
+        _graphicsObjectsPanel.RefreshVisibility();
     }
 
     // --- row/tile context menu (使用箇所を表示…) --------------------------------
@@ -459,7 +459,7 @@ internal sealed partial class MainForm
         // number would describe neither.
         var parts = new List<string>(2);
         if (_selectedHashes.Count > 0) parts.Add(L10n.StatusSelection(_selectedHashes.Count));
-        int flattenCount = _flattenPanel.SelectedObjectCount;
+        int flattenCount = _graphicsObjectsPanel.SelectedObjectCount;
         if (flattenCount > 0) parts.Add(L10n.StatusFlattenSelection(flattenCount));
 
         if (parts.Count > 0)

@@ -20,7 +20,7 @@ internal sealed partial class MainForm
     // names several units but a unit names exactly one row — following the
     // selection the other way would have to guess which unit was meant.
 
-    void OnFlattenSelectionChanged(object? sender, EventArgs e)
+    void OnGraphicsObjectsSelectionChanged(object? sender, EventArgs e)
     {
         UpdateSelectionState();
         RefreshSelectionStatus();
@@ -37,8 +37,8 @@ internal sealed partial class MainForm
     /// tick is what is hiding it, so the tick goes. Everything of that object
     /// comes back, which is what "show it again" can honestly mean here.
     /// </summary>
-    void OnLayerVisibilityChangeRequested(
-        object? sender, FlattenPanel.VisibilityChangeEventArgs e)
+    void OnObjectVisibilityChangeRequested(
+        object? sender, GraphicsObjectsPanel.VisibilityChangeEventArgs e)
     {
         foreach (var placed in e.Objects)
         {
@@ -53,7 +53,7 @@ internal sealed partial class MainForm
         }
 
         SyncAllViewCheckStates();
-        _flattenPanel.RefreshVisibility();
+        _graphicsObjectsPanel.RefreshVisibility();
         UpdateSelectionState();
         RefreshSelectionStatus();
     }
@@ -64,7 +64,7 @@ internal sealed partial class MainForm
     /// is where the user sees that anything happened. Nothing they own is
     /// written; saving is still what does that.
     /// </summary>
-    async void OnFlattenRequested(object? sender, FlattenPanel.FlattenRequestedEventArgs e)
+    async void OnFlattenRequested(object? sender, GraphicsObjectsPanel.FlattenRequestedEventArgs e)
     {
         var places = e.Places;
         if (_isBusy || places.Count == 0) return;
@@ -194,7 +194,7 @@ internal sealed partial class MainForm
     /// Show the units the current row takes part in. Called from every place
     /// the current row can change, in either view.
     /// </summary>
-    void ShowFlattenPanelForCurrentRow() => _flattenPanel.ShowFor(CurrentDisplayGroup());
+    void ShowGraphicsObjectsForCurrentRow() => _graphicsObjectsPanel.ShowFor(CurrentDisplayGroup());
 
     /// <summary>
     /// Put every surface back in step with a workspace that has just changed
@@ -218,7 +218,7 @@ internal sealed partial class MainForm
         RebuildDisplay();
         AutoSizeContentColumns();
         FocusFirstRow();
-        _flattenPanel.SetDocuments(_workflow.OpenDocuments);
+        _graphicsObjectsPanel.SetDocuments(_workflow.OpenDocuments);
         SetStatus(status);
     }
 
@@ -244,13 +244,13 @@ internal sealed partial class MainForm
     /// once is not a removable text group, but it is still drawn on the page
     /// and still belongs to a unit.
     /// </summary>
-    LayerThumbnail LayerThumbnailFor(PlacedObject placed)
+    ObjectThumbnail ObjectThumbnailFor(PlacedObject placed)
     {
         var group = _workflow.ImageGroups.FirstOrDefault(g => g.Matches(placed));
         if (group is null) return default;
 
         var bitmap = _thumbnails.Grid(group.Hash);
-        return new LayerThumbnail(
+        return new ObjectThumbnail(
             group,
             bitmap ?? (_thumbnails.IsUnrenderable(group.Hash) ? _tilePlaceholderIcon : null),
             CanEverRender: bitmap is not null || !_thumbnails.IsUnrenderable(group.Hash));

@@ -133,7 +133,7 @@ internal sealed class JapaneseStrings : IStrings
     public string AboutLicenseLink => "ライセンス情報";
     public string ContextMenuUsageLocations => "使用箇所を表示(&U)…";
 
-    public string FlattenPanelTitle => "描画オブジェクト";
+    public string GraphicsObjectsTitle => "描画オブジェクト";
     public string FlattenUnitMenu => "このユニットの操作";
     public string FlattenVisible => "表示中オブジェクトを画像化";
     public string FlattenSelected => "選択オブジェクトを画像化";

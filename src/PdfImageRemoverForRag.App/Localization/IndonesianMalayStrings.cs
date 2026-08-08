@@ -145,7 +145,7 @@ internal sealed class IndonesianMalayStrings : IStrings
     public string AboutLicenseLink => "Informasi lisensi";
     public string ContextMenuUsageLocations => "Tampilkan &Lokasi Penggunaan…";
 
-    public string FlattenPanelTitle => "Objek grafis";
+    public string GraphicsObjectsTitle => "Objek grafis";
     public string FlattenUnitMenu => "Perintah untuk unit ini";
     public string FlattenVisible => "Jadikan objek terlihat sebagai gambar";
     public string FlattenSelected => "Jadikan objek terpilih sebagai gambar";

@@ -141,7 +141,7 @@ internal sealed class GermanStrings : IStrings
     public string AboutLicenseLink => "Lizenzinformationen";
     public string ContextMenuUsageLocations => "&Verwendungsorte anzeigen…";
 
-    public string FlattenPanelTitle => "Grafikobjekte";
+    public string GraphicsObjectsTitle => "Grafikobjekte";
     public string FlattenUnitMenu => "Befehle für diese Einheit";
     public string FlattenVisible => "Sichtbare Objekte zu einem Bild machen";
     public string FlattenSelected => "Gewählte Objekte zu einem Bild machen";

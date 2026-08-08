@@ -147,7 +147,7 @@ internal sealed class TurkishStrings : IStrings
     public string AboutLicenseLink => "Lisans bilgileri";
     public string ContextMenuUsageLocations => "&Kullanım Konumlarını Göster…";
 
-    public string FlattenPanelTitle => "Grafik nesneleri";
+    public string GraphicsObjectsTitle => "Grafik nesneleri";
     public string FlattenUnitMenu => "Bu birimin komutları";
     public string FlattenVisible => "Görünür nesneleri resme dönüştür";
     public string FlattenSelected => "Seçili nesneleri resme dönüştür";

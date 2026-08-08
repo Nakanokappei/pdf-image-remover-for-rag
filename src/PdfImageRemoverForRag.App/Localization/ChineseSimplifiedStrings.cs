@@ -135,7 +135,7 @@ internal sealed class ChineseSimplifiedStrings : IStrings
     public string AboutLicenseLink => "许可证信息";
     public string ContextMenuUsageLocations => "显示使用位置(&U)…";
 
-    public string FlattenPanelTitle => "图形对象";
+    public string GraphicsObjectsTitle => "图形对象";
     public string FlattenUnitMenu => "此单元的命令";
     public string FlattenVisible => "把可见对象变成图片";
     public string FlattenSelected => "把所选对象变成图片";

@@ -140,7 +140,7 @@ internal sealed class ItalianStrings : IStrings
     public string AboutLicenseLink => "Informazioni sulle licenze";
     public string ContextMenuUsageLocations => "Mostra &posizioni di utilizzo…";
 
-    public string FlattenPanelTitle => "Oggetti grafici";
+    public string GraphicsObjectsTitle => "Oggetti grafici";
     public string FlattenUnitMenu => "Comandi di questa unità";
     public string FlattenVisible => "Trasformare in immagine gli oggetti visibili";
     public string FlattenSelected => "Trasformare in immagine gli oggetti selezionati";

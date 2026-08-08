@@ -148,7 +148,7 @@ internal sealed class RussianStrings : IStrings
     public string AboutLicenseLink => "Сведения о лицензиях";
     public string ContextMenuUsageLocations => "Показать &места использования…";
 
-    public string FlattenPanelTitle => "Графические объекты";
+    public string GraphicsObjectsTitle => "Графические объекты";
     public string FlattenUnitMenu => "Команды этого блока";
     public string FlattenVisible => "Сделать изображением видимые объекты";
     public string FlattenSelected => "Сделать изображением выбранные объекты";

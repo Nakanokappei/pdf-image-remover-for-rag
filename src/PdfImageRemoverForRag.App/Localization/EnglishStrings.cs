@@ -137,7 +137,7 @@ internal sealed class EnglishStrings : IStrings
     public string AboutLicenseLink => "License information";
     public string ContextMenuUsageLocations => "Show &Usage Locations…";
 
-    public string FlattenPanelTitle => "Graphics objects";
+    public string GraphicsObjectsTitle => "Graphics objects";
     public string FlattenUnitMenu => "Commands for this unit";
     public string FlattenVisible => "Turn the visible objects into a picture";
     public string FlattenSelected => "Turn the selected objects into a picture";

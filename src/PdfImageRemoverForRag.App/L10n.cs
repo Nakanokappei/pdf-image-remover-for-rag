@@ -250,7 +250,7 @@ internal static class L10n
 
     // --- the flatten panel --------------------------------------------------
 
-    public static string FlattenPanelTitle => S.FlattenPanelTitle;
+    public static string GraphicsObjectsTitle => S.GraphicsObjectsTitle;
     public static string FlattenVisible => S.FlattenVisible;
     public static string FlattenSelected => S.FlattenSelected;
     public static string FlattenUnitMenu => S.FlattenUnitMenu;

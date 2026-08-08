@@ -250,7 +250,7 @@ internal interface IStrings
     /// application never touches. Not plain object either: an object in PDF is
     /// an indirect object, which is what <see cref="ColumnObjectId"/> numbers.
     /// </summary>
-    string FlattenPanelTitle { get; }
+    string GraphicsObjectsTitle { get; }
 
     /// <summary>
     /// Spoken name of the menu in a unit's own row, which shows a different

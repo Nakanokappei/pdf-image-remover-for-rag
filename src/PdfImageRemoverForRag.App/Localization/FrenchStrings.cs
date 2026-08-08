@@ -143,7 +143,7 @@ internal sealed class FrenchStrings : IStrings
     public string AboutLicenseLink => "Informations de licence";
     public string ContextMenuUsageLocations => "Afficher les &emplacements d'utilisation…";
 
-    public string FlattenPanelTitle => "Objets graphiques";
+    public string GraphicsObjectsTitle => "Objets graphiques";
     public string FlattenUnitMenu => "Commandes de cette unité";
     public string FlattenVisible => "Transformer les objets visibles en image";
     public string FlattenSelected => "Transformer les objets sélectionnés en image";

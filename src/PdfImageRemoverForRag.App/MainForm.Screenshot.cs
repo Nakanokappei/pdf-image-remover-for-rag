@@ -95,7 +95,7 @@ internal sealed partial class MainForm
 
             case ScreenshotViews.Objects:
                 FocusAnOverlappingObject();
-                _flattenPanel.SelectFirstObject();
+                _graphicsObjectsPanel.SelectFirstObject();
                 return this;
 
             case ScreenshotViews.ShownTypes:

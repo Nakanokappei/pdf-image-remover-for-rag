@@ -29,7 +29,7 @@ internal sealed partial class MainForm
         // BEFORE the views, not after: rebuilding them ends by pointing the
         // panel at the current row, and a panel rebuilt afterwards would clear
         // that again — which showed as an empty panel until the user moved.
-        _flattenPanel.SetDocuments(_workflow.OpenDocuments);
+        _graphicsObjectsPanel.SetDocuments(_workflow.OpenDocuments);
         RebuildDisplay();
     }
 
@@ -66,7 +66,7 @@ internal sealed partial class MainForm
             // grid's CurrentCellChanged does fire during the rebuild, but on the
             // first row added — before its Tag names a group — so the panel
             // would be left describing nothing until the user moved.
-            ShowFlattenPanelForCurrentRow();
+            ShowGraphicsObjectsForCurrentRow();
             // Whichever view is showing, fetch the bitmaps its viewport needs.
             ScheduleThumbnailLoad();
             // Re-assert which view is on screen: a rebuild must never leave the
@@ -328,7 +328,7 @@ internal sealed partial class MainForm
         // of the object list — they are whichever objects share a unit with the
         // current row, which can sit anywhere in it. So its visible rows are
         // added to the window rather than assumed to be inside it.
-        var alsoNeeded = _flattenPanel.VisibleThumbnailGroups();
+        var alsoNeeded = _graphicsObjectsPanel.VisibleThumbnailGroups();
 
         var (first, count) = _isTileView ? VisibleTileRange() : VisibleRowRange();
         if (count <= 0) return alsoNeeded;
@@ -373,7 +373,7 @@ internal sealed partial class MainForm
         // And the panel, which draws thumbnails of its own from the same cache.
         // It was left out, so its rows stayed empty until the pointer crossed
         // them and Windows repainted for its own reasons.
-        _flattenPanel.RefreshThumbnails();
+        _graphicsObjectsPanel.RefreshThumbnails();
     }
 
     /// <summary>

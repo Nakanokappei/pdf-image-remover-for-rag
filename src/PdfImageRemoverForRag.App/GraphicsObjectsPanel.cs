@@ -111,6 +111,11 @@ internal sealed class GraphicsObjectsPanel : UserControl
         Text = L10n.GraphicsObjectsTitle,
         TextAlign = ContentAlignment.MiddleLeft,
         UseMnemonic = false,
+        // The button beside it takes what its caption needs and the title fills
+        // the rest, so a long translation can leave the title short of room. It
+        // says so rather than losing a letter in silence: German read
+        // "Grafikobjekt" for "Grafikobjekte", and Russian stopped mid-word.
+        AutoEllipsis = true,
     };
     readonly Button _mergeButton = new()
     {

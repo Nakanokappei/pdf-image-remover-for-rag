@@ -153,7 +153,7 @@ internal sealed class RussianStrings : IStrings
     public string FlattenVisible => "Сделать изображением видимые объекты";
     public string FlattenSelected => "Сделать изображением выбранные объекты";
     public string FlattenUndo => "Отменить изображение";
-    public string FlattenMerge => "Объединить блоки";
+    public string FlattenMerge => "Объединить";
     public string FlattenSplit => "Отделить выбранные объекты";
 
     public string FlattenDescription =>

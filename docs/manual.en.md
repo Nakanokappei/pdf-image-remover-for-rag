@@ -77,6 +77,14 @@ English / 日本語 / 简体中文 / 繁體中文 / 한국어 / Deutsch / Franç
 - **There is no language switch inside the app.** It follows Windows.
 - Right-to-left languages such as Arabic are not supported (the whole screen would have to be mirrored).
 - **Only Japanese and English have a manual.** In every other language, **Help → Online Manual** opens the English page.
+- **You can start it in another language just once** by passing `--language` on the command line. Your Windows setting is untouched; it applies to that run only.
+
+  ```
+  PdfImageRemoverForRag.exe --language en
+  PdfImageRemoverForRag.exe report.pdf --language ja
+  ```
+
+  The tags are the sixteen above (`ja` `en` `zh-Hans` `zh-Hant` `ko` `de` `fr` `es` `it` `pt` `ru` `id` `ms` `hi` `tr` `vi`). It is **for the zip build**, where the exe is yours to start from a command line.
 
 The window position and size are remembered on exit and restored next time (falling back to the default size if your display arrangement has changed).
 
@@ -119,7 +127,7 @@ Below the toolbar the window is split left and right.
 - **Left — the object list.** The main thing this app does. It switches between a table and tiles, and the removal ticks go here.
 - **Right — the Graphics objects panel.** It shows where the object on the **currently selected row** overlaps something else. It takes a share of the width until you drag the divider; after that the width is yours and resizing the window leaves it alone.
 
-- **The toolbar's Select All and Clear Selection act on the object list only.** Merging is done a unit at a time in the panel — there is no one-click "flatten every overlap in the document", because that would make the target of an irreversible operation impossible to predict. The panel's own menu has a **Clear selection** for dropping what it has selected.
+- **The toolbar's Select All and Clear Selection act on the object list only.** Merging is done a unit at a time in the panel — there is no one-click "flatten every overlap in the document", because that would make the target of an irreversible operation impossible to predict. In the panel, clicking another row is what moves its selection.
 - **Remove & Save is available as soon as there is something to write** — an object ticked for removal, an eye closed, or a place already merged.
 - The status bar reports **both** counts, e.g. `3 object(s) selected for removal / 4 object(s) to flatten`.
 
@@ -213,19 +221,22 @@ Only places where objects of *different* kinds overlap are listed. That gives fo
 
 ### How to use it
 
-![The graphics-objects panel: an eye at the left for what is drawn, a click to select a row, and the commands gathered under the menu at the top right](images/flatten-en.png)
+![The graphics-objects panel: an eye at the left for what is drawn, a click to select a row, and the commands gathered under each unit's own menu](images/flatten-en.png)
 
-1. **Select the row of the object you want to look at, in the list on the left.** The Graphics objects panel then shows **only the units that object takes part in**, with the first of them already selected, so it is ready to act on.
-   - An object that overlaps nothing gets "This graphics object does not overlap anything." Most objects in a document are like that.
+1. **Select the row of the object you want to look at, in the list on the left.** The Graphics objects panel then shows **every place that object is drawn**, with the first of them already selected, so it is ready to act on.
+   - Where it overlaps something, the place is a **unit** holding it and whatever it overlaps.
+   - Where it overlaps nothing, the place is **a unit of its own**. A header or a page number printed on forty pages is mostly this.
    - With no row selected the panel is empty.
 2. The panel is laid out **like an image editor's layers panel**: a **folder is a unit** (`Doc:01 P.02 Unit 01` reads "the first file, its second page, the first unit on it") and the **graphics objects** sit under it. The chevron at a folder's left folds it away.
 3. **The eye at the left says whether the object is drawn.** Close it and the object goes from that place on that page — **it leaves the preview as well**, and it will not be in the PDF you save. **Only that one place goes**: the same image on other pages stays. A folder's eye acts on everything inside it.
+   - **This is how you take out one drawing and keep the others.** The tick in the list on the left removes the object from **everywhere it appears**; when you want this page's heading gone but not the next page's, close the eye on that place here.
 4. **Clicking a row selects it** (Ctrl to add or remove, Shift for a range). What is selected says which UNIT the commands act on.
-5. **The commands are under the menu at the top right.**
-   - **Merge visible graphics objects in the selected unit** — makes one picture of them, there and then. **Anything whose eye is closed stays out of it**, since the save is going to take it away. Which objects inside the unit you picked does not narrow it: the whole unit's visible objects are what merges.
-   - **Undo flatten** — with the row of a picture some merge drew selected, puts back what it covered.
-   - **Merge selected** / **Split selected** — correct a unit by hand when what was detected does not match the document. To merge only part of a unit, split it first.
-   - **Clear selection** — drops the panel's selection only; the toolbar's Clear Selection acts on the object list.
+5. **The commands are under the ☰ at the right of a unit's own row**, and act on that unit (from the keyboard: Enter, Shift+F10 or the Menu key on that row).
+   - **Turn the visible objects into a picture** — makes one picture of them, there and then. **Anything whose eye is closed stays out of it**, since the save is going to take it away. **The closed eyes open again afterwards**: "not in this picture" is an instruction that has been carried out once the picture exists.
+   - **Turn the selected objects into a picture** — the same, for the rows you picked inside that unit.
+   - **Split the selected objects off** — correct a unit by hand when what was detected does not match the document, by moving what you picked into a unit of its own.
+   - **Merge units** (the button at the panel's top right) — puts several units of one page together. Select across them, then press it.
+   - **Undo the picture** — **right-click the picture's row in the list on the left**. Merging ends the unit its objects came from, so the command lives on the row of what the merge drew.
 6. **The preview underneath is that page, actually drawn.** Objects whose eye is closed are not in it. **The selected graphics object is outlined in light blue**, and a small or thin one gets **an arrow in the same colour** beside it.
 7. **Saving is the same as for deleting** (**Remove & Save** on the toolbar, or **File → Remove Selected & Save…**). The merging has already happened, so the save writes it out. A save with nothing but flattening works fine.
 

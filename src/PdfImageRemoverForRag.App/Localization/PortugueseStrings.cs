@@ -156,7 +156,7 @@ internal sealed class PortugueseStrings : IStrings
     public string FlattenObjectNotOverlapping => "Este objeto gráfico não se sobrepõe a nada.";
     public string FlattenNoOverlaps => "Não foram encontrados objetos gráficos sobrepostos.";
     public string FlattenWholePageWarning =>
-        "Os objetos marcados cobrem quase toda a página. Ao achatá-los, a página vira uma única imagem e nenhum texto continua sendo texto.";
+        "Os objetos selecionados cobrem quase toda a página. Ao achatá-los, a página vira uma única imagem e nenhum texto continua sendo texto.";
     public string StatusFlattenSelection(int objectCount) =>
         $"{objectCount} objeto(s) gráfico(s) selecionado(s)";
     public string AccessibleFlattenPreview => "Pré-visualização";

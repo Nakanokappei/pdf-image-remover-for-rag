@@ -163,7 +163,7 @@ internal sealed class RussianStrings : IStrings
     public string FlattenObjectNotOverlapping => "Этот графический объект ни с чем не перекрывается.";
     public string FlattenNoOverlaps => "Перекрывающиеся графические объекты не найдены.";
     public string FlattenWholePageWarning =>
-        "Отмеченные объекты занимают почти всю страницу. После объединения страница станет одним изображением, и весь её текст перестанет быть текстом.";
+        "Выбранные объекты занимают почти всю страницу. После объединения страница станет одним изображением, и весь её текст перестанет быть текстом.";
     public string StatusFlattenSelection(int objectCount) =>
         $"Выбрано графических объектов: {objectCount}";
     public string AccessibleFlattenPreview => "Предварительный просмотр";

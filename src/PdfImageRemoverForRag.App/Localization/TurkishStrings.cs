@@ -162,7 +162,7 @@ internal sealed class TurkishStrings : IStrings
     public string FlattenObjectNotOverlapping => "Bu grafik nesnesi hiçbir şeyle üst üste gelmiyor.";
     public string FlattenNoOverlaps => "Üst üste gelen grafik nesnesi bulunamadı.";
     public string FlattenWholePageWarning =>
-        "İşaretlenen nesneler sayfanın neredeyse tamamını kaplıyor. Birleştirildiğinde sayfa tek bir görüntüye dönüşür ve hiçbir metin metin olarak kalmaz.";
+        "Seçilen nesneler sayfanın neredeyse tamamını kaplıyor. Birleştirildiğinde sayfa tek bir görüntüye dönüşür ve hiçbir metin metin olarak kalmaz.";
     public string StatusFlattenSelection(int objectCount) =>
         $"{objectCount} grafik nesnesi seçildi";
     public string AccessibleFlattenPreview => "Önizleme";

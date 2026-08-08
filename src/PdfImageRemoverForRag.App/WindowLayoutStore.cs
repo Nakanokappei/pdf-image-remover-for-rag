@@ -9,26 +9,22 @@ namespace PdfImageRemoverForRag.App;
 /// same screen count); otherwise the caller falls back to the default so the
 /// window never opens off-screen or larger than the current display.
 /// </summary>
-/// <param name="FlattenPanelWidth">
-/// Width of the graphics objects panel, and <paramref name="FlattenPreviewHeight"/>
+/// <param name="ObjectsPanelWidth">
+/// Width of the graphics objects panel, and <paramref name="ObjectsPreviewHeight"/>
 /// the height of the preview inside it — both in LOGICAL (96-DPI) pixels, because a
 /// width dragged on the 200 % VM would be half the panel on a 100 % display if
 /// it were stored in device pixels. Zero means "never recorded", which is what
-/// a window.json written before these existed deserializes to, so the defaults
-/// apply and an old file needs no migration.
+/// a window.json written before these existed — or under their earlier names —
+/// deserializes to, so the defaults apply and no file needs migrating.
 ///
 /// They ride along with the placement but are NOT subject to its
 /// display-arrangement guard: a splitter position cannot put anything
 /// off-screen, so plugging in a second monitor is no reason to forget it.
-///
-/// The names are the keys in window.json, which is why they still say Flatten
-/// after the panel was renamed: changing them would read every existing file
-/// as "never recorded" and forget the width every user had dragged.
 /// </param>
 internal sealed record WindowLayout(
     int X, int Y, int Width, int Height, bool Maximized,
     int ScreenIndex, int ScreenWidth, int ScreenHeight, int ScreenCount,
-    int FlattenPanelWidth = 0, int FlattenPreviewHeight = 0);
+    int ObjectsPanelWidth = 0, int ObjectsPreviewHeight = 0);
 
 internal static class WindowLayoutStore
 {
@@ -42,7 +38,7 @@ internal static class WindowLayoutStore
     /// off the form: they are logical pixels, and only the caller knows the scale
     /// they were measured at.
     /// </summary>
-    public static void Save(Form form, int flattenPanelWidth, int flattenPreviewHeight)
+    public static void Save(Form form, int objectsPanelWidth, int objectsPreviewHeight)
     {
         try
         {
@@ -58,7 +54,7 @@ internal static class WindowLayoutStore
                 bounds.X, bounds.Y, bounds.Width, bounds.Height,
                 form.WindowState == FormWindowState.Maximized,
                 index, screen.Bounds.Width, screen.Bounds.Height, screens.Length,
-                flattenPanelWidth, flattenPreviewHeight);
+                objectsPanelWidth, objectsPreviewHeight);
 
             Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
             File.WriteAllText(FilePath, JsonSerializer.Serialize(layout));

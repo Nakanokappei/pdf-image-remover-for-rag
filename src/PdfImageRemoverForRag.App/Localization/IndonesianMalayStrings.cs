@@ -160,7 +160,7 @@ internal sealed class IndonesianMalayStrings : IStrings
     public string FlattenObjectNotOverlapping => "Objek grafis ini tidak bertumpang tindih dengan apa pun.";
     public string FlattenNoOverlaps => "Tidak ada objek grafis yang bertumpang tindih.";
     public string FlattenWholePageWarning =>
-        "Objek yang dicentang menutupi hampir seluruh halaman. Setelah digabung, halaman ini menjadi satu gambar dan teksnya tidak lagi berupa teks.";
+        "Objek yang dipilih menutupi hampir seluruh halaman. Setelah digabung, halaman ini menjadi satu gambar dan teksnya tidak lagi berupa teks.";
     public string StatusFlattenSelection(int objectCount) =>
         $"{objectCount} objek grafis dipilih";
     public string AccessibleFlattenPreview => "Pratinjau";

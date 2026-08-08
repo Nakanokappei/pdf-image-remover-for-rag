@@ -152,7 +152,7 @@ internal sealed class EnglishStrings : IStrings
     public string FlattenObjectNotOverlapping => "This graphics object does not overlap anything.";
     public string FlattenNoOverlaps => "No overlapping graphics objects were found.";
     public string FlattenWholePageWarning =>
-        "The ticked objects cover almost the whole page. Flattening them turns the page into a single image, and none of its text stays text.";
+        "The selected objects cover almost the whole page. Flattening them turns the page into a single image, and none of its text stays text.";
     public string StatusFlattenSelection(int objectCount) =>
         $"{objectCount} graphics object(s) selected";
     public string AccessibleFlattenPreview => "Preview";

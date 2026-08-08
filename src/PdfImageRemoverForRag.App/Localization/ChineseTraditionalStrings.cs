@@ -151,7 +151,7 @@ internal sealed class ChineseTraditionalStrings : IStrings
     public string FlattenObjectNotOverlapping => "該圖形物件沒有與任何內容重疊。";
     public string FlattenNoOverlaps => "找不到重疊的圖形物件。";
     public string FlattenWholePageWarning =>
-        "勾選的範圍幾乎涵蓋整頁。合併後本頁將變成一張圖片，其中的文字將不再是文字。";
+        "選取的範圍幾乎涵蓋整頁。合併後本頁將變成一張圖片，其中的文字將不再是文字。";
     public string StatusFlattenSelection(int objectCount) =>
         $"已選取 {objectCount} 個圖形物件";
     public string AccessibleFlattenPreview => "預覽";

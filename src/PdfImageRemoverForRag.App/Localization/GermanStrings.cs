@@ -156,7 +156,7 @@ internal sealed class GermanStrings : IStrings
     public string FlattenObjectNotOverlapping => "Dieses Grafikobjekt überlappt mit nichts.";
     public string FlattenNoOverlaps => "Es wurden keine überlappenden Grafikobjekte gefunden.";
     public string FlattenWholePageWarning =>
-        "Die markierten Objekte bedecken fast die ganze Seite. Beim Zusammenfassen wird die Seite zu einem einzigen Bild, und kein Text bleibt Text.";
+        "Die ausgewählten Objekte bedecken fast die ganze Seite. Beim Zusammenfassen wird die Seite zu einem einzigen Bild, und kein Text bleibt Text.";
     public string StatusFlattenSelection(int objectCount) =>
         $"{objectCount} Grafikobjekt(e) ausgewählt";
     public string AccessibleFlattenPreview => "Vorschau";

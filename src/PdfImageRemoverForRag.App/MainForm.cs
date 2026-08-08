@@ -383,12 +383,12 @@ internal sealed partial class MainForm : Form
                 Bounds = new Rectangle(savedLayout.X, savedLayout.Y, savedLayout.Width, savedLayout.Height);
                 if (savedLayout.Maximized) WindowState = FormWindowState.Maximized;
             }
-            if (savedLayout.FlattenPanelWidth > 0)
+            if (savedLayout.ObjectsPanelWidth > 0)
             {
-                _graphicsObjectsPanelWidth = savedLayout.FlattenPanelWidth;
+                _graphicsObjectsPanelWidth = savedLayout.ObjectsPanelWidth;
                 _graphicsObjectsPanelWidthIsTheUsersChoice = true;
             }
-            _graphicsObjectsPanel.PreviewHeight = savedLayout.FlattenPreviewHeight;
+            _graphicsObjectsPanel.PreviewHeight = savedLayout.ObjectsPreviewHeight;
         }
 
         BuildMenu();

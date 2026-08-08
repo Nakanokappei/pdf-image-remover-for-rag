@@ -149,7 +149,7 @@ internal sealed class ChineseSimplifiedStrings : IStrings
     public string FlattenObjectNotOverlapping => "该图形对象没有与任何内容重叠。";
     public string FlattenNoOverlaps => "未找到重叠的图形对象。";
     public string FlattenWholePageWarning =>
-        "勾选的范围几乎覆盖整页。合并后本页将变成一张图片，其中的文字将不再是文本。";
+        "选中的范围几乎覆盖整页。合并后本页将变成一张图片，其中的文字将不再是文本。";
     public string StatusFlattenSelection(int objectCount) =>
         $"已选择 {objectCount} 个图形对象";
     public string AccessibleFlattenPreview => "预览";

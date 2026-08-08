@@ -148,7 +148,7 @@ internal sealed class JapaneseStrings : IStrings
     public string FlattenObjectNotOverlapping => "この描画オブジェクトは何とも重なっていません。";
     public string FlattenNoOverlaps => "重なっている描画オブジェクトはありません。";
     public string FlattenWholePageWarning =>
-        "チェックした範囲がページのほぼ全体です。統合するとこのページは 1 枚の画像になり、文字はすべてテキストでなくなります。";
+        "選択した範囲がページのほぼ全体です。統合するとこのページは 1 枚の画像になり、文字はすべてテキストでなくなります。";
     public string StatusFlattenSelection(int objectCount) =>
         $"描画オブジェクトを {objectCount} 個選択中";
     public string AccessibleFlattenPreview => "プレビュー";

@@ -143,10 +143,12 @@ internal sealed class GermanStrings : IStrings
 
     public string FlattenPanelTitle => "Grafikobjekte";
     public string FlattenMenu => "Grafikobjektbefehle";
-    public string FlattenApply => "Sichtbare Grafikobjekte der gewählten Einheit zusammenfügen";
-    public string FlattenUndo => "Zusammenfügen aufheben";
-    public string FlattenMerge => "Zusammenführen";
-    public string FlattenSplit => "Trennen";
+    public string FlattenUnitMenu => "Befehle für diese Einheit";
+    public string FlattenVisible => "Sichtbare Objekte zu einem Bild machen";
+    public string FlattenSelected => "Gewählte Objekte zu einem Bild machen";
+    public string FlattenUndo => "Bild zurücknehmen";
+    public string FlattenMerge => "Gewählte Einheiten zusammenführen";
+    public string FlattenSplit => "Gewählte Objekte abtrennen";
 
     public string FlattenDescription =>
         "Fügt überlappende Grafikobjekte zu einem einzigen Bild zusammen. Die Seite sieht "

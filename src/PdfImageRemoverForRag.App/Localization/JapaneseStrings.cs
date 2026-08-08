@@ -135,10 +135,12 @@ internal sealed class JapaneseStrings : IStrings
 
     public string FlattenPanelTitle => "描画オブジェクト";
     public string FlattenMenu => "描画オブジェクト操作";
-    public string FlattenApply => "選択ユニット内の表示中の描画オブジェクトを結合";
-    public string FlattenUndo => "統合を解除";
-    public string FlattenMerge => "選択を合流";
-    public string FlattenSplit => "選択を分割";
+    public string FlattenUnitMenu => "このユニットの操作";
+    public string FlattenVisible => "表示中オブジェクトを画像化";
+    public string FlattenSelected => "選択オブジェクトを画像化";
+    public string FlattenUndo => "画像化を取り消す";
+    public string FlattenMerge => "選択したユニットをまとめる";
+    public string FlattenSplit => "選択オブジェクトを分ける";
 
     public string FlattenDescription =>
         "重なっている描画オブジェクトをまとめて画像化します。見た目は変わりませんが、"

@@ -147,10 +147,12 @@ internal sealed class IndonesianMalayStrings : IStrings
 
     public string FlattenPanelTitle => "Objek grafis";
     public string FlattenMenu => "Perintah objek grafis";
-    public string FlattenApply => "Gabungkan objek grafis terlihat dalam unit terpilih";
-    public string FlattenUndo => "Batalkan penggabungan";
-    public string FlattenMerge => "Gabungkan";
-    public string FlattenSplit => "Pisahkan";
+    public string FlattenUnitMenu => "Perintah untuk unit ini";
+    public string FlattenVisible => "Jadikan objek terlihat sebagai gambar";
+    public string FlattenSelected => "Jadikan objek terpilih sebagai gambar";
+    public string FlattenUndo => "Batalkan gambar";
+    public string FlattenMerge => "Gabungkan unit terpilih";
+    public string FlattenSplit => "Pisahkan objek terpilih";
 
     public string FlattenDescription =>
         "Menggabungkan objek grafis yang bertumpang tindih menjadi satu gambar. Halaman tetap "

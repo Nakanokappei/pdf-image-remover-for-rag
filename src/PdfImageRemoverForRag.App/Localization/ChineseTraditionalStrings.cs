@@ -139,10 +139,12 @@ internal sealed class ChineseTraditionalStrings : IStrings
 
     public string FlattenPanelTitle => "圖形物件";
     public string FlattenMenu => "圖形物件命令";
-    public string FlattenApply => "合併所選單元中的可見圖形物件";
-    public string FlattenUndo => "復原平面化";
-    public string FlattenMerge => "合併所選";
-    public string FlattenSplit => "分割所選";
+    public string FlattenUnitMenu => "此單元的命令";
+    public string FlattenVisible => "把可見物件變成圖片";
+    public string FlattenSelected => "把所選物件變成圖片";
+    public string FlattenUndo => "復原變成圖片";
+    public string FlattenMerge => "合併所選單元";
+    public string FlattenSplit => "把所選物件分出去";
 
     public string FlattenDescription =>
         "將重疊的圖形物件平面化為一張影像。頁面外觀不變，但其中的文字將不再是文字。";

@@ -142,10 +142,12 @@ internal sealed class ItalianStrings : IStrings
 
     public string FlattenPanelTitle => "Oggetti grafici";
     public string FlattenMenu => "Comandi oggetto grafico";
-    public string FlattenApply => "Unisci gli oggetti grafici visibili dell'unità selezionata";
-    public string FlattenUndo => "Annulla unione";
-    public string FlattenMerge => "Unisci";
-    public string FlattenSplit => "Dividi";
+    public string FlattenUnitMenu => "Comandi di questa unità";
+    public string FlattenVisible => "Trasformare in immagine gli oggetti visibili";
+    public string FlattenSelected => "Trasformare in immagine gli oggetti selezionati";
+    public string FlattenUndo => "Annullare l'immagine";
+    public string FlattenMerge => "Unire le unità selezionate";
+    public string FlattenSplit => "Separare gli oggetti selezionati";
 
     public string FlattenDescription =>
         "Fonde gli oggetti grafici sovrapposti in un'unica immagine. La pagina resta uguale, "

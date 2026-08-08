@@ -20,14 +20,6 @@ internal sealed partial class MainForm
     // names several units but a unit names exactly one row — following the
     // selection the other way would have to guess which unit was meant.
 
-    /// <summary>
-    /// The places to flatten, per source file — each covering only the objects
-    /// the user ticked. Empty when nothing is ticked, which is what makes a
-    /// delete-only save go through the same path unchanged.
-    /// </summary>
-    IReadOnlyDictionary<string, IReadOnlyList<OverlapRegion>> FlattenSelection() =>
-        _flattenPanel.SelectedRegionsByFile();
-
     void OnFlattenSelectionChanged(object? sender, EventArgs e)
     {
         UpdateSelectionState();
@@ -72,9 +64,9 @@ internal sealed partial class MainForm
     /// is where the user sees that anything happened. Nothing they own is
     /// written; saving is still what does that.
     /// </summary>
-    async void OnFlattenRequested(object? sender, EventArgs e)
+    async void OnFlattenRequested(object? sender, FlattenPanel.FlattenRequestedEventArgs e)
     {
-        var places = FlattenSelection();
+        var places = e.Places;
         if (_isBusy || places.Count == 0) return;
 
         SetBusy(true, L10n.StatusFlattening);

@@ -260,16 +260,25 @@ internal interface IStrings
     string FlattenMenu { get; }
 
     /// <summary>
-    /// Commands acting on the selected objects, every one of them taking effect
-    /// at once: merge replaces them with a picture of themselves, undo takes
-    /// such a picture back, and the two below gather objects into one unit or
-    /// take them out of the one they are in.
-    ///
-    /// The first says VISIBLE because that is what it combines — an object whose
-    /// eye is closed is one the save is going to take out, and baking it into
-    /// the picture would put it back as pixels.
+    /// Spoken name of the menu in a unit's own row, which shows a different
+    /// glyph from the panel's hamburger and makes a different promise: it acts
+    /// on that unit, not on whatever is selected.
     /// </summary>
-    string FlattenApply { get; }
+    string FlattenUnitMenu { get; }
+
+    /// <summary>
+    /// The two commands in a UNIT's own menu that make a picture of it. The
+    /// menu lives in the unit's row, so neither says which unit: the row it was
+    /// opened from is the answer, and that is the whole reason the menu is
+    /// there.
+    ///
+    /// The first takes everything the unit still draws, the second only what is
+    /// also selected inside it. Both say VISIBLE or SELECTED and neither says
+    /// hidden, because an object whose eye is closed is one the save is going
+    /// to take out — baking it into the picture would put it back as pixels.
+    /// </summary>
+    string FlattenVisible { get; }
+    string FlattenSelected { get; }
     string FlattenUndo { get; }
     string FlattenMerge { get; }
     string FlattenSplit { get; }

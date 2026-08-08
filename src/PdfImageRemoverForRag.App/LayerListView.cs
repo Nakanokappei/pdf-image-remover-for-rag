@@ -77,6 +77,7 @@ internal sealed class LayerListView : Panel
     const int IndentWidth = 18;
     const int DisclosureWidth = 14;
     const int EyeWidth = 18;
+    const int MenuWidth = 18;
     const int FolderSize = 16;
     const int ThumbnailSize = 32;
     const int Gap = 6;
@@ -105,6 +106,13 @@ internal sealed class LayerListView : Panel
 
     /// <summary>Raised when a folder's chevron is clicked.</summary>
     public event Action<int>? ExpandToggled;
+
+    /// <summary>
+    /// Raised when a unit's own menu glyph is clicked, with the row and where
+    /// to put the menu. The row is the SUBJECT — not the selection — which is
+    /// the whole point of a menu that lives in the row.
+    /// </summary>
+    public event Action<int, Point>? UnitMenuRequested;
 
     /// <summary>Raised whenever the set of selected rows changes.</summary>
     public event EventHandler? SelectionChanged;
@@ -230,6 +238,17 @@ internal sealed class LayerListView : Panel
         Dip(DisclosureWidth), Dip(DisclosureWidth));
 
     /// <summary>
+    /// The commands for one unit, at the far right of its row. A different
+    /// glyph from the panel's own menu on purpose: that one acts on whatever is
+    /// selected, this one acts on the row it sits in, and two menus that look
+    /// alike would be read as the same menu.
+    /// </summary>
+    Rectangle MenuRect(Rectangle bounds) => new(
+        bounds.Right - Dip(RowInset) - Dip(MenuWidth),
+        bounds.Top + ((bounds.Height - Dip(MenuWidth)) / 2),
+        Dip(MenuWidth), Dip(MenuWidth));
+
+    /// <summary>
     /// The picture column: a folder icon on a unit, the object's thumbnail on
     /// its members. Objects sit one level in from their folder.
     /// </summary>
@@ -289,6 +308,12 @@ internal sealed class LayerListView : Panel
         {
             DrawDisclosure(g, DisclosureRect(bounds), visual.IsExpanded, text);
             DrawGlyph(g, icon, visual.IsExpanded ? GlyphFolderOpen : GlyphFolder, text);
+            // Drawn with the UI font, not the icon font: the icon font is a
+            // symbol set and has nothing at this code point, which comes out as
+            // an empty box.
+            TextRenderer.DrawText(g, L10n.RowMenuGlyph, Font, MenuRect(bounds), muted,
+                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter
+                | TextFormatFlags.NoPrefix);
         }
         else
         {
@@ -303,7 +328,12 @@ internal sealed class LayerListView : Panel
         var titleFont = visual.IsGroup ? new Font(Font, FontStyle.Bold) : Font;
         try
         {
-            int width = Math.Max(Dip(20), bounds.Right - Dip(RowInset) - x);
+            // A unit's title stops short of its menu, or the ellipsis runs
+            // under the glyph and the two read as one smudge.
+            int rightEdge = visual.IsGroup
+                ? MenuRect(bounds).Left - Dip(Gap)
+                : bounds.Right - Dip(RowInset);
+            int width = Math.Max(Dip(20), rightEdge - x);
             if (visual.Subtitle is null)
             {
                 TextRenderer.DrawText(g, visual.Title, titleFont,
@@ -515,6 +545,16 @@ internal sealed class LayerListView : Panel
             ExpandToggled?.Invoke(row);
             return;
         }
+        if (visual.IsGroup && Spans(e.X, MenuRect(bounds)))
+        {
+            // The row is selected first: the menu is about this unit, and a
+            // menu opening on a row that does not look chosen reads as if it
+            // might act on something else.
+            SelectRow(row, Keys.None);
+            var at = MenuRect(bounds);
+            UnitMenuRequested?.Invoke(row, new Point(at.Left, at.Bottom));
+            return;
+        }
 
         SelectRow(row, ModifierKeys);
     }
@@ -619,9 +659,30 @@ internal sealed class LayerListView : Panel
             // only "out" move this two-level list has.
             case Keys.Left: CollapseOrGoToGroup(row); break;
             case Keys.Right: ExpandGroup(row); break;
+            // The unit's own menu, by the two keys Windows opens a context menu
+            // with. Without this the commands in it could be reached only by
+            // clicking a glyph — a whole menu that keyboard and screen-reader
+            // users could not get to.
+            case Keys.Apps: OpenUnitMenu(row); break;
+            case Keys.F10 when e.Shift: OpenUnitMenu(row); break;
             default: return;
         }
         e.Handled = true;
+    }
+
+    /// <summary>
+    /// Open a unit's menu from the keyboard, on the folder the cursor is in —
+    /// which for an object row is the folder above it, because that is the unit
+    /// the user is looking at.
+    /// </summary>
+    void OpenUnitMenu(int row)
+    {
+        while (row >= 0 && !_isGroupRow(row)) row--;
+        if (row < 0) return;
+
+        SelectRow(row, Keys.None);
+        var at = MenuRect(BoundsOf(row));
+        UnitMenuRequested?.Invoke(row, new Point(at.Left, at.Bottom));
     }
 
     /// <summary>

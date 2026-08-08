@@ -136,10 +136,12 @@ internal sealed class KoreanStrings : IStrings
 
     public string FlattenPanelTitle => "그래픽 개체";
     public string FlattenMenu => "그래픽 개체 명령";
-    public string FlattenApply => "선택한 단위의 보이는 그래픽 개체 병합";
-    public string FlattenUndo => "병합 취소";
-    public string FlattenMerge => "선택 합치기";
-    public string FlattenSplit => "선택 나누기";
+    public string FlattenUnitMenu => "이 단위의 명령";
+    public string FlattenVisible => "보이는 개체를 이미지로 만들기";
+    public string FlattenSelected => "선택한 개체를 이미지로 만들기";
+    public string FlattenUndo => "이미지로 만들기 취소";
+    public string FlattenMerge => "선택한 단위 합치기";
+    public string FlattenSplit => "선택한 개체 떼어내기";
 
     public string FlattenDescription =>
         "겹쳐 있는 그래픽 개체를 한 장의 이미지로 병합합니다. 페이지 모양은 그대로이지만 "

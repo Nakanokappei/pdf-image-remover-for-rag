@@ -150,10 +150,12 @@ internal sealed class RussianStrings : IStrings
 
     public string FlattenPanelTitle => "Графические объекты";
     public string FlattenMenu => "Команды графических объектов";
-    public string FlattenApply => "Объединить видимые графические объекты выбранного блока";
-    public string FlattenUndo => "Отменить объединение";
-    public string FlattenMerge => "Объединить";
-    public string FlattenSplit => "Разделить";
+    public string FlattenUnitMenu => "Команды этого блока";
+    public string FlattenVisible => "Сделать изображением видимые объекты";
+    public string FlattenSelected => "Сделать изображением выбранные объекты";
+    public string FlattenUndo => "Отменить изображение";
+    public string FlattenMerge => "Объединить выбранные блоки";
+    public string FlattenSplit => "Отделить выбранные объекты";
 
     public string FlattenDescription =>
         "Сводит перекрывающиеся графические объекты в одно изображение. Страница выглядит так же, "

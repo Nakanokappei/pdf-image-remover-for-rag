@@ -145,10 +145,12 @@ internal sealed class VietnameseStrings : IStrings
 
     public string FlattenPanelTitle => "Đối tượng đồ họa";
     public string FlattenMenu => "Lệnh đối tượng đồ họa";
-    public string FlattenApply => "Gộp các đối tượng đồ họa hiển thị trong đơn vị đã chọn";
-    public string FlattenUndo => "Hoàn tác gộp";
-    public string FlattenMerge => "Gộp lựa chọn";
-    public string FlattenSplit => "Tách lựa chọn";
+    public string FlattenUnitMenu => "Lệnh của đơn vị này";
+    public string FlattenVisible => "Biến các đối tượng hiển thị thành ảnh";
+    public string FlattenSelected => "Biến các đối tượng đã chọn thành ảnh";
+    public string FlattenUndo => "Hoàn tác việc thành ảnh";
+    public string FlattenMerge => "Gộp các đơn vị đã chọn";
+    public string FlattenSplit => "Tách các đối tượng đã chọn ra";
 
     public string FlattenDescription =>
         "Gộp các đối tượng đồ họa chồng lên nhau thành một ảnh duy nhất. Trang vẫn trông như cũ, "

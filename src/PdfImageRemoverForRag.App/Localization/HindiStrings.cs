@@ -141,10 +141,12 @@ internal sealed class HindiStrings : IStrings
 
     public string FlattenPanelTitle => "ग्राफ़िक ऑब्जेक्ट";
     public string FlattenMenu => "ग्राफ़िक ऑब्जेक्ट कमांड";
-    public string FlattenApply => "चयनित यूनिट के दृश्य ग्राफ़िक ऑब्जेक्ट मिलाएँ";
-    public string FlattenUndo => "मिलाना पूर्ववत करें";
-    public string FlattenMerge => "चयन मिलाएँ";
-    public string FlattenSplit => "चयन अलग करें";
+    public string FlattenUnitMenu => "इस यूनिट के कमांड";
+    public string FlattenVisible => "दिख रहे ऑब्जेक्ट को चित्र बनाएँ";
+    public string FlattenSelected => "चुने हुए ऑब्जेक्ट को चित्र बनाएँ";
+    public string FlattenUndo => "चित्र बनाना पूर्ववत करें";
+    public string FlattenMerge => "चुनी हुई यूनिट मिलाएँ";
+    public string FlattenSplit => "चुने हुए ऑब्जेक्ट अलग करें";
 
     public string FlattenDescription =>
         "एक-दूसरे पर आने वाले ग्राफ़िक ऑब्जेक्ट को एक ही छवि में मिला देता है। पृष्ठ वैसा ही दिखता है, "

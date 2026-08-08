@@ -149,10 +149,12 @@ internal sealed class TurkishStrings : IStrings
 
     public string FlattenPanelTitle => "Grafik nesneleri";
     public string FlattenMenu => "Grafik nesnesi komutları";
-    public string FlattenApply => "Seçili birimdeki görünür grafik nesnelerini birleştir";
-    public string FlattenUndo => "Birleştirmeyi geri al";
-    public string FlattenMerge => "Birleştir";
-    public string FlattenSplit => "Ayır";
+    public string FlattenUnitMenu => "Bu birimin komutları";
+    public string FlattenVisible => "Görünür nesneleri resme dönüştür";
+    public string FlattenSelected => "Seçili nesneleri resme dönüştür";
+    public string FlattenUndo => "Resmi geri al";
+    public string FlattenMerge => "Seçili birimleri birleştir";
+    public string FlattenSplit => "Seçili nesneleri ayır";
 
     public string FlattenDescription =>
         "Üst üste gelen grafik nesnelerini tek bir görüntüde birleştirir. Sayfa aynı görünür, "

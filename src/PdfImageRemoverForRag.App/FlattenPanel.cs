@@ -87,15 +87,26 @@ internal sealed class FlattenPanel : UserControl
     };
     readonly ContextMenuStrip _menu = new();
 
-    // The commands, every one of them acting on the SELECTED rows and every one
-    // taking effect at once: flatten replaces them with a picture of themselves,
-    // undo takes such a picture back, merge gathers them into one unit and split
-    // takes them out of the one they are in.
-    readonly ToolStripMenuItem _flattenSelection = new(L10n.FlattenApply);
+    // Two menus, because there are two kinds of command and one menu could not
+    // say which was which.
+    //
+    // A unit's own menu lives in its row and acts on THAT unit: turning what it
+    // holds into a picture, taking that back, splitting part of it off. Nothing
+    // in it needs the words "in the selected unit", because the row it was
+    // opened from is the answer.
+    //
+    // The panel's menu is for what crosses units, and only that: gathering a
+    // selection that spans several of them into one.
+    readonly ContextMenuStrip _unitMenu = new();
+    readonly ToolStripMenuItem _flattenVisible = new(L10n.FlattenVisible);
+    readonly ToolStripMenuItem _flattenSelected = new(L10n.FlattenSelected);
     readonly ToolStripMenuItem _undoFlatten = new(L10n.FlattenUndo);
-    readonly ToolStripMenuItem _mergeSelection = new(L10n.FlattenMerge);
     readonly ToolStripMenuItem _splitSelection = new(L10n.FlattenSplit);
-    readonly ToolStripMenuItem _clearSelection = new(L10n.ToolClearSelection);
+    readonly ToolStripMenuItem _mergeSelection = new(L10n.FlattenMerge);
+
+    // The unit whose row menu is open. Set as it opens and read by the
+    // commands, so what they act on cannot drift from what was pressed.
+    UnitEntry? _menuUnit;
 
     // Only ever visible when it has something to say: an always-present strip
     // of empty red would train the eye to skip it.
@@ -133,11 +144,23 @@ internal sealed class FlattenPanel : UserControl
     public event EventHandler? SelectionChanged;
 
     /// <summary>
-    /// Raised when the user asks for the selected objects to be flattened now.
-    /// The panel does not do it: flattening writes a file, and the workspace is
-    /// what owns files.
+    /// Raised when the user asks for objects to be turned into a picture now,
+    /// carrying the places to draw. The panel does not do it: this writes a
+    /// file, and the workspace is what owns files.
     /// </summary>
-    public event EventHandler? FlattenRequested;
+    public event EventHandler<FlattenRequestedEventArgs>? FlattenRequested;
+
+    internal sealed class FlattenRequestedEventArgs : EventArgs
+    {
+        public FlattenRequestedEventArgs(
+            IReadOnlyDictionary<string, IReadOnlyList<OverlapRegion>> places)
+        {
+            Places = places;
+        }
+
+        /// <summary>The places to draw, per source file. Never empty.</summary>
+        public IReadOnlyDictionary<string, IReadOnlyList<OverlapRegion>> Places { get; }
+    }
 
     /// <summary>Raised when the user asks to take back the flatten they are looking at.</summary>
     public event EventHandler? UndoFlattenRequested;
@@ -271,20 +294,22 @@ internal sealed class FlattenPanel : UserControl
 
         _menuButton.AccessibleName = $"{L10n.FlattenMenu} ({L10n.FlattenPanelTitle})";
         _menuButton.Click += (_, _) => _menu.Show(_menuButton, new Point(0, _menuButton.Height));
-        _menu.Items.AddRange(new ToolStripItem[]
+        _menu.Items.Add(_mergeSelection);
+        _unitMenu.Items.AddRange(new ToolStripItem[]
         {
-            _flattenSelection, _undoFlatten, new ToolStripSeparator(),
-            _mergeSelection, _splitSelection, new ToolStripSeparator(),
-            _clearSelection,
+            _flattenVisible, _flattenSelected, _undoFlatten,
+            new ToolStripSeparator(), _splitSelection,
         });
-        // Decided as the menu opens rather than kept in step with every click:
+        // Decided as a menu opens rather than kept in step with every click:
         // there is one moment when it matters, and this way it cannot be stale.
         _menu.Opening += (_, _) => RefreshCommandState();
-        _flattenSelection.Click += (_, _) => FlattenRequested?.Invoke(this, EventArgs.Empty);
+        _unitMenu.Opening += (_, _) => RefreshCommandState();
+        _flattenVisible.Click += (_, _) => RequestFlatten(VisibleIn(_menuUnit));
+        _flattenSelected.Click += (_, _) => RequestFlatten(SelectedIn(_menuUnit));
         _undoFlatten.Click += (_, _) => UndoFlattenRequested?.Invoke(this, EventArgs.Empty);
         _mergeSelection.Click += (_, _) => EditUnits(merge: true);
         _splitSelection.Click += (_, _) => EditUnits(merge: false);
-        _clearSelection.Click += (_, _) => ClearSelection();
+        _list.UnitMenuRequested += OnUnitMenuRequested;
 
         _titleBar.Controls.Add(_title);
         _titleBar.Controls.Add(_menuButton);
@@ -397,10 +422,11 @@ internal sealed class FlattenPanel : UserControl
     void RefreshWholePageWarning()
     {
         bool covers = false;
-        foreach (var (unit, members) in VisibleInSelectedUnits())
+        foreach (var (unit, _) in SelectedByUnit())
         {
-            if (OverlapDetector.CoversWholePage(
-                    OverlapDetector.RegionCovering(unit.Region.Page, members)))
+            var shown = VisibleIn(unit);
+            if (shown.Count > 0 && OverlapDetector.CoversWholePage(
+                    OverlapDetector.RegionCovering(unit.Region.Page, shown.ToArray())))
             {
                 covers = true;
                 break;
@@ -779,45 +805,55 @@ internal sealed class FlattenPanel : UserControl
     }
 
     /// <summary>
-    /// What is SHOWN in each unit the selection touches. Which objects inside it
-    /// are selected does not narrow this: the command says "in the selected
-    /// unit", so selecting anything in a unit asks for that unit — and picking
-    /// out some of its objects is what Split Selection is for.
-    ///
-    /// Hidden objects stay out. One of those is going to be taken out by the
-    /// save, and drawing it into the picture would put it back as pixels.
+    /// What is drawn in one unit. Hidden objects stay out: one of those is
+    /// going to be taken out by the save, and drawing it into the picture would
+    /// put it back as pixels.
     /// </summary>
-    IReadOnlyList<(UnitEntry Unit, IReadOnlyList<PlacedObject> Members)> VisibleInSelectedUnits()
+    IReadOnlyList<PlacedObject> VisibleIn(UnitEntry? unit) => unit is null
+        ? Array.Empty<PlacedObject>()
+        : unit.Region.Members.Where(m => !Hidden(unit, m)).ToArray();
+
+    /// <summary>
+    /// What is drawn AND selected in one unit — the narrower of the two
+    /// commands. In the region's own member order, because the covering
+    /// rectangle is built from that sequence.
+    /// </summary>
+    IReadOnlyList<PlacedObject> SelectedIn(UnitEntry? unit)
     {
-        var result = new List<(UnitEntry, IReadOnlyList<PlacedObject>)>();
-        foreach (var (unit, _) in SelectedByUnit())
-        {
-            var shown = unit.Region.Members.Where(m => !Hidden(unit, m)).ToArray();
-            if (shown.Length > 0) result.Add((unit, shown));
-        }
-        return result;
+        if (unit is null) return Array.Empty<PlacedObject>();
+
+        var picked = _list.SelectedRows
+            .Where(index => index < _rows.Count && ReferenceEquals(_units[_rows[index].UnitIndex], unit))
+            .Select(index => _rows[index].Object)
+            .Where(o => o is not null)
+            .ToArray();
+        return unit.Region.Members
+            .Where(m => !Hidden(unit, m) && picked.Contains(m))
+            .ToArray();
     }
 
     /// <summary>
-    /// The places to combine, per source file — one per unit the selection
-    /// touches, covering what is shown in it.
+    /// Ask for these objects to become a picture. One place, in one file: both
+    /// commands act on one unit, which is the row their menu was opened from.
     /// </summary>
-    public IReadOnlyDictionary<string, IReadOnlyList<OverlapRegion>> SelectedRegionsByFile()
+    void RequestFlatten(IReadOnlyList<PlacedObject> members)
     {
-        var byFile = new Dictionary<string, List<OverlapRegion>>(StringComparer.OrdinalIgnoreCase);
-        foreach (var (unit, shown) in VisibleInSelectedUnits())
-        {
-            if (!byFile.TryGetValue(unit.FilePath, out var regions))
+        if (_menuUnit is null || members.Count == 0) return;
+
+        var place = OverlapDetector.RegionCovering(_menuUnit.Region.Page, members.ToArray());
+        FlattenRequested?.Invoke(this, new FlattenRequestedEventArgs(
+            new Dictionary<string, IReadOnlyList<OverlapRegion>>(StringComparer.OrdinalIgnoreCase)
             {
-                regions = new List<OverlapRegion>();
-                byFile[unit.FilePath] = regions;
-            }
-            regions.Add(OverlapDetector.RegionCovering(unit.Region.Page, shown.ToArray()));
-        }
-        return byFile.ToDictionary(
-            kv => kv.Key,
-            kv => (IReadOnlyList<OverlapRegion>)kv.Value,
-            StringComparer.OrdinalIgnoreCase);
+                [_menuUnit.FilePath] = new[] { place },
+            }));
+    }
+
+    /// <summary>Open a unit's own menu, on the unit whose row it came from.</summary>
+    void OnUnitMenuRequested(int row, Point at)
+    {
+        if (row < 0 || row >= _rows.Count) return;
+        _menuUnit = _units[_rows[row].UnitIndex];
+        _unitMenu.Show(_list, at);
     }
 
     /// <summary>
@@ -941,12 +977,9 @@ internal sealed class FlattenPanel : UserControl
 
     void RefreshCommandState()
     {
-        var selected = SelectedByUnit();
-        // A unit with anything shown in it can be combined, whatever is selected
-        // inside it — the command acts on the unit. Only a unit with everything
-        // hidden has nothing to draw.
-        _flattenSelection.Enabled = VisibleInSelectedUnits().Count > 0;
-        _clearSelection.Enabled = selected.Count > 0;
+        // The unit's own commands answer about the row the menu belongs to.
+        _flattenVisible.Enabled = VisibleIn(_menuUnit).Count > 0;
+        _flattenSelected.Enabled = SelectedIn(_menuUnit).Count > 0;
         _undoFlatten.Enabled = CanUndoFlatten;
 
         var (units, selection) = EditingScope();

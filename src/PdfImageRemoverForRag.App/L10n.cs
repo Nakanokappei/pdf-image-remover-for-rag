@@ -115,6 +115,14 @@ internal static class L10n
     public const string MenuGlyph = "☰";
 
     /// <summary>
+    /// The menu that lives in a unit's own row. A DIFFERENT symbol from the
+    /// hamburger, because it is a different promise: the hamburger acts on
+    /// whatever is selected, this one acts on the row it sits in. Two menus
+    /// drawn alike are read as one menu.
+    /// </summary>
+    public const string RowMenuGlyph = "⋮";
+
+    /// <summary>
     /// A unit's heading: which document, which page, which unit on it. The same
     /// in every language, because it is three numbers and three tags — a reader
     /// matching "Doc:01 P.12 Unit 03" against a page needs it to look the same
@@ -254,7 +262,9 @@ internal static class L10n
 
     public static string FlattenPanelTitle => S.FlattenPanelTitle;
     public static string FlattenMenu => S.FlattenMenu;
-    public static string FlattenApply => S.FlattenApply;
+    public static string FlattenVisible => S.FlattenVisible;
+    public static string FlattenSelected => S.FlattenSelected;
+    public static string FlattenUnitMenu => S.FlattenUnitMenu;
     public static string FlattenUndo => S.FlattenUndo;
     public static string FlattenMerge => S.FlattenMerge;
     public static string FlattenSplit => S.FlattenSplit;

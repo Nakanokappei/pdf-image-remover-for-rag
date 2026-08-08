@@ -139,10 +139,12 @@ internal sealed class EnglishStrings : IStrings
 
     public string FlattenPanelTitle => "Graphics objects";
     public string FlattenMenu => "Graphics object commands";
-    public string FlattenApply => "Merge visible graphics objects in the selected unit";
-    public string FlattenUndo => "Undo flatten";
-    public string FlattenMerge => "Merge selected";
-    public string FlattenSplit => "Split selected";
+    public string FlattenUnitMenu => "Commands for this unit";
+    public string FlattenVisible => "Turn the visible objects into a picture";
+    public string FlattenSelected => "Turn the selected objects into a picture";
+    public string FlattenUndo => "Undo the picture";
+    public string FlattenMerge => "Merge the selected units";
+    public string FlattenSplit => "Split the selected objects off";
 
     public string FlattenDescription =>
         "Bakes overlapping graphics objects into a single image. The page looks the same, "

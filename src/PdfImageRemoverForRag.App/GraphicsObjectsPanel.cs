@@ -147,13 +147,32 @@ internal sealed class GraphicsObjectsPanel : UserControl
     internal sealed class FlattenRequestedEventArgs : EventArgs
     {
         public FlattenRequestedEventArgs(
-            IReadOnlyDictionary<string, IReadOnlyList<OverlapRegion>> places)
+            IReadOnlyDictionary<string, IReadOnlyList<OverlapRegion>> places,
+            VisibilityChangeEventArgs? showAgain = null)
         {
             Places = places;
+            ShowAgain = showAgain;
         }
 
         /// <summary>The places to draw, per source file. Never empty.</summary>
         public IReadOnlyDictionary<string, IReadOnlyList<OverlapRegion>> Places { get; }
+
+        /// <summary>
+        /// What to show again once the picture is drawn, or null for a command
+        /// that leaves the eyes as they are.
+        ///
+        /// Closing an eye is how the user says "not in this picture", and
+        /// "turn the VISIBLE objects into a picture" is the command that reads
+        /// it that way. Once the picture exists that instruction has been
+        /// carried out, so the eye reopens — otherwise a mark made to compose
+        /// one picture would go on to delete the object at the next save.
+        ///
+        /// It lists everything the command left out, including objects left out
+        /// for the OTHER reason — being ticked for removal in the list opposite.
+        /// The host is what can tell the two apart, and it reopens only the eyes
+        /// it had closed itself.
+        /// </summary>
+        public VisibilityChangeEventArgs? ShowAgain { get; }
     }
 
     /// <summary>
@@ -283,8 +302,10 @@ internal sealed class GraphicsObjectsPanel : UserControl
         // Decided as a menu opens rather than kept in step with every click:
         // there is one moment when it matters, and this way it cannot be stale.
         _unitMenu.Opening += (_, _) => RefreshCommandState();
-        _flattenVisible.Click += (_, _) => RequestFlatten(VisibleIn(_menuUnit));
-        _flattenSelected.Click += (_, _) => RequestFlatten(SelectedIn(_menuUnit));
+        _flattenVisible.Click += (_, _) =>
+            RequestFlatten(VisibleIn(_menuUnit), showTheRestAgain: true);
+        _flattenSelected.Click += (_, _) =>
+            RequestFlatten(SelectedIn(_menuUnit), showTheRestAgain: false);
         _splitSelection.Click += (_, _) => EditUnits(merge: false);
         _list.UnitMenuRequested += OnUnitMenuRequested;
 
@@ -811,16 +832,29 @@ internal sealed class GraphicsObjectsPanel : UserControl
     /// Ask for these objects to become a picture. One place, in one file: both
     /// commands act on one unit, which is the row their menu was opened from.
     /// </summary>
-    void RequestFlatten(IReadOnlyList<PlacedObject> members)
+    /// <param name="showTheRestAgain">
+    /// True for the command that composes the picture out of what is VISIBLE,
+    /// where a closed eye means "not in this one" and has done its job as soon
+    /// as the picture exists. False where the eye was not the instrument: the
+    /// user picked rows, and an object they had hidden for their own reasons
+    /// stays hidden.
+    /// </param>
+    void RequestFlatten(IReadOnlyList<PlacedObject> members, bool showTheRestAgain)
     {
         if (_menuUnit is null || members.Count == 0) return;
 
         var place = OverlapDetector.RegionCovering(_menuUnit.Region.Page, members.ToArray());
+        var leftOut = showTheRestAgain
+            ? _menuUnit.Region.Members.Where(m => !members.Contains(m)).ToArray()
+            : Array.Empty<PlacedObject>();
+
         FlattenRequested?.Invoke(this, new FlattenRequestedEventArgs(
             new Dictionary<string, IReadOnlyList<OverlapRegion>>(StringComparer.OrdinalIgnoreCase)
             {
                 [_menuUnit.FilePath] = new[] { place },
-            }));
+            },
+            leftOut.Length == 0 ? null : new VisibilityChangeEventArgs(
+                _menuUnit.FilePath, _menuUnit.Region.Page, leftOut, hide: false)));
     }
 
     /// <summary>Open a unit's own menu, on the unit whose row it came from.</summary>

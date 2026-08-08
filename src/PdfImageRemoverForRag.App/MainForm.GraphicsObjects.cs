@@ -74,6 +74,7 @@ internal sealed partial class MainForm
         {
             var flattened = await _workflow.FlattenAsync(places,
                 new Progress<AnalysisProgress>(report => SetStatus(_openProgress.Describe(report))));
+            if (e.ShowAgain is { } showAgain) ShowHiddenAgain(showAgain);
             RebuildAfterWorkspaceChanged(
                 L10n.StatusFlattened(flattened.Count), keepSelection: true);
             ShowPictureDrawnBy(flattened);
@@ -87,6 +88,26 @@ internal sealed partial class MainForm
         finally
         {
             SetBusy(false);
+        }
+    }
+
+    /// <summary>
+    /// Open again the eyes that composed a picture. Closing one is how the user
+    /// says "not in this one", and once the picture is drawn that is done with —
+    /// leaving them closed would turn a decision about ONE picture into a
+    /// deletion at the next save, which nobody asked for.
+    ///
+    /// Only the eyes THIS side closed. An object also looks hidden in the panel
+    /// while it is ticked for removal in the list opposite, and that tick is a
+    /// different decision with a different scope: it survives.
+    /// </summary>
+    void ShowHiddenAgain(GraphicsObjectsPanel.VisibilityChangeEventArgs e)
+    {
+        foreach (var placed in e.Objects)
+        {
+            if (!_workflow.IsPlacementHidden(e.FilePath, e.Page.PageNumber, placed)) continue;
+            _workflow.SetPlacementHidden(
+                e.FilePath, e.Page.PageNumber, e.Page, placed, hide: false);
         }
     }
 

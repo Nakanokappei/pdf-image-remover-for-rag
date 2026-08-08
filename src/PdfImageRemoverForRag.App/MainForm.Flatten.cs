@@ -97,7 +97,7 @@ internal sealed partial class MainForm
     /// </summary>
     async void OnUndoFlattenRequested(object? sender, EventArgs e)
     {
-        var (filePath, place) = CurrentFlatten();
+        var (filePath, place) = FlattenBehindContextRow();
         if (_isBusy || filePath is null || place is null) return;
 
         SetBusy(true, L10n.StatusFlattening);
@@ -163,13 +163,15 @@ internal sealed partial class MainForm
     }
 
     /// <summary>
-    /// The flatten the current row is the picture of, with the file it is in —
-    /// null when the row is an ordinary object. One lookup for both the undo
-    /// command's enablement and what it acts on, so the two can never disagree.
+    /// The flatten the RIGHT-CLICKED row is the picture of, with the file it is
+    /// in — null when the row is an ordinary object. One lookup for both the
+    /// undo command's enablement and what it acts on, so the two can never
+    /// disagree; and it asks about the row the menu was opened on, which is not
+    /// always the row the cursor is in.
     /// </summary>
-    (string? FilePath, OverlapRegion? Place) CurrentFlatten()
+    (string? FilePath, OverlapRegion? Place) FlattenBehindContextRow()
     {
-        if (CurrentDisplayGroup() is not { Kind: RemovableKind.Image } group) return (null, null);
+        if (_contextGroup is not { Kind: RemovableKind.Image } group) return (null, null);
 
         foreach (var file in group.FileOccurrences)
         {
@@ -186,11 +188,7 @@ internal sealed partial class MainForm
     /// Show the units the current row takes part in. Called from every place
     /// the current row can change, in either view.
     /// </summary>
-    void ShowFlattenPanelForCurrentRow()
-    {
-        _flattenPanel.ShowFor(CurrentDisplayGroup());
-        _flattenPanel.CanUndoFlatten = CurrentFlatten().Place is not null;
-    }
+    void ShowFlattenPanelForCurrentRow() => _flattenPanel.ShowFor(CurrentDisplayGroup());
 
     /// <summary>
     /// Put every surface back in step with a workspace that has just changed

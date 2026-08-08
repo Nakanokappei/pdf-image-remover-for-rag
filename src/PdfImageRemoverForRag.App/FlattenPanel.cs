@@ -100,7 +100,6 @@ internal sealed class FlattenPanel : UserControl
     readonly ContextMenuStrip _unitMenu = new();
     readonly ToolStripMenuItem _flattenVisible = new(L10n.FlattenVisible);
     readonly ToolStripMenuItem _flattenSelected = new(L10n.FlattenSelected);
-    readonly ToolStripMenuItem _undoFlatten = new(L10n.FlattenUndo);
     readonly ToolStripMenuItem _splitSelection = new(L10n.FlattenSplit);
     readonly ToolStripMenuItem _mergeSelection = new(L10n.FlattenMerge);
 
@@ -162,9 +161,6 @@ internal sealed class FlattenPanel : UserControl
         public IReadOnlyDictionary<string, IReadOnlyList<OverlapRegion>> Places { get; }
     }
 
-    /// <summary>Raised when the user asks to take back the flatten they are looking at.</summary>
-    public event EventHandler? UndoFlattenRequested;
-
     /// <summary>
     /// Raised when an eye is clicked. Whether a layer is drawn is the same fact
     /// as whether a save keeps it, and that fact lives in the workspace beside
@@ -222,13 +218,6 @@ internal sealed class FlattenPanel : UserControl
     /// every other showing of the same object.
     /// </summary>
     public Func<string, int, PlacedObject, bool>? IsHidden { get; set; }
-
-    /// <summary>
-    /// Whether the object selected in the list is a picture some flatten drew,
-    /// which is the only thing the undo command can act on. Decided by the host
-    /// — it is the workspace that knows what has been flattened.
-    /// </summary>
-    public bool CanUndoFlatten { get; set; }
 
     /// <summary>
     /// Height of the preview under the list, in LOGICAL pixels: set by the host
@@ -297,7 +286,7 @@ internal sealed class FlattenPanel : UserControl
         _menu.Items.Add(_mergeSelection);
         _unitMenu.Items.AddRange(new ToolStripItem[]
         {
-            _flattenVisible, _flattenSelected, _undoFlatten,
+            _flattenVisible, _flattenSelected,
             new ToolStripSeparator(), _splitSelection,
         });
         // Decided as a menu opens rather than kept in step with every click:
@@ -306,7 +295,6 @@ internal sealed class FlattenPanel : UserControl
         _unitMenu.Opening += (_, _) => RefreshCommandState();
         _flattenVisible.Click += (_, _) => RequestFlatten(VisibleIn(_menuUnit));
         _flattenSelected.Click += (_, _) => RequestFlatten(SelectedIn(_menuUnit));
-        _undoFlatten.Click += (_, _) => UndoFlattenRequested?.Invoke(this, EventArgs.Empty);
         _mergeSelection.Click += (_, _) => EditUnits(merge: true);
         _splitSelection.Click += (_, _) => EditUnits(merge: false);
         _list.UnitMenuRequested += OnUnitMenuRequested;
@@ -980,7 +968,6 @@ internal sealed class FlattenPanel : UserControl
         // The unit's own commands answer about the row the menu belongs to.
         _flattenVisible.Enabled = VisibleIn(_menuUnit).Count > 0;
         _flattenSelected.Enabled = SelectedIn(_menuUnit).Count > 0;
-        _undoFlatten.Enabled = CanUndoFlatten;
 
         var (units, selection) = EditingScope();
         _mergeSelection.Enabled = FlattenUnitEditing.CanMerge(units, selection);

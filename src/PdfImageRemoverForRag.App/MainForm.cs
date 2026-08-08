@@ -207,6 +207,12 @@ internal sealed partial class MainForm : Form
     // captured just before the menu opens.
     readonly ContextMenuStrip _rowContextMenu = new();
     readonly ToolStripMenuItem _usageLocationsMenuItem = new(L10n.ContextMenuUsageLocations);
+
+    // Taking a picture back belongs HERE, on the picture's own row, and not in
+    // the unit menu across the window: flattening ends the unit — its objects
+    // became the picture — so by the time there is anything to undo, the unit
+    // it came from is gone from the panel. What is left is this row.
+    readonly ToolStripMenuItem _undoFlattenMenuItem = new(L10n.FlattenUndo);
     CrossFileImageGroup? _contextGroup;
 
     // --- status bar --------------------------------------------------------
@@ -441,7 +447,6 @@ internal sealed partial class MainForm : Form
 
         _flattenPanel.SelectionChanged += OnFlattenSelectionChanged;
         _flattenPanel.FlattenRequested += OnFlattenRequested;
-        _flattenPanel.UndoFlattenRequested += OnUndoFlattenRequested;
         // A layer is not drawn when this one placement of it is hidden, or when
         // the object it belongs to is ticked for removal everywhere. Two marks
         // with two scopes, and the eye shows the result of both.
@@ -473,7 +478,14 @@ internal sealed partial class MainForm : Form
         _tileView.FocusedGroupChanged += (_, _) => ShowFlattenPanelForCurrentRow();
 
         _usageLocationsMenuItem.Click += OnUsageLocationsClicked;
-        _rowContextMenu.Items.Add(_usageLocationsMenuItem);
+        _undoFlattenMenuItem.Click += OnUndoFlattenRequested;
+        _rowContextMenu.Items.AddRange(new ToolStripItem[]
+        {
+            _usageLocationsMenuItem, _undoFlattenMenuItem,
+        });
+        // Decided as it opens: there is one moment when it matters.
+        _rowContextMenu.Opening += (_, _) =>
+            _undoFlattenMenuItem.Enabled = FlattenBehindContextRow().Place is not null;
         _tileView.ToolTipFor = TileToolTipFor;
         _tileView.AccessibleNameFor = TileAccessibleNameFor;
         _thumbnailSettleTimer.Tick += OnThumbnailSettleTick;

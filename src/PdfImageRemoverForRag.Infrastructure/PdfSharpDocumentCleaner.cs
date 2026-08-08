@@ -308,7 +308,9 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
                 int flattenedOps = 0;
                 foreach (var flatten in pageFlatten)
                 {
-                    int removedForRegion = RemoveRegionMembers(
+                    // Where the picture belongs is decided BEFORE the members
+                    // go, because it is decided by where the lowest of them was.
+                    var (removedForRegion, firstIndex) = RemoveRegionMembers(
                         page, sequence, flatten.Region, flattenedNames);
                     // Nothing matched: the objects are no longer where analysis
                     // saw them, so there is nothing to replace and drawing the
@@ -321,6 +323,13 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
                     if (flatten.Png is null) continue;
                     flattenedOps += removedForRegion;
                     flattenedHere.Add(flatten);
+                    // Drawn into the sequence as it stands, and not appended to
+                    // the page afterwards: the picture stands in for objects
+                    // that were somewhere in the middle of the drawing order,
+                    // and drawing it last put it over things it used to be
+                    // under. Everything removed later shifts it along, which is
+                    // why it goes in now rather than at the end of the page.
+                    PlacePicture(page, sequence, flatten, firstIndex, placedImages);
                 }
 
                 if (namesToDrop.Count > 0)
@@ -373,15 +382,12 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
                     }
                 }
 
+                // The pictures are already in the sequence, each at the place
+                // its objects were drawn. ReplaceContent collapses the page into
+                // one stream, which is also what throws away the scratch streams
+                // PDFsharp wrote while the images were being made.
                 page.Contents.ReplaceContent(sequence);
-                // Only now may the replacements be drawn: ReplaceContent
-                // collapses the page into a single content stream, so anything
-                // appended before it would be thrown away.
-                if (flattenedHere.Count > 0)
-                {
-                    DrawFlattenedRegions(page, flattenedHere, placedImages);
-                    regionsFlattened += flattenedHere.Count;
-                }
+                regionsFlattened += flattenedHere.Count;
                 pagesModified++;
                 totalRemovedOps += removed - flattenedOps;
             }
@@ -452,7 +458,7 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
     /// Delete the region's members at that one place on the page, and return how
     /// many operators (or operator ranges) went.
     /// </summary>
-    static int RemoveRegionMembers(
+    static (int Removed, int FirstIndex) RemoveRegionMembers(
         PdfPage page, CSequence sequence, OverlapRegion region, HashSet<string> flattenedNames)
     {
         // The region names its image members by stream hash, while the page
@@ -484,32 +490,66 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
     }
 
     /// <summary>
-    /// Draw each region's rendering where its objects used to be. The images are
-    /// added to <paramref name="keepAlive"/> rather than disposed here because
-    /// PDFsharp reads their streams when the document is saved.
+    /// Put the region's rendering into the page's own drawing order, where the
+    /// lowest object it replaces was — so a picture that stood under something
+    /// goes on standing under it.
+    ///
+    /// It used to be appended to the page as a stream of its own, which drew it
+    /// last and so over everything: an object the user had kept inside the
+    /// region disappeared behind the picture of its neighbours.
+    ///
+    /// The image is added to <paramref name="keepAlive"/> rather than disposed
+    /// here because PDFsharp reads its stream when the document is saved.
     /// </summary>
-    static void DrawFlattenedRegions(
-        PdfPage page, List<FlattenImage> flattened, List<IDisposable> keepAlive)
+    static void PlacePicture(
+        PdfPage page, CSequence sequence, FlattenImage flatten, int firstIndex,
+        List<IDisposable> keepAlive)
     {
-        // Appending gives a content stream of our own, on top of what is left of
-        // the page. XGraphics measures from the top-left with y growing down,
-        // while a region is in PDF space with the origin at the bottom-left, so
-        // the top edge is the page height less the region's upper edge. (Pages
-        // with a /Rotate entry are not handled specially — analysis reads
-        // content-stream coordinates too, so both sides are consistent.)
-        using var gfx = XGraphics.FromPdfPage(page, XGraphicsPdfPageOptions.Append, XGraphicsUnit.Point);
-        foreach (var flatten in flattened)
-        {
-            // Only regions with pixels reach here; a place merely emptied has
-            // none, and is filtered out before the list is built.
-            if (flatten.Png is null) continue;
+        var operators = PictureOperators(page, flatten, keepAlive);
 
-            var region = flatten.Region;
-            var image = XImage.FromStream(new MemoryStream(flatten.Png));
+        // Where the block may go without landing inside somebody else's saved
+        // state. -1 means the page transforms its whole top level, which this
+        // cannot honour — there the picture goes last, as it always did.
+        int at = ContentStreamWalker.InsertionPointFor(sequence, firstIndex);
+        if (at < 0) at = sequence.Count;
+
+        for (int i = operators.Count - 1; i >= 0; i--) sequence.Insert(at, operators[i]);
+    }
+
+    /// <summary>
+    /// Make the picture an image of the page and answer the operators that draw
+    /// it.
+    ///
+    /// PDFsharp has no way to say "give me an image XObject": the drawing is
+    /// what makes one. So it draws into a scratch content stream — which
+    /// registers the image and names it in the page's resources — and only the
+    /// operators are taken. The stream itself is left for ReplaceContent to
+    /// discard, since the whole point is that the picture goes somewhere else.
+    ///
+    /// XGraphics measures from the top-left with y growing down, while a region
+    /// is in PDF space with the origin at the bottom-left, so the top edge is
+    /// the page height less the region's upper edge. (Pages with a /Rotate entry
+    /// are not handled specially — analysis reads content-stream coordinates
+    /// too, so both sides are consistent.)
+    /// </summary>
+    static CSequence PictureOperators(
+        PdfPage page, FlattenImage flatten, List<IDisposable> keepAlive)
+    {
+        var region = flatten.Region;
+        using (var gfx = XGraphics.FromPdfPage(
+                   page, XGraphicsPdfPageOptions.Append, XGraphicsUnit.Point))
+        {
+            var image = XImage.FromStream(new MemoryStream(flatten.Png!));
             keepAlive.Add(image);
             double top = page.Height.Point - (region.Y + region.Height);
             gfx.DrawImage(image, new XRect(region.X, top, region.Width, region.Height));
         }
+
+        var written = page.Contents.Elements[page.Contents.Elements.Count - 1];
+        var scratch = (written is PdfReference reference ? reference.Value : written) as PdfDictionary;
+        return scratch is null
+            ? new CSequence()
+            : ContentReader.ReadContent(scratch.Stream.UnfilteredValue);
     }
 
     /// <summary>

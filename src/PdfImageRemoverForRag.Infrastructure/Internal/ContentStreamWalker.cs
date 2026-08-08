@@ -254,7 +254,8 @@ internal static class ContentStreamWalker
     /// a stored operator index because the file is re-read from disk here and
     /// the indices from analysis no longer apply.
     ///
-    /// Returns the number of operators (or operator ranges) removed.
+    /// Returns how many operators (or operator ranges) were removed, and the
+    /// index the FIRST of them was at — where a picture replacing them belongs.
     /// </summary>
     /// <summary>
     /// Which side of a region's membership an operator has to be on to be
@@ -271,7 +272,7 @@ internal static class ContentStreamWalker
         Others,
     }
 
-    public static int RemoveInRegion(
+    public static (int Removed, int FirstIndex) RemoveInRegion(
         CSequence sequence,
         OverlapRegion region,
         IReadOnlySet<string> imageResourceNames,
@@ -327,11 +328,52 @@ internal static class ContentStreamWalker
             ranges.Add((hit.StartIndex, hit.EndIndex));
         }
 
+        // The FIRST of them, before anything moves: a picture standing in for
+        // these draw calls belongs where the lowest of them was, and after the
+        // deletion there is nothing left to ask.
+        int firstIndex = ranges.Count == 0 ? -1 : ranges.Min(r => r.Start);
+
         foreach (var range in ranges.OrderByDescending(r => r.Start))
         {
             for (int i = range.End; i >= range.Start; i--) sequence.RemoveAt(i);
         }
-        return ranges.Count;
+        return (ranges.Count, firstIndex);
+    }
+
+    /// <summary>
+    /// Where a self-contained block of operators may be inserted so that it
+    /// draws just before whatever is at <paramref name="index"/>: the last
+    /// point at or before it where no graphics state is open.
+    ///
+    /// The block PDFsharp writes for an image is balanced and places itself
+    /// with an absolute <c>cm</c>, so it lands where it says it does — as long
+    /// as it is not dropped inside somebody else's <c>q…Q</c>, where the state
+    /// in force is not the page's own.
+    ///
+    /// Answers -1 when the page applies a <c>cm</c> outside any <c>q…Q</c> pair:
+    /// that changes what "absolute" means for everything after it, and honouring
+    /// it would mean carrying the transform in. Rare enough to be worth
+    /// refusing rather than guessing at — the caller draws the picture last, as
+    /// it always did.
+    /// </summary>
+    public static int InsertionPointFor(CSequence sequence, int index)
+    {
+        int depth = 0;
+        int boundary = 0;
+        for (int at = 0; at < index && at < sequence.Count; at++)
+        {
+            if (sequence[at] is not COperator op) continue;
+            switch (op.OpCode.Name)
+            {
+                case "q": depth++; break;
+                case "Q": depth--; break;
+                case "cm" when depth == 0: return -1;
+            }
+            // The boundary is the place BEFORE the operator that reopened the
+            // top level, so a block inserted there draws ahead of it.
+            if (depth == 0) boundary = at + 1;
+        }
+        return boundary;
     }
 
     /// <summary>

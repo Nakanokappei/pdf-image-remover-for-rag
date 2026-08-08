@@ -2,6 +2,9 @@ using PdfImageRemoverForRag.Core.Errors;
 using PdfImageRemoverForRag.Core.Grouping;
 using PdfImageRemoverForRag.Core.Models;
 using PdfImageRemoverForRag.Infrastructure;
+using PdfImageRemoverForRag.Infrastructure.Internal;
+using PdfSharp.Pdf.Content;
+using PdfSharp.Pdf.IO;
 using Xunit;
 using PdfPigDoc = UglyToad.PdfPig.PdfDocument;
 
@@ -208,6 +211,45 @@ public class FlattenRegionTests : IClassFixture<SamplePdfFixture>
                 _samples.ImageAndTextPath, Destination("never-written.pdf"),
                 NothingToRemove(), new[] { region }));
         Assert.Equal(PdfCleanerErrorKind.Unexpected, ex.Kind);
+    }
+
+    [Fact]
+    public async Task ThePictureIsDrawnWhereTheLowestObjectItReplacesWas()
+    {
+        // The sample draws a logo near the top of the page, then a second logo
+        // lower down. Flattening the upper one has to leave the lower one drawn
+        // AFTER the picture, or anything the user kept over that place — the
+        // second logo here — ends up behind a picture of its neighbours.
+        //
+        // The page's y grows upward, so the unit drawn first is the one higher
+        // up the paper.
+        var info = await NewAnalyzer().AnalyzeAsync(_samples.FlattenUnitsPath);
+        var region = info.OverlapRegions.OrderByDescending(r => r.Y).First();
+
+        var before = DrawCallOrder(_samples.FlattenUnitsPath, region.PageNumber);
+        var dest = Destination("flatten-units_z-order.pdf");
+        await new PdfSharpDocumentCleaner(new FlatColourRasterizer())
+            .CleanAsync(_samples.FlattenUnitsPath, dest, NothingToRemove(), new[] { region });
+
+        var after = DrawCallOrder(dest, region.PageNumber);
+        var picture = after.Except(before, StringComparer.Ordinal).ToArray();
+        Assert.Single(picture);
+
+        // It stands exactly where the object it replaced stood: nothing that was
+        // drawn before it has moved, and the second logo still comes after.
+        Assert.Equal(0, after.IndexOf(picture[0]));
+        Assert.True(after.Count > 1, "the sample must draw something after the unit");
+    }
+
+    /// <summary>The resource names a page's Do operators reference, in order.</summary>
+    static List<string> DrawCallOrder(string path, int pageNumber)
+    {
+        using var document = PdfReader.Open(path, PdfDocumentOpenMode.Import);
+        var page = document.Pages[pageNumber - 1];
+        var sequence = ContentReader.ReadContent(PageContentAccessor.ReadMergedBytes(page));
+        return ContentStreamWalker.FindDrawCalls(sequence)
+            .Select(call => call.ResourceName)
+            .ToList();
     }
 
     [Fact]

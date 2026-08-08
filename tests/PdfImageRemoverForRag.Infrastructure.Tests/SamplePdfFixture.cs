@@ -28,6 +28,7 @@ public sealed class SamplePdfFixture : IDisposable
     public string SoftMaskedImagePath => Path.Combine(TempDirectory, "soft-masked-image.pdf");
     public string ShadowLayerPath => Path.Combine(TempDirectory, "shadow-layer.pdf");
     public string AnnotationSharedImagePath => Path.Combine(TempDirectory, "annotation-shared-image.pdf");
+    public string FlattenUnitsPath => Path.Combine(TempDirectory, "flatten-units-a.pdf");
 
     public SamplePdfFixture()
     {

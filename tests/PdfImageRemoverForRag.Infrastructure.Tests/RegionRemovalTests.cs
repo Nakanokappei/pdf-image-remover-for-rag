@@ -28,7 +28,7 @@ public class RegionRemovalTests
     static int RemoveIn(CSequence sequence, OverlapRegion region, params string[] imageNames) =>
         ContentStreamWalker.RemoveInRegion(
             sequence, region, new HashSet<string>(imageNames),
-            new PdfTextDecoder(null), new PdfFontMetrics(null));
+            new PdfTextDecoder(null), new PdfFontMetrics(null)).Removed;
 
     static OverlapRegion Region(double x, double y, double w, double h, params OverlapMember[] members) =>
         new(1, x, y, w, h, members.Select(m =>

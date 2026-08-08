@@ -63,9 +63,15 @@ internal sealed class GraphicsObjectsPanel : UserControl
     /// there was no way to say "that one goes and this one stays": the tick on
     /// the left takes all forty-one at once, and the eye lived only inside a
     /// unit.
+    ///
+    /// Two numbers, not a copy: which of the selected object's files, and which
+    /// of its drawings in that file. The workspace already holds every
+    /// occurrence of every object, and describing them a second time here cost
+    /// 332 KB on a document that draws one picture two thousand times, against
+    /// 16 KB for the numbers. <see cref="LoneAt"/> spells one out when a row is
+    /// painted or acted on.
     /// </summary>
-    sealed record LonePlace(
-        string FilePath, int DocumentNumber, PageDimensions Page, PlacedObject Object);
+    readonly record struct LonePlace(int File, int Occurrence);
 
     /// <summary>
     /// A line in the list. Three kinds, told apart by which index is set: a unit
@@ -89,8 +95,11 @@ internal sealed class GraphicsObjectsPanel : UserControl
     IReadOnlyList<PdfDocumentInfo> _documents = Array.Empty<PdfDocumentInfo>();
 
     // Rebuilt whenever the panel comes to describe another object, because that
-    // is what they are: the places THAT object is drawn alone.
+    // is what they are: the places THAT object is drawn alone. Beside them,
+    // which open document each of the object's files is, resolved once per
+    // rebuild rather than once per row.
     readonly List<LonePlace> _lonePlaces = new();
+    readonly Dictionary<int, int> _loneFiles = new();
 
     CrossFileObjectGroup? _selectedGroup;
     bool _anyDocuments;
@@ -591,29 +600,29 @@ internal sealed class GraphicsObjectsPanel : UserControl
         // then page. They are the same question ("where is this drawn?") asked
         // of one object, and splitting them into two blocks would make the user
         // read the document twice to find page 12.
-        var order = listedUnits
-            .Select(i => (Unit: i, Lone: -1,
-                          Document: _units[i].DocumentNumber,
-                          Page: _units[i].Region.PageNumber,
-                          Number: _units[i].NumberOnPage))
-            .Concat(_lonePlaces.Select((place, i) => (Unit: -1, Lone: i,
-                          Document: place.DocumentNumber,
-                          Page: place.Page.PageNumber,
-                          Number: 0)))
-            .OrderBy(x => x.Document).ThenBy(x => x.Page).ThenBy(x => x.Number);
-
-        foreach (var entry in order)
+        //
+        // Merged rather than sorted: both sides already run in page order (the
+        // units as the workspace built them, the placements as the analyzer
+        // swept the pages), and a document that draws one picture two thousand
+        // times is exactly where an unnecessary sort per keystroke would show.
+        int nextUnit = 0, nextLone = 0;
+        while (nextUnit < listedUnits.Length || nextLone < _lonePlaces.Count)
         {
-            if (entry.Lone >= 0)
+            bool takeLone = nextUnit >= listedUnits.Length
+                || (nextLone < _lonePlaces.Count && LoneComesFirst(listedUnits[nextUnit], nextLone));
+
+            if (takeLone)
             {
-                _rows.Add(new Row(-1, _lonePlaces[entry.Lone].Object, entry.Lone));
+                _rows.Add(new Row(-1, null, nextLone++));
                 continue;
             }
-            _rows.Add(new Row(entry.Unit, null));
-            if (!_units[entry.Unit].Expanded) continue;
-            foreach (var member in _units[entry.Unit].Region.Members)
+
+            int unit = listedUnits[nextUnit++];
+            _rows.Add(new Row(unit, null));
+            if (!_units[unit].Expanded) continue;
+            foreach (var member in _units[unit].Region.Members)
             {
-                _rows.Add(new Row(entry.Unit, member));
+                _rows.Add(new Row(unit, member));
             }
         }
 
@@ -660,35 +669,93 @@ internal sealed class GraphicsObjectsPanel : UserControl
     void CollectLonePlaces(IReadOnlyList<int> listedUnits)
     {
         _lonePlaces.Clear();
+        _loneFiles.Clear();
         if (_selectedGroup is null) return;
 
-        for (int index = 0; index < _documents.Count; index++)
+        for (int file = 0; file < _selectedGroup.FileOccurrences.Count; file++)
         {
-            var document = _documents[index];
-            var occurrences = _selectedGroup.FileOccurrences.FirstOrDefault(
-                f => string.Equals(f.FilePath, document.FilePath, StringComparison.OrdinalIgnoreCase));
-            if (occurrences is null) continue;
+            var occurrences = _selectedGroup.FileOccurrences[file];
+            int document = IndexOfDocument(occurrences.FilePath);
+            if (document < 0) continue;
+            _loneFiles[file] = document;
 
-            foreach (var occurrence in occurrences.Occurrences)
+            for (int at = 0; at < occurrences.Occurrences.Count; at++)
             {
-                var placed = new PlacedObject(
-                    _selectedGroup.Kind, _selectedGroup.MatchKey,
-                    occurrence.X, occurrence.Y, occurrence.Width, occurrence.Height);
+                var occurrence = occurrences.Occurrences[at];
 
                 // A drawing a unit already lists is not lone: it would be the
                 // same object twice in the same panel, once with a folder and
                 // once without.
                 bool inAUnit = listedUnits.Any(i =>
                     _units[i].Region.PageNumber == occurrence.PageNumber
-                    && string.Equals(_units[i].FilePath, document.FilePath,
+                    && string.Equals(_units[i].FilePath, occurrences.FilePath,
                         StringComparison.OrdinalIgnoreCase)
-                    && _units[i].Region.Members.Any(m => Covers(m, placed)));
+                    && _units[i].Region.Members.Any(m => Covers(m, occurrence)));
                 if (inAUnit) continue;
 
-                _lonePlaces.Add(new LonePlace(
-                    document.FilePath, index + 1, PageOf(document, occurrence.PageNumber), placed));
+                _lonePlaces.Add(new LonePlace(file, at));
             }
         }
+    }
+
+    /// <summary>
+    /// Which of the two comes first on paper: the document, then the page. A
+    /// unit and a lone placement on the same page put the unit first, because
+    /// the unit is the more particular answer.
+    /// </summary>
+    bool LoneComesFirst(int unitIndex, int loneIndex)
+    {
+        var unit = _units[unitIndex];
+        var (document, page) = LoneOrderOf(loneIndex);
+        // The document number the panel shows is one-based; this compares the
+        // index it came from, which orders the same way.
+        if (document != unit.DocumentNumber - 1) return document < unit.DocumentNumber - 1;
+        return page < unit.Region.PageNumber;
+    }
+
+    /// <summary>
+    /// Where a lone place belongs in reading order. Kept apart from
+    /// <see cref="LoneAt"/> because sorting asks it of every place, and it must
+    /// not build a drawing to answer.
+    /// </summary>
+    (int Document, int Page) LoneOrderOf(int index)
+    {
+        var place = _lonePlaces[index];
+        return (_loneFiles[place.File],
+                _selectedGroup!.FileOccurrences[place.File].Occurrences[place.Occurrence].PageNumber);
+    }
+
+    int IndexOfDocument(string filePath)
+    {
+        for (int i = 0; i < _documents.Count; i++)
+        {
+            if (string.Equals(_documents[i].FilePath, filePath, StringComparison.OrdinalIgnoreCase))
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /// <summary>
+    /// One lone place, spelled out: which file, which page and how big it is,
+    /// and the drawing as the rest of the app names one. Built when a row is
+    /// painted or acted on rather than held, which is what keeps
+    /// <see cref="LonePlace"/> down to two numbers.
+    /// </summary>
+    (string FilePath, int DocumentNumber, PageDimensions Page, PlacedObject Object) LoneAt(int index)
+    {
+        var place = _lonePlaces[index];
+        var occurrences = _selectedGroup!.FileOccurrences[place.File];
+        var occurrence = occurrences.Occurrences[place.Occurrence];
+        int document = _loneFiles[place.File];
+
+        return (occurrences.FilePath,
+                document + 1,
+                PageOf(_documents[document], occurrence.PageNumber),
+                new PlacedObject(
+                    _selectedGroup.Kind, _selectedGroup.MatchKey,
+                    occurrence.X, occurrence.Y, occurrence.Width, occurrence.Height));
     }
 
     /// <summary>
@@ -697,21 +764,30 @@ internal sealed class GraphicsObjectsPanel : UserControl
     /// list, and the two measure a rectangle by their own routes — a tenth of a
     /// point apart is the same ink.
     /// </summary>
-    static bool Covers(PlacedObject member, PlacedObject placed) =>
-        member.Kind == placed.Kind
-        && member.Identity == placed.Identity
-        && Math.Abs(member.X - placed.X) < 0.1
-        && Math.Abs(member.Y - placed.Y) < 0.1;
+    bool Covers(PlacedObject member, ObjectOccurrence occurrence) =>
+        member.Kind == _selectedGroup!.Kind
+        && member.Identity == _selectedGroup.MatchKey
+        && Math.Abs(member.X - occurrence.X) < 0.1
+        && Math.Abs(member.Y - occurrence.Y) < 0.1;
 
     /// <summary>
     /// The page an occurrence is on, size included. Falls back to a page of no
     /// size when the document does not carry one, which costs the whole-page
     /// warning and nothing else — the region is still where it says it is.
     /// </summary>
-    static PageDimensions PageOf(PdfDocumentInfo document, int pageNumber) =>
-        document.Pages.FirstOrDefault(p => p.PageNumber == pageNumber) is { PageNumber: > 0 } page
-            ? page
+    static PageDimensions PageOf(PdfDocumentInfo document, int pageNumber)
+    {
+        // The list is in page order, so the number indexes it; anything else is
+        // looked up, and a document carrying no sizes answers a page of none.
+        if (pageNumber >= 1 && pageNumber <= document.Pages.Count
+            && document.Pages[pageNumber - 1].PageNumber == pageNumber)
+        {
+            return document.Pages[pageNumber - 1];
+        }
+        return document.Pages.FirstOrDefault(p => p.PageNumber == pageNumber) is { PageNumber: > 0 } found
+            ? found
             : new PageDimensions(pageNumber, 0, 0);
+    }
 
     // =======================================================================
     // Rows
@@ -729,7 +805,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
         {
             // Its own row, at the top level: there is no folder over it, so the
             // page it is on is what names it.
-            var place = _lonePlaces[row.LoneIndex];
+            var place = LoneAt(row.LoneIndex);
             string? loneText = ObjectDisplay.ThumbnailText(
                 place.Object.Kind, place.Object.Identity);
             var loneThumbnail = loneText is null
@@ -798,14 +874,14 @@ internal sealed class GraphicsObjectsPanel : UserControl
     bool Hidden(UnitEntry unit, PlacedObject member) =>
         IsHidden?.Invoke(unit.FilePath, unit.Region.PageNumber, member) == true;
 
-    bool Hidden(LonePlace place) =>
+    bool Hidden((string FilePath, int DocumentNumber, PageDimensions Page, PlacedObject Object) place) =>
         IsHidden?.Invoke(place.FilePath, place.Page.PageNumber, place.Object) == true;
 
     string? ToolTipForRow(int index)
     {
         if (index < 0 || index >= _rows.Count) return null;
         var row = _rows[index];
-        if (row.IsLone) return ObjectLabel(_lonePlaces[row.LoneIndex].Object);
+        if (row.IsLone) return ObjectLabel(LoneAt(row.LoneIndex).Object);
         if (row.Object is null) return _units[row.UnitIndex].FilePath;
         return row.Object.Kind == RemovableKind.Text ? row.Object.Identity : ObjectLabel(row.Object);
     }
@@ -853,7 +929,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
 
         if (row.IsLone)
         {
-            var place = _lonePlaces[row.LoneIndex];
+            var place = LoneAt(row.LoneIndex);
             VisibilityChangeRequested?.Invoke(this, new VisibilityChangeEventArgs(
                 place.FilePath, place.Page, new[] { place.Object }, !Hidden(place)));
             return;
@@ -916,7 +992,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
     {
         for (int i = 0; i < _rows.Count; i++)
         {
-            if (_rows[i].Object is null) continue;
+            if (_rows[i].Object is null && !_rows[i].IsLone) continue;
             _list.SelectOnly(i);
             return;
         }
@@ -932,10 +1008,11 @@ internal sealed class GraphicsObjectsPanel : UserControl
     /// they are gathered apart from <see cref="SelectedByUnit"/> rather than
     /// squeezed into it.
     /// </summary>
-    IReadOnlyList<LonePlace> SelectedLonePlaces() => _list.SelectedRows
-        .Where(index => index < _rows.Count && _rows[index].IsLone)
-        .Select(index => _lonePlaces[_rows[index].LoneIndex])
-        .ToArray();
+    IReadOnlyList<(string FilePath, int DocumentNumber, PageDimensions Page, PlacedObject Object)>
+        SelectedLonePlaces() => _list.SelectedRows
+            .Where(index => index < _rows.Count && _rows[index].IsLone)
+            .Select(index => LoneAt(_rows[index].LoneIndex))
+            .ToArray();
 
     /// <summary>
     /// The selected objects, gathered by the unit they sit in. A selected folder
@@ -1183,8 +1260,21 @@ internal sealed class GraphicsObjectsPanel : UserControl
 
         var (first, count) = _list.VisibleRange();
         var groups = new List<CrossFileObjectGroup>(count);
+        bool loneAsked = false;
         for (int i = first; i < first + count && i < _rows.Count; i++)
         {
+            // Every lone row draws the SAME object — they are its places — so
+            // one bitmap answers all of them, and asking once is the whole of
+            // what a screenful of them costs.
+            if (_rows[i].IsLone)
+            {
+                if (loneAsked || _selectedGroup is null
+                    || _selectedGroup.Kind == RemovableKind.Text) continue;
+                groups.Add(_selectedGroup);
+                loneAsked = true;
+                continue;
+            }
+
             var member = _rows[i].Object;
             // Text draws its string, so it needs nothing rendered.
             if (member is null || member.Kind == RemovableKind.Text) continue;

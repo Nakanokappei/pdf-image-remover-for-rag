@@ -1,6 +1,6 @@
 # PDF Image Remover for RAG
 
-A Windows 11 desktop tool that removes unnecessary images, repeated text, vector shapes, and grouped artwork from PDFs before you feed them into a RAG pipeline.
+A Windows 11 desktop tool that takes images, repeated text, shapes, drawings, and shadows out of a PDF before you feed it to a RAG pipeline.
 
 Company logos, headers, footers, watermarks, and page rules degrade retrieval quality and inflate preprocessing cost once a PDF lands in a RAG / Dify pipeline. This tool lists every removable object in your PDFs, lets you check what you want gone, and writes new PDFs without them. A removed image is taken out of the file itself, not merely stopped from being painted — otherwise a pipeline that reads a PDF by enumerating its objects still finds it. **The original files are never overwritten.**
 
@@ -22,13 +22,14 @@ Everything runs locally — files never leave your PC, and no data is collected.
 
 ## Features
 
-- **Open several PDFs at once.** Identical objects are merged into one row across files — one check box removes a shared logo from every file.
-- **Two views.** A spreadsheet-style table (sortable on any column, resizable columns) and a thumbnail tile view, always in the same order.
-- **Flatten overlaps into an image** (the Graphics objects panel, beside the object list). Select a row in the object list and the panel lists every place that object is drawn, laid out like an image editor's layers panel: a unit is a layer group, and the graphics objects inside it are its layers, each with a thumbnail, a name and an eye. Close one eye and that single drawing goes on the next save, on that page only. Where objects overlap — image + text, image + shape, text + shape — you can turn the place into a picture of exactly what was there, so the page keeps its appearance while the text in it leaves the text layer. Flattening takes effect when you press it and can be undone. A preview underneath shows where on the page you are working.
-- **Thumbnails for everything.** Images are decoded, text is drawn as text, shapes are rendered from their actual path in their actual color, and a drawing's paths are rendered together so it looks like what sits on the page.
+- **Open several PDFs at once.** Identical objects merge into one row across files, so one check box removes a shared logo from every file.
+- **Two views.** A spreadsheet-style table, sortable on any column, and a thumbnail tile view, always in the same order.
+- **A thumbnail for everything.** Images are decoded, text is drawn as text, and shapes and drawings are rendered from their real paths in their real colors.
+- **Flatten overlaps into an image.** Select a row and the Graphics objects panel lists every place that object is drawn, laid out like an image editor's layers panel. Where objects overlap you can replace the place with a picture of exactly what was there, so the page keeps its appearance while the text in it leaves the text layer. Flattening takes effect when you press it and can be undone.
+- **Remove one drawing of an object.** Closing an object's eye in that panel drops that single drawing at the next save, on that page only, and leaves the other pages alone.
 - **Filter by kind** — check boxes on the toolbar, or View → Shown Types — to work on one kind at a time.
-- **Safety first.** Saves go through a temp file that is verified (re-opens, page count matches, removed images absent from both the content streams and the page resources, kept objects present) before it becomes the final `_cleaned.pdf`. Objects inside a shared Form XObject are marked unremovable; full-page (scanned) images are flagged with a warning.
-- **16 UI languages**, following the OS display language: English, Japanese, Simplified Chinese, Traditional Chinese, Korean, German, French, Spanish, Italian, Portuguese, Russian, Indonesian, Malay, Hindi, Turkish, Vietnamese. There is no in-app language switch — it follows Windows. The manual exists in English and Japanese only; every other language opens the English page.
+- **Every save is verified.** The file is written to a temp file and checked before it becomes the final `_cleaned.pdf`: it re-opens, the page count matches, removed objects are gone from both the content streams and the page resources, and the objects you kept are still there.
+- **16 UI languages**, following the Windows display language: English, Japanese, Simplified and Traditional Chinese, Korean, German, French, Spanish, Italian, Portuguese, Russian, Indonesian, Malay, Hindi, Turkish, Vietnamese. There is no in-app switch, and the manual exists in English and Japanese only.
 - **Handles large documents.** A 31 MB, 176-page file with 2,015 removable objects opens in seconds. Thumbnails are cached on disk and only the ones on screen are held in memory, so opening many large PDFs costs disk rather than RAM.
 - **High-DPI aware** (PerMonitorV2), verified at 200% scaling.
 
@@ -69,15 +70,14 @@ dotnet publish src/PdfImageRemoverForRag.App/PdfImageRemoverForRag.App.csproj -c
 Three `CleanedFileNamerTests` cases assert POSIX paths and fail on Windows. That is expected, not a
 broken checkout.
 
-## Repository layout
+Where things live:
 
 ```
 src/PdfImageRemoverForRag.Core/            net8.0          Models, grouping, formatting, validation, abstractions
 src/PdfImageRemoverForRag.Infrastructure/  net8.0          PDFsharp / PdfPig implementations (GDI-free)
 src/PdfImageRemoverForRag.App/             net8.0-windows  WinForms UI (all GDI+ drawing lives here)
-tests/                                     xunit           145 unit + 125 integration tests
-scripts/GenerateSamples/                   Sample-PDF generator (shared with the test fixture)
-scripts/PdfImageRemoverForRag.Poc/         Technical-verification driver over Infrastructure
+tests/                                     xunit           unit + integration tests
+scripts/GenerateSamples/                   Sample-PDF generator, shared with the test fixture
 ```
 
 ## Libraries
@@ -88,13 +88,7 @@ scripts/PdfImageRemoverForRag.Poc/         Technical-verification driver over In
 
 Bundled-dependency notices: [docs/license-notices.md](docs/license-notices.md).
 
-## Documentation
-
-- [docs/manual.en.md](docs/manual.en.md) / [docs/manual.ja.md](docs/manual.ja.md) — user manual (also in the app's Help menu).
-- [docs/known-limitations.md](docs/known-limitations.md) — what this version does not handle.
-- [docs/license-notices.md](docs/license-notices.md) — bundled-dependency notices.
-- [docs/privacy-policy.md](docs/privacy-policy.md) — privacy policy (also the Store listing's policy URL).
-
-## License
+## License and privacy
 
 MIT — see [LICENSE](LICENSE). Copyright (c) 2026 Nakano Kappei.
+Privacy policy: [docs/privacy-policy.md](docs/privacy-policy.md), which is also the Store listing's policy URL.

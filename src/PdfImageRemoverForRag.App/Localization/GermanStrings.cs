@@ -142,12 +142,11 @@ internal sealed class GermanStrings : IStrings
     public string ContextMenuUsageLocations => "&Verwendungsorte anzeigen…";
 
     public string FlattenPanelTitle => "Grafikobjekte";
-    public string FlattenMenu => "Grafikobjektbefehle";
     public string FlattenUnitMenu => "Befehle für diese Einheit";
     public string FlattenVisible => "Sichtbare Objekte zu einem Bild machen";
     public string FlattenSelected => "Gewählte Objekte zu einem Bild machen";
     public string FlattenUndo => "Bild zurücknehmen";
-    public string FlattenMerge => "Gewählte Einheiten zusammenführen";
+    public string FlattenMerge => "Einheiten zusammenführen";
     public string FlattenSplit => "Gewählte Objekte abtrennen";
 
     public string FlattenDescription =>

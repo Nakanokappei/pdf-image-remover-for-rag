@@ -134,12 +134,11 @@ internal sealed class JapaneseStrings : IStrings
     public string ContextMenuUsageLocations => "使用箇所を表示(&U)…";
 
     public string FlattenPanelTitle => "描画オブジェクト";
-    public string FlattenMenu => "描画オブジェクト操作";
     public string FlattenUnitMenu => "このユニットの操作";
     public string FlattenVisible => "表示中オブジェクトを画像化";
     public string FlattenSelected => "選択オブジェクトを画像化";
     public string FlattenUndo => "画像化を取り消す";
-    public string FlattenMerge => "選択したユニットをまとめる";
+    public string FlattenMerge => "ユニットをまとめる";
     public string FlattenSplit => "選択オブジェクトを分ける";
 
     public string FlattenDescription =>

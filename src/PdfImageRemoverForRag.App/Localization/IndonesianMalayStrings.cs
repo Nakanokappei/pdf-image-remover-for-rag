@@ -146,12 +146,11 @@ internal sealed class IndonesianMalayStrings : IStrings
     public string ContextMenuUsageLocations => "Tampilkan &Lokasi Penggunaan…";
 
     public string FlattenPanelTitle => "Objek grafis";
-    public string FlattenMenu => "Perintah objek grafis";
     public string FlattenUnitMenu => "Perintah untuk unit ini";
     public string FlattenVisible => "Jadikan objek terlihat sebagai gambar";
     public string FlattenSelected => "Jadikan objek terpilih sebagai gambar";
     public string FlattenUndo => "Batalkan gambar";
-    public string FlattenMerge => "Gabungkan unit terpilih";
+    public string FlattenMerge => "Gabungkan unit";
     public string FlattenSplit => "Pisahkan objek terpilih";
 
     public string FlattenDescription =>

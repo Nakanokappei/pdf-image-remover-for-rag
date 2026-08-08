@@ -65,9 +65,10 @@ internal sealed class FlattenPanel : UserControl
     bool _anyDocuments;
 
     readonly LayerListView _list;
-    // Title and a menu share a bar. The commands are in the menu rather than on
-    // a row of their own: five buttons cannot share a line with a heading at any
-    // width, and this panel is the one the user drags narrow.
+    // Title and one button share a bar. The button is a button and not a menu
+    // because there is one command at this level — everything else belongs to a
+    // unit and lives in that unit's row. A menu holding a single item asks the
+    // user to open it to find that out.
     readonly Panel _titleBar = new() { Dock = DockStyle.Top };
     readonly Label _title = new()
     {
@@ -77,31 +78,25 @@ internal sealed class FlattenPanel : UserControl
         TextAlign = ContentAlignment.MiddleLeft,
         UseMnemonic = false,
     };
-    readonly Button _menuButton = new()
+    readonly Button _mergeButton = new()
     {
         Dock = DockStyle.Right,
-        Text = L10n.MenuGlyph,
+        Text = L10n.FlattenMerge,
         FlatStyle = FlatStyle.System,
-        AutoSize = false,
+        AutoSize = true,
+        AutoSizeMode = AutoSizeMode.GrowAndShrink,
         UseMnemonic = false,
     };
-    readonly ContextMenuStrip _menu = new();
 
-    // Two menus, because there are two kinds of command and one menu could not
-    // say which was which.
-    //
-    // A unit's own menu lives in its row and acts on THAT unit: turning what it
-    // holds into a picture, taking that back, splitting part of it off. Nothing
-    // in it needs the words "in the selected unit", because the row it was
-    // opened from is the answer.
-    //
-    // The panel's menu is for what crosses units, and only that: gathering a
-    // selection that spans several of them into one.
+    // A unit's menu lives in its own row and acts on THAT unit: turning what it
+    // holds into a picture, doing the same to only what is selected inside it,
+    // splitting a selection off. Nothing in it needs the words "in the selected
+    // unit", because the row it was opened from is the answer — which is the
+    // whole reason it is not one menu at the top of the panel.
     readonly ContextMenuStrip _unitMenu = new();
     readonly ToolStripMenuItem _flattenVisible = new(L10n.FlattenVisible);
     readonly ToolStripMenuItem _flattenSelected = new(L10n.FlattenSelected);
     readonly ToolStripMenuItem _splitSelection = new(L10n.FlattenSplit);
-    readonly ToolStripMenuItem _mergeSelection = new(L10n.FlattenMerge);
 
     // The unit whose row menu is open. Set as it opens and read by the
     // commands, so what they act on cannot drift from what was pressed.
@@ -281,9 +276,8 @@ internal sealed class FlattenPanel : UserControl
         _wholePageWarning.ForeColor = MainForm.WarningTextColour;
         _title.Font = new Font(Font, FontStyle.Bold);
 
-        _menuButton.AccessibleName = $"{L10n.FlattenMenu} ({L10n.FlattenPanelTitle})";
-        _menuButton.Click += (_, _) => _menu.Show(_menuButton, new Point(0, _menuButton.Height));
-        _menu.Items.Add(_mergeSelection);
+        _mergeButton.AccessibleName = $"{L10n.FlattenMerge} ({L10n.FlattenPanelTitle})";
+        _mergeButton.Click += (_, _) => EditUnits(merge: true);
         _unitMenu.Items.AddRange(new ToolStripItem[]
         {
             _flattenVisible, _flattenSelected,
@@ -291,16 +285,14 @@ internal sealed class FlattenPanel : UserControl
         });
         // Decided as a menu opens rather than kept in step with every click:
         // there is one moment when it matters, and this way it cannot be stale.
-        _menu.Opening += (_, _) => RefreshCommandState();
         _unitMenu.Opening += (_, _) => RefreshCommandState();
         _flattenVisible.Click += (_, _) => RequestFlatten(VisibleIn(_menuUnit));
         _flattenSelected.Click += (_, _) => RequestFlatten(SelectedIn(_menuUnit));
-        _mergeSelection.Click += (_, _) => EditUnits(merge: true);
         _splitSelection.Click += (_, _) => EditUnits(merge: false);
         _list.UnitMenuRequested += OnUnitMenuRequested;
 
         _titleBar.Controls.Add(_title);
-        _titleBar.Controls.Add(_menuButton);
+        _titleBar.Controls.Add(_mergeButton);
 
         var listSide = new Panel { Dock = DockStyle.Fill };
         listSide.Controls.Add(_list);
@@ -353,8 +345,6 @@ internal sealed class FlattenPanel : UserControl
     void ApplyDpiDependentLayout()
     {
         _title.Padding = new Padding(Dip(8), 0, Dip(8), 0);
-        // Square, so the glyph sits in the middle of it rather than in a slab.
-        _menuButton.Width = Dip(30);
         _titleBar.Height = Dip(30);
         _titleBar.Padding = new Padding(0, Dip(3), Dip(6), Dip(3));
         FitWarningHeight();
@@ -970,7 +960,7 @@ internal sealed class FlattenPanel : UserControl
         _flattenSelected.Enabled = SelectedIn(_menuUnit).Count > 0;
 
         var (units, selection) = EditingScope();
-        _mergeSelection.Enabled = FlattenUnitEditing.CanMerge(units, selection);
+        _mergeButton.Enabled = FlattenUnitEditing.CanMerge(units, selection);
         _splitSelection.Enabled = FlattenUnitEditing.CanSplit(units, selection);
     }
 

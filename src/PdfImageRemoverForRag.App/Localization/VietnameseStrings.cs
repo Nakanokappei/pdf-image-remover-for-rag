@@ -144,12 +144,11 @@ internal sealed class VietnameseStrings : IStrings
     public string ContextMenuUsageLocations => "Hiển thị &Vị trí Sử dụng…";
 
     public string FlattenPanelTitle => "Đối tượng đồ họa";
-    public string FlattenMenu => "Lệnh đối tượng đồ họa";
     public string FlattenUnitMenu => "Lệnh của đơn vị này";
     public string FlattenVisible => "Biến các đối tượng hiển thị thành ảnh";
     public string FlattenSelected => "Biến các đối tượng đã chọn thành ảnh";
     public string FlattenUndo => "Hoàn tác việc thành ảnh";
-    public string FlattenMerge => "Gộp các đơn vị đã chọn";
+    public string FlattenMerge => "Gộp đơn vị";
     public string FlattenSplit => "Tách các đối tượng đã chọn ra";
 
     public string FlattenDescription =>

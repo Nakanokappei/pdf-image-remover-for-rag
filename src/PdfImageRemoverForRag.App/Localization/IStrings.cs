@@ -253,13 +253,6 @@ internal interface IStrings
     string FlattenPanelTitle { get; }
 
     /// <summary>
-    /// Spoken name of the menu button in the objects panel's title bar, which
-    /// holds the commands below. It shows a hamburger glyph and no words, so this is all
-    /// a screen reader has to go on.
-    /// </summary>
-    string FlattenMenu { get; }
-
-    /// <summary>
     /// Spoken name of the menu in a unit's own row, which shows a different
     /// glyph from the panel's hamburger and makes a different promise: it acts
     /// on that unit, not on whatever is selected.

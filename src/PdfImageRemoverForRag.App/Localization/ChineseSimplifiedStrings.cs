@@ -136,12 +136,11 @@ internal sealed class ChineseSimplifiedStrings : IStrings
     public string ContextMenuUsageLocations => "显示使用位置(&U)…";
 
     public string FlattenPanelTitle => "图形对象";
-    public string FlattenMenu => "图形对象命令";
     public string FlattenUnitMenu => "此单元的命令";
     public string FlattenVisible => "把可见对象变成图片";
     public string FlattenSelected => "把所选对象变成图片";
     public string FlattenUndo => "撤销变成图片";
-    public string FlattenMerge => "合并所选单元";
+    public string FlattenMerge => "合并单元";
     public string FlattenSplit => "把所选对象分出去";
 
     public string FlattenDescription =>

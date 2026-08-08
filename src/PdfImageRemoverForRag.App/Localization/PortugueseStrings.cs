@@ -142,12 +142,11 @@ internal sealed class PortugueseStrings : IStrings
     public string ContextMenuUsageLocations => "Mostrar &locais de utilização…";
 
     public string FlattenPanelTitle => "Objetos gráficos";
-    public string FlattenMenu => "Comandos de objeto gráfico";
     public string FlattenUnitMenu => "Comandos desta unidade";
     public string FlattenVisible => "Transformar os objetos visíveis em imagem";
     public string FlattenSelected => "Transformar os objetos selecionados em imagem";
     public string FlattenUndo => "Desfazer a imagem";
-    public string FlattenMerge => "Unir as unidades selecionadas";
+    public string FlattenMerge => "Unir unidades";
     public string FlattenSplit => "Separar os objetos selecionados";
 
     public string FlattenDescription =>

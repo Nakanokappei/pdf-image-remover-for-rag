@@ -135,12 +135,11 @@ internal sealed class KoreanStrings : IStrings
     public string ContextMenuUsageLocations => "사용 위치 표시(&U)…";
 
     public string FlattenPanelTitle => "그래픽 개체";
-    public string FlattenMenu => "그래픽 개체 명령";
     public string FlattenUnitMenu => "이 단위의 명령";
     public string FlattenVisible => "보이는 개체를 이미지로 만들기";
     public string FlattenSelected => "선택한 개체를 이미지로 만들기";
     public string FlattenUndo => "이미지로 만들기 취소";
-    public string FlattenMerge => "선택한 단위 합치기";
+    public string FlattenMerge => "단위 합치기";
     public string FlattenSplit => "선택한 개체 떼어내기";
 
     public string FlattenDescription =>

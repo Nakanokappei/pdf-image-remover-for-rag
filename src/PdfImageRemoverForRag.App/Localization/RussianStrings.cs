@@ -149,12 +149,11 @@ internal sealed class RussianStrings : IStrings
     public string ContextMenuUsageLocations => "Показать &места использования…";
 
     public string FlattenPanelTitle => "Графические объекты";
-    public string FlattenMenu => "Команды графических объектов";
     public string FlattenUnitMenu => "Команды этого блока";
     public string FlattenVisible => "Сделать изображением видимые объекты";
     public string FlattenSelected => "Сделать изображением выбранные объекты";
     public string FlattenUndo => "Отменить изображение";
-    public string FlattenMerge => "Объединить выбранные блоки";
+    public string FlattenMerge => "Объединить блоки";
     public string FlattenSplit => "Отделить выбранные объекты";
 
     public string FlattenDescription =>

@@ -144,12 +144,11 @@ internal sealed class FrenchStrings : IStrings
     public string ContextMenuUsageLocations => "Afficher les &emplacements d'utilisation…";
 
     public string FlattenPanelTitle => "Objets graphiques";
-    public string FlattenMenu => "Commandes d'objet graphique";
     public string FlattenUnitMenu => "Commandes de cette unité";
     public string FlattenVisible => "Transformer les objets visibles en image";
     public string FlattenSelected => "Transformer les objets sélectionnés en image";
     public string FlattenUndo => "Annuler l'image";
-    public string FlattenMerge => "Fusionner les unités sélectionnées";
+    public string FlattenMerge => "Fusionner les unités";
     public string FlattenSplit => "Détacher les objets sélectionnés";
 
     public string FlattenDescription =>

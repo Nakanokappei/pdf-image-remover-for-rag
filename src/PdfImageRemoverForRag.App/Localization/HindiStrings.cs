@@ -140,12 +140,11 @@ internal sealed class HindiStrings : IStrings
     public string ContextMenuUsageLocations => "उपयोग स्थान दिखाएँ(&U)…";
 
     public string FlattenPanelTitle => "ग्राफ़िक ऑब्जेक्ट";
-    public string FlattenMenu => "ग्राफ़िक ऑब्जेक्ट कमांड";
     public string FlattenUnitMenu => "इस यूनिट के कमांड";
     public string FlattenVisible => "दिख रहे ऑब्जेक्ट को चित्र बनाएँ";
     public string FlattenSelected => "चुने हुए ऑब्जेक्ट को चित्र बनाएँ";
     public string FlattenUndo => "चित्र बनाना पूर्ववत करें";
-    public string FlattenMerge => "चुनी हुई यूनिट मिलाएँ";
+    public string FlattenMerge => "यूनिट मिलाएँ";
     public string FlattenSplit => "चुने हुए ऑब्जेक्ट अलग करें";
 
     public string FlattenDescription =>

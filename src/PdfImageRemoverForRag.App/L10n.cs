@@ -109,18 +109,15 @@ internal static class L10n
     public static string FlattenPanelHeader => S.FlattenPanelTitle;
 
     /// <summary>
-    /// The hamburger. Not translated — it is a symbol, and the button's spoken
-    /// name carries the words.
+    /// The hamburger, and the only one in the panel: it belongs to a UNIT's own
+    /// row, which is the only place with a menu. Not translated — it is a
+    /// symbol.
+    ///
+    /// It sat at the top of the panel for a while, over a menu whose commands
+    /// acted on the selection. That menu is gone: what was left in it was one
+    /// command, and one command is a button.
     /// </summary>
-    public const string MenuGlyph = "☰";
-
-    /// <summary>
-    /// The menu that lives in a unit's own row. A DIFFERENT symbol from the
-    /// hamburger, because it is a different promise: the hamburger acts on
-    /// whatever is selected, this one acts on the row it sits in. Two menus
-    /// drawn alike are read as one menu.
-    /// </summary>
-    public const string RowMenuGlyph = "⋮";
+    public const string RowMenuGlyph = "☰";
 
     /// <summary>
     /// A unit's heading: which document, which page, which unit on it. The same
@@ -261,7 +258,6 @@ internal static class L10n
     // --- the flatten panel --------------------------------------------------
 
     public static string FlattenPanelTitle => S.FlattenPanelTitle;
-    public static string FlattenMenu => S.FlattenMenu;
     public static string FlattenVisible => S.FlattenVisible;
     public static string FlattenSelected => S.FlattenSelected;
     public static string FlattenUnitMenu => S.FlattenUnitMenu;

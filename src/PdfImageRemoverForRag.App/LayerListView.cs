@@ -547,10 +547,10 @@ internal sealed class LayerListView : Panel
         }
         if (visual.IsGroup && Spans(e.X, MenuRect(bounds)))
         {
-            // The row is selected first: the menu is about this unit, and a
-            // menu opening on a row that does not look chosen reads as if it
-            // might act on something else.
-            SelectRow(row, Keys.None);
+            // The selection is LEFT ALONE. One of the commands in that menu
+            // acts on the objects selected inside the unit, so moving the
+            // selection to the unit's own row to open it would throw away the
+            // very thing the command was about.
             var at = MenuRect(bounds);
             UnitMenuRequested?.Invoke(row, new Point(at.Left, at.Bottom));
             return;
@@ -659,15 +659,29 @@ internal sealed class LayerListView : Panel
             // only "out" move this two-level list has.
             case Keys.Left: CollapseOrGoToGroup(row); break;
             case Keys.Right: ExpandGroup(row); break;
-            // The unit's own menu, by the two keys Windows opens a context menu
-            // with. Without this the commands in it could be reached only by
-            // clicking a glyph — a whole menu that keyboard and screen-reader
-            // users could not get to.
-            case Keys.Apps: OpenUnitMenu(row); break;
-            case Keys.F10 when e.Shift: OpenUnitMenu(row); break;
             default: return;
         }
         e.Handled = true;
+    }
+
+    /// <summary>
+    /// The Menu key and Shift+F10, which is how Windows asks for a context menu
+    /// from the keyboard. Taken here rather than from KeyDown because that is
+    /// where the message arrives: the Menu key raises this AFTER its key-down,
+    /// and Shift+F10 raises nothing else at all — which is why an earlier
+    /// attempt in KeyDown never opened anything.
+    /// </summary>
+    protected override void WndProc(ref Message m)
+    {
+        const int WmContextMenu = 0x007B;
+        // The low word is -1 when the request came from the keyboard rather
+        // than from a right-click, and a right-click is already handled.
+        if (m.Msg == WmContextMenu && (m.LParam.ToInt64() & 0xFFFFFFFF) == 0xFFFFFFFF)
+        {
+            OpenUnitMenu(_focusedRow < 0 ? VisibleRange().First : _focusedRow);
+            return;
+        }
+        base.WndProc(ref m);
     }
 
     /// <summary>
@@ -680,7 +694,7 @@ internal sealed class LayerListView : Panel
         while (row >= 0 && !_isGroupRow(row)) row--;
         if (row < 0) return;
 
-        SelectRow(row, Keys.None);
+        // Again without touching the selection — see the mouse path.
         var at = MenuRect(BoundsOf(row));
         UnitMenuRequested?.Invoke(row, new Point(at.Left, at.Bottom));
     }

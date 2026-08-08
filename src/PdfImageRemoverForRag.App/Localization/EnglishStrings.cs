@@ -138,12 +138,11 @@ internal sealed class EnglishStrings : IStrings
     public string ContextMenuUsageLocations => "Show &Usage Locations…";
 
     public string FlattenPanelTitle => "Graphics objects";
-    public string FlattenMenu => "Graphics object commands";
     public string FlattenUnitMenu => "Commands for this unit";
     public string FlattenVisible => "Turn the visible objects into a picture";
     public string FlattenSelected => "Turn the selected objects into a picture";
     public string FlattenUndo => "Undo the picture";
-    public string FlattenMerge => "Merge the selected units";
+    public string FlattenMerge => "Merge units";
     public string FlattenSplit => "Split the selected objects off";
 
     public string FlattenDescription =>

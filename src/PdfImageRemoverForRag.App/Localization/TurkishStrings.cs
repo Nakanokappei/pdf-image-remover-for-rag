@@ -148,12 +148,11 @@ internal sealed class TurkishStrings : IStrings
     public string ContextMenuUsageLocations => "&Kullanım Konumlarını Göster…";
 
     public string FlattenPanelTitle => "Grafik nesneleri";
-    public string FlattenMenu => "Grafik nesnesi komutları";
     public string FlattenUnitMenu => "Bu birimin komutları";
     public string FlattenVisible => "Görünür nesneleri resme dönüştür";
     public string FlattenSelected => "Seçili nesneleri resme dönüştür";
     public string FlattenUndo => "Resmi geri al";
-    public string FlattenMerge => "Seçili birimleri birleştir";
+    public string FlattenMerge => "Birimleri birleştir";
     public string FlattenSplit => "Seçili nesneleri ayır";
 
     public string FlattenDescription =>

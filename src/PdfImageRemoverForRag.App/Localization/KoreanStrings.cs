@@ -1,3 +1,5 @@
+using PdfImageRemoverForRag.Core.Models;
+
 namespace PdfImageRemoverForRag.App.Localization;
 
 /// <summary>Korean (ko) UI text. Selected for any ko-* display language.</summary>
@@ -19,6 +21,8 @@ internal sealed class KoreanStrings : IStrings
     public string MenuShowDrawings => "그림";
     public string MenuShowShadows => "그림자";
     public string MenuShowText => "텍스트";
+    public string MenuTools => "도구(&T)";
+    public string MenuSettings => "설정(&S)…";
     public string MenuHelp => "도움말(&H)";
     public string MenuManual => "온라인 설명서(&M)…";
     public string MenuAbout => "정보(&A)…";
@@ -75,8 +79,9 @@ internal sealed class KoreanStrings : IStrings
     public string StatusSaving => "저장하는 중…";
     public string StatusSaveFailed => "저장하지 못했습니다";
 
-    public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
-        $"{fileCount}개 파일을 저장했습니다 — 그리기 명령 {drawCallsRemoved}개 삭제, {regionsFlattened}개 영역 이미지화, 검증 정상";
+    public string StatusSaved(
+        int fileCount, int drawCallsRemoved, int regionsFlattened, int imagesResized) =>
+        $"{fileCount}개 파일을 저장했습니다 — 그리기 명령 {drawCallsRemoved}개 삭제, {regionsFlattened}개 영역 이미지화, 이미지 {imagesResized}개 축소, 검증 정상";
 
     public string StatusFlattening => "병합 중…";
 
@@ -153,6 +158,41 @@ internal sealed class KoreanStrings : IStrings
     public string StatusFlattenSelection(int objectCount) =>
         $"그래픽 개체 {objectCount}개 선택됨";
     public string AccessibleFlattenPreview => "미리 보기";
+
+    public string Ok => "확인";
+    public string SettingsTitle => "설정";
+    public string SettingsImagesGroup => "저장되는 PDF의 이미지";
+    public string SettingsShrinkImages => "이미지 축소(&S)";
+    public string SettingsResolution => "해상도(&R):";
+    public string SettingsJpegQuality => "화질(&Q):";
+    public string SettingsSampleFigure => "도표";
+    public string SettingsSamplePhoto => "사진";
+    public string SettingsSampleText => "검사 기록 3분기";
+    public string SettingsZoom => "확대(&Z):";
+
+    public string SettingsPreviewLossless(string name, string size) =>
+        $"{name} - {size}, 무손실 저장. 화질은 이를 바꾸지 않습니다.";
+
+    public string SettingsPreviewLossy(string name, string size) =>
+        $"{name} - 이 화질에서 {size}";
+
+    public string SettingsShrinkDescription =>
+        "선택한 해상도보다 큰 이미지를 더 작게 다시 그립니다. "
+        + "페이지의 모습은 그대로이고, 그 뒤의 픽셀 수만 바뀝니다. 확대는 하지 않습니다.";
+
+    public string ResolutionScreen(int dpi) => $"화면 - {dpi} dpi";
+
+    public string ResolutionRagLatin(int dpi) => $"RAG용(로마자 및 키릴 문자) - {dpi} dpi";
+
+    public string ResolutionRagComplexScripts(int dpi) =>
+        $"RAG용(CJK 등 복잡한 문자) - {dpi} dpi";
+
+    public string ResolutionRagFinePrint(int dpi) =>
+        $"RAG용(작은 글씨가 있는 문서) - {dpi} dpi";
+
+    public string ResolutionPrint(int dpi) => $"인쇄 - {dpi} dpi";
+
+    public ImageSizeLimit DefaultImageSizeLimit => ImageSizeLimit.RagComplexScripts;
 
     public string ErrorSameAsSource =>
         "원본 PDF에 덮어쓸 수 없습니다. 다른 이름을 지정하십시오.";

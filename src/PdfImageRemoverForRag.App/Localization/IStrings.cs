@@ -1,3 +1,5 @@
+using PdfImageRemoverForRag.Core.Models;
+
 namespace PdfImageRemoverForRag.App.Localization;
 
 /// <summary>
@@ -55,6 +57,8 @@ internal interface IStrings
     string MenuShowDrawings { get; }
     string MenuShowShadows { get; }
     string MenuShowText { get; }
+    string MenuTools { get; }
+    string MenuSettings { get; }
     string MenuHelp { get; }
     string MenuManual { get; }
     string MenuAbout { get; }
@@ -160,11 +164,14 @@ internal interface IStrings
     string StatusSaving { get; }
     string StatusSaveFailed { get; }
     /// <summary>
-    /// What one save run did. Both counts are always shown, including a zero:
+    /// What one save run did. Every count is always shown, including a zero:
     /// one run can delete, flatten, or both, and "0 removed" is what tells a
-    /// user who only flattened that nothing was thrown away.
+    /// user who only flattened that nothing was thrown away. The last is how
+    /// many images were made smaller, which is the only place the reduction
+    /// setting reports that it did anything at all.
     /// </summary>
-    string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened);
+    string StatusSaved(
+        int fileCount, int drawCallsRemoved, int regionsFlattened, int imagesResized);
 
     /// <summary>Shown while a flatten or its undo is rewriting the document.</summary>
     string StatusFlattening { get; }
@@ -321,6 +328,129 @@ internal interface IStrings
     /// drawn, so it has no text of its own for UI Automation to read.
     /// </summary>
     string AccessibleFlattenPreview { get; }
+
+    // --- the settings window -----------------------------------------------
+    // How large the images in a saved PDF are allowed to be. It matters more
+    // than it sounds: too large and the file passes the pipeline's upload
+    // limit, too small and the pipeline reads the page's own text wrongly.
+
+    /// <summary>Accept button of the settings window. Not "OK" everywhere.</summary>
+    string Ok { get; }
+
+    string SettingsTitle { get; }
+
+    /// <summary>Caption over the whole group, e.g. "Images in the saved PDF".</summary>
+    string SettingsImagesGroup { get; }
+
+    /// <summary>The check box that switches the whole reduction on and off.</summary>
+    string SettingsShrinkImages { get; }
+
+    string SettingsResolution { get; }
+
+    /// <summary>
+    /// Label for the JPEG quality slider. "Quality" as a photo editor means
+    /// it, not the quality of the app's work.
+    /// </summary>
+    string SettingsJpegQuality { get; }
+
+    // The two sample pictures, named so a screen reader can tell the bands
+    // apart and a reader knows which case each one is showing.
+    string SettingsSampleFigure { get; }
+    string SettingsSamplePhoto { get; }
+
+    /// <summary>
+    /// A short phrase set into the figure sample at 6, 8, 10 and 12 pt, so the
+    /// reader can see which sizes of THEIR OWN writing system survive a
+    /// resolution. That is the whole point of it, so translate rather than
+    /// transliterate: the characters have to be the ones they read every day,
+    /// and for a script that packs many strokes into a character that is
+    /// exactly where the answer differs.
+    ///
+    /// Keep it to about twenty characters. It is drawn at 12 pt across a
+    /// three-inch picture, and a longer line runs off the edge.
+    /// </summary>
+    string SettingsSampleText { get; }
+
+    /// <summary>
+    /// Caption for a sample kept in a form that loses nothing — which is what
+    /// happens to a figure, because resizing a picture in a PDF never changes
+    /// how that PDF stores it. Say so: this band does not move as the quality
+    /// slider does, and without a word for it that reads as a control that is
+    /// broken.
+    ///
+    /// <paramref name="size"/> arrives already assembled and already
+    /// translated where it needs to be: a byte count and a pixel count, as in
+    /// "58.5 KB / 900 x 506 px". Place it, do not take it apart.
+    /// </summary>
+    string SettingsPreviewLossless(string name, string size);
+
+    /// <summary>
+    /// Caption for a sample stored as a JPEG, which is what happens to a
+    /// photograph. This is the band the quality slider is really about.
+    /// <paramref name="size"/> is as above.
+    /// </summary>
+    string SettingsPreviewLossy(string name, string size);
+
+    /// <summary>
+    /// Label for the magnification slider under the samples. At life size the
+    /// artifact is below what an eye resolves; magnified, the picture is no
+    /// longer recognisable. The reader needs to move between the two.
+    /// </summary>
+    string SettingsZoom { get; }
+
+    /// <summary>
+    /// One or two lines under the controls saying what the reduction does and
+    /// what it does not: the page keeps its appearance, only the pixel count
+    /// behind it changes.
+    /// </summary>
+    string SettingsShrinkDescription { get; }
+
+    // The five entries of the resolution list. Each takes its numbers rather
+    // than spelling them out, so the value lives in ImageReduction alone; a
+    // number typed into sixteen translations is a number that will one day
+    // disagree with the code. Keep them ordered by resolution when translating
+    // — the list is a ladder and reads as one.
+
+    /// <summary>
+    /// The lowest rung: what a page-sized picture gets when it is made to fit
+    /// an ordinary monitor. The only one that does not name a use, so name the
+    /// place instead - the word for a display screen.
+    /// </summary>
+    string ResolutionScreen(int dpi);
+
+    /// <summary>For documents set in Latin or Cyrillic script.</summary>
+    string ResolutionRagLatin(int dpi);
+
+    /// <summary>
+    /// For Japanese, Chinese, Korean, Devanagari and Vietnamese — scripts that
+    /// pack more strokes or marks into a character and need more pixels to
+    /// keep them apart.
+    /// </summary>
+    string ResolutionRagComplexScripts(int dpi);
+
+    /// <summary>
+    /// For documents whose footnotes, captions or table cells are set smaller
+    /// than the body text.
+    /// </summary>
+    string ResolutionRagFinePrint(int dpi);
+
+    string ResolutionPrint(int dpi);
+
+    /// <summary>
+    /// Which resolution a first run starts on, before the user has chosen. The
+    /// display language is the only clue available about what script the
+    /// documents will be in, and it is a poor one — someone reading a Japanese
+    /// interface may well be processing English PDFs. It only has to be a
+    /// sensible starting point: the window shows the resolution in the list and
+    /// lets it be changed.
+    ///
+    /// Languages written in a complex script answer
+    /// <see cref="ImageSizeLimit.RagComplexScripts"/>; the rest answer
+    /// <see cref="ImageSizeLimit.RagLatin"/>. It is NOT a string, and it is here
+    /// rather than in a lookup table for the same reason everything else is: a
+    /// language added without one must fail the build.
+    /// </summary>
+    ImageSizeLimit DefaultImageSizeLimit { get; }
 
     // --- messages raised by the workflow (spec §17) ------------------------
 

@@ -1,3 +1,5 @@
+using PdfImageRemoverForRag.Core.Models;
+
 namespace PdfImageRemoverForRag.App.Localization;
 
 /// <summary>
@@ -25,6 +27,8 @@ internal sealed class SpanishStrings : IStrings
     public string MenuShowDrawings => "Dibujos";
     public string MenuShowShadows => "Sombras";
     public string MenuShowText => "Texto";
+    public string MenuTools => "&Herramientas";
+    public string MenuSettings => "&Configuración…";
     public string MenuHelp => "A&yuda";
     public string MenuManual => "&Manual en línea…";
     public string MenuAbout => "&Acerca de…";
@@ -84,8 +88,9 @@ internal sealed class SpanishStrings : IStrings
     public string StatusSaving => "Guardando…";
     public string StatusSaveFailed => "Error al guardar";
 
-    public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
-        $"Se guardaron {fileCount} archivo(s) — se quitaron {drawCallsRemoved} llamada(s) de dibujo, se convirtieron {regionsFlattened} área(s) en imagen, verificación correcta";
+    public string StatusSaved(
+        int fileCount, int drawCallsRemoved, int regionsFlattened, int imagesResized) =>
+        $"Se guardaron {fileCount} archivo(s) — se quitaron {drawCallsRemoved} llamada(s) de dibujo, se convirtieron {regionsFlattened} área(s) en imagen, se redujeron {imagesResized} imagen(es), verificación correcta";
 
     public string StatusFlattening => "Acoplando…";
 
@@ -163,6 +168,42 @@ internal sealed class SpanishStrings : IStrings
     public string StatusFlattenSelection(int objectCount) =>
         $"{objectCount} objeto(s) gráfico(s) seleccionado(s)";
     public string AccessibleFlattenPreview => "Vista previa";
+
+    public string Ok => "Aceptar";
+    public string SettingsTitle => "Configuración";
+    public string SettingsImagesGroup => "Imágenes en el PDF guardado";
+    public string SettingsShrinkImages => "&Reducir las imágenes";
+    public string SettingsResolution => "Re&solución:";
+    public string SettingsJpegQuality => "&Calidad:";
+    public string SettingsSampleFigure => "Figura";
+    public string SettingsSamplePhoto => "Fotografía";
+    public string SettingsSampleText => "Registro de ensayo T3";
+    public string SettingsZoom => "A&mpliación:";
+
+    public string SettingsPreviewLossless(string name, string size) =>
+        $"{name} - {size}, sin pérdida. La calidad no lo cambia.";
+
+    public string SettingsPreviewLossy(string name, string size) =>
+        $"{name} - {size} con esta calidad";
+
+    public string SettingsShrinkDescription =>
+        "Las imágenes más grandes que la resolución elegida se vuelven a dibujar más pequeñas. "
+        + "La página se ve igual; solo cambia la cantidad de píxeles que hay detrás. "
+        + "Nunca se amplía nada.";
+
+    public string ResolutionScreen(int dpi) => $"Pantalla - {dpi} dpi";
+
+    public string ResolutionRagLatin(int dpi) => $"Para RAG (latino y cirílico) - {dpi} dpi";
+
+    public string ResolutionRagComplexScripts(int dpi) =>
+        $"Para RAG (CJK y otras escrituras complejas) - {dpi} dpi";
+
+    public string ResolutionRagFinePrint(int dpi) =>
+        $"Para RAG (documentos con letra pequeña) - {dpi} dpi";
+
+    public string ResolutionPrint(int dpi) => $"Impresión - {dpi} dpi";
+
+    public ImageSizeLimit DefaultImageSizeLimit => ImageSizeLimit.RagLatin;
 
     public string ErrorSameAsSource =>
         "No se puede guardar sobre el PDF de origen. Elija otro nombre.";

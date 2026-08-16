@@ -30,22 +30,30 @@ namespace PdfImageRemoverForRag.Infrastructure;
 public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
 {
     /// <summary>
-    /// Resolution flattened regions are rendered at. 200 dpi keeps small labels
-    /// legible in the replacement image without turning a chart into a megabyte;
-    /// the rasterizer renders below it when the region is large enough to hit its
-    /// own pixel ceiling.
+    /// Resolution flattened regions are rendered at when the reduction setting
+    /// names none of its own. 200 dpi keeps small labels legible in the
+    /// replacement image without turning a chart into a megabyte; the rasterizer
+    /// renders below it when the region is large enough to hit its own pixel
+    /// ceiling.
     /// </summary>
-    const int FlattenDpi = 200;
+    const int DefaultFlattenDpi = 200;
 
     /// <summary>
-    /// The screen the output is for, and the quality a JPEG is written at.
-    /// Both come from what the file is for: it goes to a RAG pipeline whose
-    /// reader displays it on an ordinary screen, and whose upload limit a manual
-    /// full of screenshots reaches easily.
+    /// What to render a flattened region at.
+    ///
+    /// It follows the reduction setting, because a picture made coarser than the
+    /// images around it is the one thing on the page that visibly suffered — and
+    /// because this is the only chance to get it right. The picture is made
+    /// once; every later pass can shrink it and none can sharpen it.
+    ///
+    /// Never below the default: rendering more finely than the setting asks
+    /// costs nothing permanent, because the reduction pass runs last and takes
+    /// the excess back off. Switched off there is nothing to take it back off
+    /// again, so the default stands on its own.
     /// </summary>
-    const int ScreenWidth = 1920;
-    const int ScreenHeight = 1080;
-    const int ScreenJpegQuality = 85;
+    static int FlattenDpiFor(ImageReduction reduction) => reduction.Enabled
+        ? Math.Max(DefaultFlattenDpi, ImageReduction.DpiOf(reduction.SizeLimit))
+        : DefaultFlattenDpi;
 
     readonly IPageRasterizer? _rasterizer;
     readonly IImageResampler? _resampler;
@@ -73,11 +81,13 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
         IReadOnlyList<ObjectRemovalSelection> selections,
         IReadOnlyList<OverlapRegion>? regionsToFlatten = null,
         IReadOnlyList<OverlapRegion>? regionsToClear = null,
-        bool fitImagesToScreen = false,
+        ImageReduction? imageReduction = null,
+        bool isFinalOutput = false,
         CancellationToken ct = default)
     {
         var regions = regionsToFlatten ?? Array.Empty<OverlapRegion>();
         var cleared = regionsToClear ?? Array.Empty<OverlapRegion>();
+        var reduction = imageReduction ?? ImageReduction.Off;
 
         // Hard rule from the spec: never overwrite the source, even if the
         // App accidentally supplies the same path.
@@ -86,14 +96,19 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
             throw new PdfCleanerException(PdfCleanerErrorKind.DestinationNotWritable,
                 "Cannot save over the source PDF. Choose a different name.");
         }
-        // Being asked to change nothing is a caller's mistake — EXCEPT when the
-        // fitting is the job. A save that only flattened has nothing left to
-        // remove, and the flattening is already in the file this reads from; the
-        // one thing still owed to the file the user keeps is its images at the
-        // size they will be looked at. Refusing that run is what silently
-        // skipped the fitting on every flatten-only save.
+        // Being asked to change nothing is a caller's mistake for an
+        // intermediate — something was supposed to happen to it — and saying so
+        // is how that gets found. It is NOT a mistake for the file the user
+        // keeps: a save that only flattened has nothing left to remove, because
+        // the flattening is already in the working copy this reads from, and
+        // writing it out is the job.
+        //
+        // The test used to be "unless the fitting was asked for", which passed
+        // only because the fitting was asked for on every save. Once the
+        // reduction became the user's to switch off, that turned a flatten-only
+        // save into "Nothing was given to remove".
         if (selections.Count == 0 && regions.Count == 0 && cleared.Count == 0
-            && !fitImagesToScreen)
+            && !isFinalOutput)
         {
             throw new PdfCleanerException(PdfCleanerErrorKind.Unexpected,
                 "Nothing was given to remove.");
@@ -119,17 +134,20 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
         // file: the replacement has to show the region as it looks now. It is
         // also the only asynchronous part of the job, so it stays out here
         // rather than being waited on inside the synchronous rewrite.
-        var flattenImages = await RenderRegionsAsync(sourcePath, regions, ct).ConfigureAwait(false);
+        var flattenImages = await RenderRegionsAsync(
+            sourcePath, regions, reduction, ct).ConfigureAwait(false);
         // The places to empty need no rendering, so they join the same list with
         // nothing to draw: one pass over the page handles both.
         flattenImages.AddRange(cleared.Select(region => new FlattenImage(region, null)));
 
-        // Fitting is asked for only when the file being written is the one the
+        // Reducing is asked for only when the file being written is the one the
         // user keeps, and it needs a resampler to do it with.
-        var resampler = fitImagesToScreen ? _resampler : null;
+        var resampler = reduction.Enabled && isFinalOutput ? _resampler : null;
 
         return await Task
-            .Run(() => CleanSync(sourcePath, destinationPath, selections, flattenImages, resampler, ct), ct)
+            .Run(() => CleanSync(
+                sourcePath, destinationPath, selections, flattenImages,
+                resampler, reduction, ct), ct)
             .ConfigureAwait(false);
     }
 
@@ -148,8 +166,10 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
     /// worse than not flattening it at all.
     /// </summary>
     async Task<List<FlattenImage>> RenderRegionsAsync(
-        string sourcePath, IReadOnlyList<OverlapRegion> regions, CancellationToken ct)
+        string sourcePath, IReadOnlyList<OverlapRegion> regions, ImageReduction reduction,
+        CancellationToken ct)
     {
+        int flattenDpi = FlattenDpiFor(reduction);
         var images = new List<FlattenImage>(regions.Count);
         foreach (var region in regions)
         {
@@ -171,11 +191,11 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
                     .RenderRegionAsync(
                         rendered ?? sourcePath,
                         rendered is null ? region.PageNumber : 1,
-                        PageRegion.Of(region), FlattenDpi,
+                        PageRegion.Of(region), flattenDpi,
                         transparentBackground: rendered is not null, ct)
                     .ConfigureAwait(false);
                 if (png is null || png.Length == 0) continue;
-                images.Add(new FlattenImage(region, png));
+                images.Add(new FlattenImage(region, StorageFormOf(png, reduction)));
             }
             finally
             {
@@ -185,10 +205,33 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
         return images;
     }
 
+    /// <summary>
+    /// How to store the picture just rendered for a flattened region.
+    ///
+    /// Only a picture this app MADE goes through here, and that is what makes
+    /// the choice safe to make at all: it never existed in the user's file, so
+    /// storing it in a lossy form takes nothing away from what they gave us. An
+    /// image that arrived inside their PDF keeps the form it arrived in.
+    ///
+    /// It matters more than it sounds. PDFsharp stores a rendered PNG under
+    /// FlateDecode, which is exactly right for a diagram — measured on a
+    /// full-page figure, lossless came to 78 KB where a JPEG came to 189 — and
+    /// ruinous for a photograph, where the same page costs 10 MB lossless and
+    /// 718 KB as a JPEG. One flattened photograph page can pass a pipeline's
+    /// whole upload limit on its own.
+    ///
+    /// Left as it came when reduction is switched off: that setting means
+    /// "leave my images alone", and this is a compression like any other.
+    /// </summary>
+    byte[] StorageFormOf(byte[] renderedPng, ImageReduction reduction) =>
+        reduction.Enabled && _resampler is not null
+            ? _resampler.ChooseStorageForm(renderedPng, reduction.JpegQuality)
+            : renderedPng;
+
     static CleaningResult CleanSync(string sourcePath, string destinationPath,
         IReadOnlyList<ObjectRemovalSelection> selections,
         IReadOnlyList<FlattenImage> flattenImages,
-        IImageResampler? resampler, CancellationToken ct)
+        IImageResampler? resampler, ImageReduction reduction, CancellationToken ct)
     {
         var sw = Stopwatch.StartNew();
         // Selections carry a GroupId but the cleaner needs a set of PDF
@@ -407,8 +450,7 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
             // anything removed above is no longer here to be redrawn.
             var resizedImages = resampler is null
                 ? Array.Empty<string>()
-                : ScreenFitPass.Apply(
-                    doc, resampler, ScreenWidth, ScreenHeight, ScreenJpegQuality, ct);
+                : ImageReductionPass.Apply(doc, resampler, reduction, ct);
 
             // Save via a temp file. On disposal-time failure we clean up the
             // temp so the caller never has to reason about half-written state.

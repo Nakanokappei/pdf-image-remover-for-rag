@@ -1,5 +1,7 @@
 using System.Globalization;
 using PdfImageRemoverForRag.App.Localization;
+using PdfImageRemoverForRag.Core.Formatting;
+using PdfImageRemoverForRag.Core.Models;
 
 namespace PdfImageRemoverForRag.App;
 
@@ -159,6 +161,8 @@ internal static class L10n
     public static string MenuShowDrawings => S.MenuShowDrawings;
     public static string MenuShowShadows => S.MenuShowShadows;
     public static string MenuShowText => S.MenuShowText;
+    public static string MenuTools => S.MenuTools;
+    public static string MenuSettings => S.MenuSettings;
     public static string MenuHelp => S.MenuHelp;
     public static string MenuManual => S.MenuManual;
     public static string MenuAbout => S.MenuAbout;
@@ -213,8 +217,9 @@ internal static class L10n
     public static string StatusSaving => S.StatusSaving;
     public static string StatusSaveFailed => S.StatusSaveFailed;
 
-    public static string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
-        S.StatusSaved(fileCount, drawCallsRemoved, regionsFlattened);
+    public static string StatusSaved(
+        int fileCount, int drawCallsRemoved, int regionsFlattened, int imagesResized) =>
+        S.StatusSaved(fileCount, drawCallsRemoved, regionsFlattened, imagesResized);
 
     public static string StatusFlattening => S.StatusFlattening;
     public static string StatusFlattened(int places) => S.StatusFlattened(places);
@@ -264,6 +269,56 @@ internal static class L10n
     public static string FlattenWholePageWarning => S.FlattenWholePageWarning;
     public static string StatusFlattenSelection(int objectCount) => S.StatusFlattenSelection(objectCount);
     public static string AccessibleFlattenPreview => S.AccessibleFlattenPreview;
+
+    // --- the settings window -----------------------------------------------
+
+    public static string Ok => S.Ok;
+    public static string SettingsTitle => S.SettingsTitle;
+    public static string SettingsImagesGroup => S.SettingsImagesGroup;
+    public static string SettingsShrinkImages => S.SettingsShrinkImages;
+    public static string SettingsResolution => S.SettingsResolution;
+    public static string SettingsJpegQuality => S.SettingsJpegQuality;
+    public static string SettingsShrinkDescription => S.SettingsShrinkDescription;
+    public static string SettingsSampleFigure => S.SettingsSampleFigure;
+    public static string SettingsSamplePhoto => S.SettingsSamplePhoto;
+    public static string SettingsSampleText => S.SettingsSampleText;
+    public static string SettingsZoom => S.SettingsZoom;
+
+    // Captions beside the sample bands. The byte count is formatted by the same
+    // Core formatter the object list uses, so two places in the window never
+    // spell one differently.
+
+    public static string SettingsPreviewLossless(string name, long bytes, int width, int height) =>
+        S.SettingsPreviewLossless(name, Measured(bytes, width, height));
+
+    public static string SettingsPreviewLossy(string name, long bytes, int width, int height) =>
+        S.SettingsPreviewLossy(name, Measured(bytes, width, height));
+
+    /// <summary>
+    /// What a stored picture measures, in the two units the settings window is
+    /// about: what it costs, and how much of it is left. Assembled here rather
+    /// than in the sixteen translations, because "px" between two numbers reads
+    /// the same in every language on the list and a seventeenth would only be
+    /// one more place for the two halves to disagree.
+    /// </summary>
+    static string Measured(long bytes, int width, int height) =>
+        $"{ByteSizeFormatter.Format(bytes)} / {width} x {height} px";
+    public static ImageSizeLimit DefaultImageSizeLimit => S.DefaultImageSizeLimit;
+
+    /// <summary>
+    /// One entry of the resolution list. The numbers come from
+    /// <see cref="ImageReduction"/> rather than from the translation, so a value
+    /// changed in one place cannot leave sixteen labels claiming the old one.
+    /// </summary>
+    public static string ResolutionLabel(ImageSizeLimit limit) => limit switch
+    {
+        ImageSizeLimit.Screen => S.ResolutionScreen(ImageReduction.DpiOf(limit)),
+        ImageSizeLimit.RagLatin => S.ResolutionRagLatin(ImageReduction.DpiOf(limit)),
+        ImageSizeLimit.RagComplexScripts =>
+            S.ResolutionRagComplexScripts(ImageReduction.DpiOf(limit)),
+        ImageSizeLimit.RagFinePrint => S.ResolutionRagFinePrint(ImageReduction.DpiOf(limit)),
+        _ => S.ResolutionPrint(ImageReduction.DpiOf(limit)),
+    };
 
     // --- workflow messages -------------------------------------------------
 

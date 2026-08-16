@@ -37,6 +37,7 @@ internal sealed partial class MainForm : Form
     // checked; CheckOnClick is off so MainForm can veto turning off the last one.
     // The entries themselves are in _kindToggles.
     readonly ToolStripMenuItem _shownTypesMenuItem = new(L10n.MenuShownTypes);
+    readonly ToolStripMenuItem _settingsMenuItem = new(L10n.MenuSettings);
     readonly ToolStripMenuItem _manualMenuItem = new(L10n.MenuManual);
     readonly ToolStripMenuItem _aboutMenuItem = new(L10n.MenuAbout);
 
@@ -414,6 +415,7 @@ internal sealed partial class MainForm : Form
                 SetKindVisible(toggle.Kind, !_visibleKinds.Contains(toggle.Kind));
             toggle.Box.CheckedChanged += (_, _) => OnKindCheckChanged(toggle.Kind, toggle.Box);
         }
+        _settingsMenuItem.Click += OnSettingsClicked;
         _manualMenuItem.Click += OnManualClicked;
         _aboutMenuItem.Click += OnAboutClicked;
 

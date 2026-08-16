@@ -1,3 +1,5 @@
+using PdfImageRemoverForRag.Core.Models;
+
 namespace PdfImageRemoverForRag.App.Localization;
 
 /// <summary>
@@ -22,6 +24,8 @@ internal sealed class GermanStrings : IStrings
     public string MenuShowDrawings => "Zeichnungen";
     public string MenuShowShadows => "Schatten";
     public string MenuShowText => "Text";
+    public string MenuTools => "E&xtras";
+    public string MenuSettings => "&Einstellungen…";
     public string MenuHelp => "&Hilfe";
     public string MenuManual => "Online-Han&dbuch…";
     public string MenuAbout => "&Info…";
@@ -81,8 +85,9 @@ internal sealed class GermanStrings : IStrings
     public string StatusSaving => "Wird gespeichert…";
     public string StatusSaveFailed => "Speichern fehlgeschlagen";
 
-    public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
-        $"{fileCount} Datei(en) gespeichert — {drawCallsRemoved} Zeichenbefehl(e) entfernt, {regionsFlattened} Bereich(e) in ein Bild umgewandelt, Prüfung OK";
+    public string StatusSaved(
+        int fileCount, int drawCallsRemoved, int regionsFlattened, int imagesResized) =>
+        $"{fileCount} Datei(en) gespeichert — {drawCallsRemoved} Zeichenbefehl(e) entfernt, {regionsFlattened} Bereich(e) in ein Bild umgewandelt, {imagesResized} Bild(er) verkleinert, Prüfung OK";
 
     public string StatusFlattening => "Wird zusammengefügt…";
 
@@ -160,6 +165,42 @@ internal sealed class GermanStrings : IStrings
     public string StatusFlattenSelection(int objectCount) =>
         $"{objectCount} Grafikobjekt(e) ausgewählt";
     public string AccessibleFlattenPreview => "Vorschau";
+
+    public string Ok => "OK";
+    public string SettingsTitle => "Einstellungen";
+    public string SettingsImagesGroup => "Bilder im gespeicherten PDF";
+    public string SettingsShrinkImages => "Bilder &verkleinern";
+    public string SettingsResolution => "&Auflösung:";
+    public string SettingsJpegQuality => "&Qualität:";
+    public string SettingsSampleFigure => "Diagramm";
+    public string SettingsSamplePhoto => "Foto";
+    public string SettingsSampleText => "Prüfbericht Q3";
+    public string SettingsZoom => "&Vergrößerung:";
+
+    public string SettingsPreviewLossless(string name, string size) =>
+        $"{name} - {size}, verlustfrei gespeichert. Die Qualität ändert daran nichts.";
+
+    public string SettingsPreviewLossy(string name, string size) =>
+        $"{name} - {size} bei dieser Qualität";
+
+    public string SettingsShrinkDescription =>
+        "Bilder, die größer als die gewählte Auflösung sind, werden kleiner neu gezeichnet. "
+        + "Die Seite sieht gleich aus; nur die Anzahl der Pixel dahinter ändert sich. "
+        + "Nichts wird jemals vergrößert.";
+
+    public string ResolutionScreen(int dpi) => $"Bildschirm - {dpi} dpi";
+
+    public string ResolutionRagLatin(int dpi) => $"Für RAG (Latein und Kyrillisch) - {dpi} dpi";
+
+    public string ResolutionRagComplexScripts(int dpi) =>
+        $"Für RAG (CJK und andere komplexe Schriften) - {dpi} dpi";
+
+    public string ResolutionRagFinePrint(int dpi) =>
+        $"Für RAG (Dokumente mit Kleingedrucktem) - {dpi} dpi";
+
+    public string ResolutionPrint(int dpi) => $"Druck - {dpi} dpi";
+
+    public ImageSizeLimit DefaultImageSizeLimit => ImageSizeLimit.RagLatin;
 
     public string ErrorSameAsSource =>
         "Die Quell-PDF kann nicht überschrieben werden. Wählen Sie einen anderen Namen.";

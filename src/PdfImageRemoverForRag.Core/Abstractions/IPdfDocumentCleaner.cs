@@ -25,12 +25,29 @@ public interface IPdfDocumentCleaner
     /// what hiding a layer means. Told apart from a removal selection by being
     /// ONE place on ONE page: the same image drawn elsewhere is untouched.
     /// </param>
-    /// <param name="fitImagesToScreen">
-    /// Redraw every image the output holds at the size it will be looked at,
-    /// which is what keeps a screenshot-heavy manual under an upload limit. Off
-    /// by default, and asked for only when the file being written is the one the
-    /// user keeps: doing it to an intermediate would re-encode the same pictures
-    /// again on the next pass.
+    /// <param name="imageReduction">
+    /// How large the images in the output may be. Null and
+    /// <see cref="ImageReduction.Off"/> both mean they are written out as they
+    /// came in.
+    /// </param>
+    /// <param name="isFinalOutput">
+    /// Whether this is the file the user keeps, rather than an intermediate the
+    /// app writes for itself. Two things turn on it.
+    ///
+    /// The images are reduced only for the final file: re-encoding the same
+    /// pictures on every pass costs detail each time. (The reduction is still
+    /// READ for an intermediate, for one thing — what resolution to render a
+    /// flattened region at. That picture is made once, on the pass that
+    /// flattens, and every later pass can only make it smaller.)
+    ///
+    /// And a run with nothing to remove, nothing to flatten and nothing to
+    /// clear is refused for an intermediate, because something was supposed to
+    /// happen to it, but allowed for the final file: a save that only flattened
+    /// arrives with nothing left to do, since the flattening is already in the
+    /// working copy it reads from, and writing that out IS the job.
+    ///
+    /// It defaults to false, the careful reading. A caller that means to write
+    /// the user's own file has to say so.
     /// </param>
     Task<CleaningResult> CleanAsync(
         string sourcePath,
@@ -38,6 +55,7 @@ public interface IPdfDocumentCleaner
         IReadOnlyList<ObjectRemovalSelection> selections,
         IReadOnlyList<OverlapRegion>? regionsToFlatten = null,
         IReadOnlyList<OverlapRegion>? regionsToClear = null,
-        bool fitImagesToScreen = false,
+        ImageReduction? imageReduction = null,
+        bool isFinalOutput = false,
         CancellationToken ct = default);
 }

@@ -9,14 +9,23 @@ using Xunit;
 
 namespace PdfImageRemoverForRag.Infrastructure.Tests;
 
-// Images redrawn at the size they will be looked at. A picture wider than the
-// reader's screen is file size and nothing else, and file size is what stops a
-// document reaching a RAG pipeline: the customer's upload limit is 15 MB.
-public class ScreenFitTests : IClassFixture<SamplePdfFixture>
+// Images redrawn at the size the user asked them to be. Too many pixels is file
+// size and nothing else, and file size is what stops a document reaching a RAG
+// pipeline: the customer's upload limit is 15 MB. Too few and the pipeline
+// misreads the page's own text, which nothing downstream reports.
+public class ImageReductionTests : IClassFixture<SamplePdfFixture>
 {
     readonly SamplePdfFixture _samples;
 
-    public ScreenFitTests(SamplePdfFixture samples)
+    /// <summary>
+    /// The lowest rung of the list, and the descendant of the ceiling this app
+    /// applied to everything before any of it became a setting. Most of the
+    /// tests below were written against that, so they go on asking for it.
+    /// </summary>
+    static readonly ImageReduction ScreenLimit = new(
+        Enabled: true, ImageSizeLimit.Screen, ImageReduction.DefaultJpegQuality);
+
+    public ImageReductionTests(SamplePdfFixture samples)
     {
         _samples = samples;
     }
@@ -31,6 +40,9 @@ public class ScreenFitTests : IClassFixture<SamplePdfFixture>
     sealed class SizeOnlyResampler : IImageResampler
     {
         public List<(int Width, int Height)> Asked { get; } = new();
+
+        // Not what these tests are about; the picture is stored as it came.
+        public byte[] ChooseStorageForm(byte[] renderedPng, int jpegQuality) => renderedPng;
 
         public StoredImage? Resize(StoredImage image, int width, int height, int jpegQuality)
         {
@@ -53,6 +65,8 @@ public class ScreenFitTests : IClassFixture<SamplePdfFixture>
     /// </summary>
     sealed class NoiseResampler : IImageResampler
     {
+        public byte[] ChooseStorageForm(byte[] renderedPng, int jpegQuality) => renderedPng;
+
         public StoredImage? Resize(StoredImage image, int width, int height, int jpegQuality)
         {
             var noise = new byte[width * height * image.Components];
@@ -79,21 +93,44 @@ public class ScreenFitTests : IClassFixture<SamplePdfFixture>
     }
 
     [Fact]
-    public async Task AnImageTallerThanTheScreenIsRedrawnToFitIt()
+    public async Task AnImageLargerThanTheResolutionAllowsIsRedrawnToFitIt()
     {
-        // The scan is 800x1100: inside 1920 across, past 1080 down. So the
-        // height decides it, and the width follows to keep the shape.
+        // The scan is 800x1100 and the page allows fewer than that at 92 dpi,
+        // so it is redrawn down to what the page allows. The ceiling is asked
+        // for rather than written out here: it is a resolution against a page
+        // size now, and a number copied into the assertion would only record
+        // what this page happened to be.
         var resampler = new SizeOnlyResampler();
         var destination = Path.Combine(_samples.TempDirectory, "screen-fit.pdf");
         await new PdfSharpDocumentCleaner(resampler: resampler).CleanAsync(
             _samples.ScannedPagePath, destination,
             new[] { new ObjectRemovalSelection("IMG_999", Array.Empty<ObjectOccurrence>()) },
-            regionsToFlatten: null, fitImagesToScreen: true);
+            regionsToFlatten: null, imageReduction: ScreenLimit, isFinalOutput: true);
+
+        var (pageWidth, pageHeight) = PageSizeOf(_samples.ScannedPagePath);
+        var ceiling = ScreenLimit.CeilingFor(pageWidth, pageHeight);
 
         var asked = Assert.Single(resampler.Asked);
-        Assert.Equal(1080, asked.Height);
-        Assert.Equal(785, asked.Width);            // 800 * 1080/1100, rounded
-        Assert.Contains((785, 1080), ImageSizesIn(destination));
+        Assert.True(asked.Width <= ceiling.Width, $"{asked.Width} > {ceiling.Width}");
+        Assert.True(asked.Height <= ceiling.Height, $"{asked.Height} > {ceiling.Height}");
+
+        // One of the two edges is right up against the ceiling, or the image
+        // was made smaller than it had to be.
+        Assert.True(asked.Width == ceiling.Width || asked.Height == ceiling.Height);
+
+        // And the shape survived.
+        Assert.Equal(800.0 / 1100.0, asked.Width / (double)asked.Height, precision: 2);
+        Assert.Contains(asked, ImageSizesIn(destination));
+    }
+
+    /// <summary>
+    /// The first page's size in points, which is what a ceiling is measured
+    /// against now that every limit on the list is a resolution.
+    /// </summary>
+    static (double Width, double Height) PageSizeOf(string path)
+    {
+        using var document = PdfReader.Open(path, PdfDocumentOpenMode.Import);
+        return (document.Pages[0].Width.Point, document.Pages[0].Height.Point);
     }
 
     [Fact]
@@ -106,7 +143,7 @@ public class ScreenFitTests : IClassFixture<SamplePdfFixture>
         await new PdfSharpDocumentCleaner(resampler: resampler).CleanAsync(
             _samples.OneImagePath, destination,
             new[] { new ObjectRemovalSelection("IMG_999", Array.Empty<ObjectOccurrence>()) },
-            regionsToFlatten: null, fitImagesToScreen: true);
+            regionsToFlatten: null, imageReduction: ScreenLimit, isFinalOutput: true);
 
         Assert.Empty(resampler.Asked);
         Assert.Contains((240, 80), ImageSizesIn(destination));
@@ -141,18 +178,18 @@ public class ScreenFitTests : IClassFixture<SamplePdfFixture>
         await new PdfSharpDocumentCleaner(resampler: resampler).CleanAsync(
             _samples.ScannedPagePath, destination,
             Array.Empty<ObjectRemovalSelection>(),
-            regionsToFlatten: null, fitImagesToScreen: true);
+            regionsToFlatten: null, imageReduction: ScreenLimit, isFinalOutput: true);
 
-        Assert.Single(resampler.Asked);
-        Assert.Contains((785, 1080), ImageSizesIn(destination));
+        var asked = Assert.Single(resampler.Asked);
+        Assert.Contains(asked, ImageSizesIn(destination));
     }
 
     [Fact]
     public async Task ARunWithNothingToDoAtAllIsStillRefused()
     {
-        // Fitting is the only thing that makes an empty run meaningful. Without
-        // it, being asked to change nothing is a caller's mistake and saying so
-        // is how it gets found.
+        // For an intermediate, being asked to change nothing is a caller's
+        // mistake and saying so is how it gets found. The file the user keeps is
+        // the exception, and the test below is that one.
         var destination = Path.Combine(_samples.TempDirectory, "screen-fit-nothing.pdf");
         await Assert.ThrowsAsync<PdfCleanerException>(() =>
             new PdfSharpDocumentCleaner().CleanAsync(
@@ -170,7 +207,7 @@ public class ScreenFitTests : IClassFixture<SamplePdfFixture>
         var result = await new PdfSharpDocumentCleaner(resampler: new NoiseResampler()).CleanAsync(
             _samples.ScannedPagePath, destination,
             new[] { new ObjectRemovalSelection("IMG_999", Array.Empty<ObjectOccurrence>()) },
-            regionsToFlatten: null, fitImagesToScreen: true);
+            regionsToFlatten: null, imageReduction: ScreenLimit, isFinalOutput: true);
 
         Assert.Empty(result.ResizedImageHashes!);
         Assert.Contains((800, 1100), ImageSizesIn(destination));
@@ -184,6 +221,8 @@ public class ScreenFitTests : IClassFixture<SamplePdfFixture>
     sealed class HalfTheBytesResampler : IImageResampler
     {
         public List<(int Width, int Height)> Asked { get; } = new();
+
+        public byte[] ChooseStorageForm(byte[] renderedPng, int jpegQuality) => renderedPng;
 
         public StoredImage? Resize(StoredImage image, int width, int height, int jpegQuality)
         {
@@ -264,7 +303,8 @@ public class ScreenFitTests : IClassFixture<SamplePdfFixture>
         using var document = DocumentWithJpeg(quality: 95, width: 240, height: 80);
         var resampler = new HalfTheBytesResampler();
 
-        var resized = ScreenFitPass.Apply(document, resampler, 1920, 1080, 85, CancellationToken.None);
+        var resized = ImageReductionPass.Apply(
+            document, resampler, ScreenLimit, CancellationToken.None);
 
         Assert.Equal((240, 80), Assert.Single(resampler.Asked));
         Assert.Single(resized);
@@ -278,7 +318,8 @@ public class ScreenFitTests : IClassFixture<SamplePdfFixture>
         using var document = DocumentWithJpeg(quality: 75, width: 240, height: 80);
         var resampler = new HalfTheBytesResampler();
 
-        var resized = ScreenFitPass.Apply(document, resampler, 1920, 1080, 85, CancellationToken.None);
+        var resized = ImageReductionPass.Apply(
+            document, resampler, ScreenLimit, CancellationToken.None);
 
         Assert.Empty(resampler.Asked);
         Assert.Empty(resized);
@@ -295,9 +336,85 @@ public class ScreenFitTests : IClassFixture<SamplePdfFixture>
         var result = await new PdfSharpDocumentCleaner(resampler: resampler).CleanAsync(
             _samples.ScannedPagePath, destination,
             new[] { new ObjectRemovalSelection("IMG_999", Array.Empty<ObjectOccurrence>()) },
-            regionsToFlatten: null, fitImagesToScreen: true);
+            regionsToFlatten: null, imageReduction: ScreenLimit, isFinalOutput: true);
 
         Assert.NotNull(result.ResizedImageHashes);
         Assert.Single(result.ResizedImageHashes!);
+    }
+
+    [Fact]
+    public void NoCeilingOnOfferEverEnlargesAnImage()
+    {
+        // The clamp at 1 is the whole guarantee, and raising the ceilings from
+        // one screen-shaped box to four resolutions is exactly the change that
+        // could quietly lose it. Asked of every entry the list offers, because
+        // the logo (240x80) is under all of them.
+        foreach (var limit in Enum.GetValues<ImageSizeLimit>())
+        {
+            using var document = PdfReader.Open(_samples.OneImagePath, PdfDocumentOpenMode.Modify);
+            var resampler = new SizeOnlyResampler();
+
+            var resized = ImageReductionPass.Apply(
+                document,
+                resampler,
+                new ImageReduction(true, limit, ImageReduction.DefaultJpegQuality),
+                CancellationToken.None);
+
+            Assert.Empty(resampler.Asked);
+            Assert.Empty(resized);
+        }
+    }
+
+    [Fact]
+    public void AHighEnoughCeilingLeavesAnImageAlone()
+    {
+        // The scan is 800x1100 on an A4 page. At 300 dpi that page allows
+        // 2480x3508, so the image is already inside it and nothing is asked of
+        // the resampler at all — where the lowest rung, 92 dpi, cuts it down.
+        using var document = PdfReader.Open(_samples.ScannedPagePath, PdfDocumentOpenMode.Modify);
+        var resampler = new SizeOnlyResampler();
+
+        var resized = ImageReductionPass.Apply(
+            document,
+            resampler,
+            new ImageReduction(true, ImageSizeLimit.RagFinePrint, ImageReduction.DefaultJpegQuality),
+            CancellationToken.None);
+
+        Assert.Empty(resampler.Asked);
+        Assert.Empty(resized);
+    }
+
+    [Fact]
+    public async Task ReductionSwitchedOffLeavesEveryImageAsItWas()
+    {
+        var resampler = new SizeOnlyResampler();
+        var destination = Path.Combine(_samples.TempDirectory, "reduction-off.pdf");
+        await new PdfSharpDocumentCleaner(resampler: resampler).CleanAsync(
+            _samples.ScannedPagePath, destination,
+            new[] { new ObjectRemovalSelection("IMG_999", Array.Empty<ObjectOccurrence>()) },
+            imageReduction: ImageReduction.Off, isFinalOutput: true);
+
+        Assert.Empty(resampler.Asked);
+        Assert.Contains((800, 1100), ImageSizesIn(destination));
+    }
+
+    [Fact]
+    public async Task ASaveWithNothingToRemoveAndNoReductionStillWritesTheFile()
+    {
+        // A run that only flattened arrives here with nothing selected, nothing
+        // to flatten again and nothing to reduce — the flattening is already in
+        // the working copy this reads from. It used to be refused, and was only
+        // ever let through because the reduction was always asked for; making
+        // the reduction the user's to switch off turned that into a save that
+        // failed with "Nothing was given to remove".
+        var destination = Path.Combine(_samples.TempDirectory, "nothing-to-remove.pdf");
+
+        await new PdfSharpDocumentCleaner().CleanAsync(
+            _samples.OneImagePath, destination,
+            Array.Empty<ObjectRemovalSelection>(),
+            imageReduction: ImageReduction.Off, isFinalOutput: true);
+
+        Assert.True(File.Exists(destination));
+        Assert.Contains((240, 80), ImageSizesIn(destination));
     }
 }

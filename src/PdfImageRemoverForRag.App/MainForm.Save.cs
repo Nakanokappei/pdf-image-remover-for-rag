@@ -78,7 +78,8 @@ internal sealed partial class MainForm
                 // open path uses, from the same describer.
                 new Progress<AnalysisProgress>(report => SetStatus(_openProgress.Describe(report))));
             SetStatus(L10n.StatusSaved(
-                result.Files.Count, result.TotalDrawCallsRemoved, result.TotalRegionsFlattened));
+                result.Files.Count, result.TotalDrawCallsRemoved, result.TotalRegionsFlattened,
+                result.TotalImagesResized));
             return true;
         }
         catch (PdfCleanerException ex)

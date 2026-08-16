@@ -1,3 +1,5 @@
+using PdfImageRemoverForRag.Core.Models;
+
 namespace PdfImageRemoverForRag.App.Localization;
 
 /// <summary>Simplified Chinese (zh-Hans) UI text. Selected for any zh-Hans display language.</summary>
@@ -20,6 +22,8 @@ internal sealed class ChineseSimplifiedStrings : IStrings
     public string MenuShowDrawings => "绘图";
     public string MenuShowShadows => "阴影";
     public string MenuShowText => "文本";
+    public string MenuTools => "工具(&T)";
+    public string MenuSettings => "设置(&S)…";
     public string MenuHelp => "帮助(&H)";
     public string MenuManual => "在线手册(&M)…";
     public string MenuAbout => "关于(&A)…";
@@ -76,8 +80,9 @@ internal sealed class ChineseSimplifiedStrings : IStrings
     public string StatusSaving => "正在保存…";
     public string StatusSaveFailed => "保存失败";
 
-    public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
-        $"已保存 {fileCount} 个文件（删除 {drawCallsRemoved} 处绘制调用，图像化 {regionsFlattened} 处，保存后验证正常）";
+    public string StatusSaved(
+        int fileCount, int drawCallsRemoved, int regionsFlattened, int imagesResized) =>
+        $"已保存 {fileCount} 个文件（删除 {drawCallsRemoved} 处绘制调用，图像化 {regionsFlattened} 处，缩小 {imagesResized} 张图像，保存后验证正常）";
 
     public string StatusFlattening => "正在拼合…";
 
@@ -153,6 +158,41 @@ internal sealed class ChineseSimplifiedStrings : IStrings
     public string StatusFlattenSelection(int objectCount) =>
         $"已选择 {objectCount} 个图形对象";
     public string AccessibleFlattenPreview => "预览";
+
+    public string Ok => "确定";
+    public string SettingsTitle => "设置";
+    public string SettingsImagesGroup => "保存的 PDF 中的图像";
+    public string SettingsShrinkImages => "缩小图像(&S)";
+    public string SettingsResolution => "分辨率(&R):";
+    public string SettingsJpegQuality => "画质(&Q):";
+    public string SettingsSampleFigure => "图表";
+    public string SettingsSamplePhoto => "照片";
+    public string SettingsSampleText => "检验记录 第三季度";
+    public string SettingsZoom => "放大(&Z):";
+
+    public string SettingsPreviewLossless(string name, string size) =>
+        $"{name} - {size}，无损保存。画质不会改变它。";
+
+    public string SettingsPreviewLossy(string name, string size) =>
+        $"{name} - 此画质下 {size}";
+
+    public string SettingsShrinkDescription =>
+        "大于所选分辨率的图像会重新绘制得更小。页面外观保持不变，"
+        + "只有其背后的像素数发生变化。任何图像都不会被放大。";
+
+    public string ResolutionScreen(int dpi) => $"屏幕 - {dpi} dpi";
+
+    public string ResolutionRagLatin(int dpi) => $"用于 RAG（拉丁文和西里尔文）- {dpi} dpi";
+
+    public string ResolutionRagComplexScripts(int dpi) =>
+        $"用于 RAG（中日韩等复杂文字）- {dpi} dpi";
+
+    public string ResolutionRagFinePrint(int dpi) =>
+        $"用于 RAG（含细小文字的文档）- {dpi} dpi";
+
+    public string ResolutionPrint(int dpi) => $"打印 - {dpi} dpi";
+
+    public ImageSizeLimit DefaultImageSizeLimit => ImageSizeLimit.RagComplexScripts;
 
     public string ErrorSameAsSource =>
         "无法覆盖源 PDF 进行保存。请指定其他文件名。";

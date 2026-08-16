@@ -1,3 +1,5 @@
+using PdfImageRemoverForRag.Core.Models;
+
 namespace PdfImageRemoverForRag.App.Localization;
 
 /// <summary>
@@ -30,6 +32,8 @@ internal sealed class IndonesianMalayStrings : IStrings
     public string MenuShowDrawings => "Grafik";
     public string MenuShowShadows => "Bayangan";
     public string MenuShowText => "Teks";
+    public string MenuTools => "&Alat";
+    public string MenuSettings => "&Pengaturan…";
     public string MenuHelp => "&Bantuan";
     public string MenuManual => "&Manual Online…";
     public string MenuAbout => "&Tentang…";
@@ -85,8 +89,9 @@ internal sealed class IndonesianMalayStrings : IStrings
     public string StatusSaving => "Menyimpan…";
     public string StatusSaveFailed => "Gagal menyimpan";
 
-    public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
-        $"{fileCount} file disimpan — {drawCallsRemoved} panggilan gambar dihapus, {regionsFlattened} area dijadikan gambar, verifikasi OK";
+    public string StatusSaved(
+        int fileCount, int drawCallsRemoved, int regionsFlattened, int imagesResized) =>
+        $"{fileCount} file disimpan — {drawCallsRemoved} panggilan gambar dihapus, {regionsFlattened} area dijadikan gambar, {imagesResized} gambar diperkecil, verifikasi OK";
 
     public string StatusFlattening => "Menggabungkan…";
 
@@ -164,6 +169,42 @@ internal sealed class IndonesianMalayStrings : IStrings
     public string StatusFlattenSelection(int objectCount) =>
         $"{objectCount} objek grafis dipilih";
     public string AccessibleFlattenPreview => "Pratinjau";
+
+    public string Ok => "OK";
+    public string SettingsTitle => "Pengaturan";
+    public string SettingsImagesGroup => "Gambar dalam PDF yang disimpan";
+    public string SettingsShrinkImages => "&Perkecil gambar";
+    public string SettingsResolution => "&Resolusi:";
+    public string SettingsJpegQuality => "&Kualitas:";
+    public string SettingsSampleFigure => "Diagram";
+    public string SettingsSamplePhoto => "Foto";
+    public string SettingsSampleText => "Laporan uji TW3";
+    public string SettingsZoom => "&Perbesaran:";
+
+    public string SettingsPreviewLossless(string name, string size) =>
+        $"{name} - {size}, disimpan tanpa kehilangan data. Kualitas tidak mengubahnya.";
+
+    public string SettingsPreviewLossy(string name, string size) =>
+        $"{name} - {size} pada kualitas ini";
+
+    public string SettingsShrinkDescription =>
+        "Gambar yang lebih besar dari resolusi yang dipilih digambar ulang lebih kecil. "
+        + "Tampilan halaman tetap sama; hanya jumlah piksel di baliknya yang berubah. "
+        + "Tidak ada yang diperbesar.";
+
+    public string ResolutionScreen(int dpi) => $"Layar - {dpi} dpi";
+
+    public string ResolutionRagLatin(int dpi) => $"Untuk RAG (Latin dan Kiril) - {dpi} dpi";
+
+    public string ResolutionRagComplexScripts(int dpi) =>
+        $"Untuk RAG (CJK dan aksara kompleks lainnya) - {dpi} dpi";
+
+    public string ResolutionRagFinePrint(int dpi) =>
+        $"Untuk RAG (dokumen dengan huruf kecil) - {dpi} dpi";
+
+    public string ResolutionPrint(int dpi) => $"Cetak - {dpi} dpi";
+
+    public ImageSizeLimit DefaultImageSizeLimit => ImageSizeLimit.RagLatin;
 
     public string ErrorSameAsSource =>
         "Tidak dapat menyimpan dengan menimpa PDF sumber. Pilih nama lain.";

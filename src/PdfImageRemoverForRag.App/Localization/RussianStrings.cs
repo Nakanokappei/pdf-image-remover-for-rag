@@ -1,3 +1,5 @@
+using PdfImageRemoverForRag.Core.Models;
+
 namespace PdfImageRemoverForRag.App.Localization;
 
 /// <summary>
@@ -27,6 +29,8 @@ internal sealed class RussianStrings : IStrings
     public string MenuShowDrawings => "Рисунки";
     public string MenuShowShadows => "Тени";
     public string MenuShowText => "Текст";
+    public string MenuTools => "&Инструменты";
+    public string MenuSettings => "&Параметры…";
     public string MenuHelp => "&Справка";
     public string MenuManual => "Онлайн-&руководство…";
     public string MenuAbout => "&О программе…";
@@ -88,8 +92,9 @@ internal sealed class RussianStrings : IStrings
     public string StatusSaving => "Сохранение…";
     public string StatusSaveFailed => "Не удалось сохранить";
 
-    public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
-        $"Файлов сохранено: {fileCount} — удалено фрагментов отрисовки: {drawCallsRemoved}, сведено областей: {regionsFlattened}, проверка пройдена";
+    public string StatusSaved(
+        int fileCount, int drawCallsRemoved, int regionsFlattened, int imagesResized) =>
+        $"Файлов сохранено: {fileCount} — удалено фрагментов отрисовки: {drawCallsRemoved}, сведено областей: {regionsFlattened}, уменьшено изображений: {imagesResized}, проверка пройдена";
 
     public string StatusFlattening => "Объединение…";
 
@@ -167,6 +172,42 @@ internal sealed class RussianStrings : IStrings
     public string StatusFlattenSelection(int objectCount) =>
         $"Выбрано графических объектов: {objectCount}";
     public string AccessibleFlattenPreview => "Предварительный просмотр";
+
+    public string Ok => "ОК";
+    public string SettingsTitle => "Параметры";
+    public string SettingsImagesGroup => "Изображения в сохранённом PDF";
+    public string SettingsShrinkImages => "&Уменьшать изображения";
+    public string SettingsResolution => "&Разрешение:";
+    public string SettingsJpegQuality => "&Качество:";
+    public string SettingsSampleFigure => "Схема";
+    public string SettingsSamplePhoto => "Фотография";
+    public string SettingsSampleText => "Протокол испытаний";
+    public string SettingsZoom => "&Увеличение:";
+
+    public string SettingsPreviewLossless(string name, string size) =>
+        $"{name} - {size}, без потерь. Качество на это не влияет.";
+
+    public string SettingsPreviewLossy(string name, string size) =>
+        $"{name} - {size} при этом качестве";
+
+    public string SettingsShrinkDescription =>
+        "Изображения крупнее выбранного разрешения перерисовываются меньшего размера. "
+        + "Страница выглядит так же; меняется только число пикселей за ней. "
+        + "Ничего никогда не увеличивается.";
+
+    public string ResolutionScreen(int dpi) => $"Экран - {dpi} dpi";
+
+    public string ResolutionRagLatin(int dpi) => $"Для RAG (латиница и кириллица) - {dpi} dpi";
+
+    public string ResolutionRagComplexScripts(int dpi) =>
+        $"Для RAG (CJK и другие сложные письменности) - {dpi} dpi";
+
+    public string ResolutionRagFinePrint(int dpi) =>
+        $"Для RAG (документы с мелким шрифтом) - {dpi} dpi";
+
+    public string ResolutionPrint(int dpi) => $"Печать - {dpi} dpi";
+
+    public ImageSizeLimit DefaultImageSizeLimit => ImageSizeLimit.RagLatin;
 
     public string ErrorSameAsSource =>
         "Нельзя сохранить поверх исходного PDF. Выберите другое имя.";

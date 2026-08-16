@@ -64,7 +64,13 @@ internal static class Program
             new PdfSharpDocumentCleaner(new WindowsPageRasterizer(), new WindowsImageResampler()),
             new PdfSharpDocumentVerifier(),
             thumbnailStore,
-            logger);
+            logger)
+        {
+            // What the user last chose in the settings window, or the defaults
+            // for a first run. Read here rather than inside the workflow so the
+            // one place that talks to disk for preferences stays the App shell.
+            ImageReduction = SettingsStore.Load(),
+        };
 
         try
         {

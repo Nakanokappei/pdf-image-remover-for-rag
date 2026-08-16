@@ -30,8 +30,8 @@
          InformationalVersion interpolates Version rather than repeating it: it
          said 1.0.0 while the Store said 1.0.3.0, because a literal here does not
          follow a bump made two lines above. -->
-    <Version>1.3.0</Version>
-    <BuildNumber>147</BuildNumber>
+    <Version>1.4.0</Version>
+    <BuildNumber>148</BuildNumber>
     <InformationalVersion>$(Version)+$(BuildNumber)</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
@@ -44,6 +44,20 @@
   <ItemGroup>
     <EmbeddedResource Include="appicon.ico">
       <LogicalName>appicon.ico</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <!-- The two pictures the settings window compresses to show what the quality
+       setting does: a photograph, which is stored lossily, and a figure, which
+       is not. Both stay PNGs on purpose - a sample stored as a JPEG would
+       arrive with artifacts already baked into it, and nobody could tell those
+       apart from the ones the slider is producing. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\quality-sample-photo.png">
+      <LogicalName>quality-sample-photo.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\quality-sample-figure.png">
+      <LogicalName>quality-sample-figure.png</LogicalName>
     </EmbeddedResource>
   </ItemGroup>
 

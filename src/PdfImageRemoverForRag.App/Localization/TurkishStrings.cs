@@ -1,3 +1,5 @@
+using PdfImageRemoverForRag.Core.Models;
+
 namespace PdfImageRemoverForRag.App.Localization;
 
 /// <summary>
@@ -28,6 +30,8 @@ internal sealed class TurkishStrings : IStrings
     public string MenuShowDrawings => "Çizimler";
     public string MenuShowShadows => "Gölgeler";
     public string MenuShowText => "Metin";
+    public string MenuTools => "&Araçlar";
+    public string MenuSettings => "A&yarlar…";
     public string MenuHelp => "&Yardım";
     public string MenuManual => "Çevrimiçi &Kılavuz…";
     public string MenuAbout => "&Hakkında…";
@@ -87,8 +91,9 @@ internal sealed class TurkishStrings : IStrings
     public string StatusSaving => "Kaydediliyor…";
     public string StatusSaveFailed => "Kaydetme başarısız";
 
-    public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
-        $"{fileCount} dosya kaydedildi — {drawCallsRemoved} çizim çağrısı kaldırıldı, {regionsFlattened} alan görüntüye dönüştürüldü, doğrulama başarılı";
+    public string StatusSaved(
+        int fileCount, int drawCallsRemoved, int regionsFlattened, int imagesResized) =>
+        $"{fileCount} dosya kaydedildi — {drawCallsRemoved} çizim çağrısı kaldırıldı, {regionsFlattened} alan görüntüye dönüştürüldü, {imagesResized} görüntü küçültüldü, doğrulama başarılı";
 
     public string StatusFlattening => "Birleştiriliyor…";
 
@@ -166,6 +171,42 @@ internal sealed class TurkishStrings : IStrings
     public string StatusFlattenSelection(int objectCount) =>
         $"{objectCount} grafik nesnesi seçildi";
     public string AccessibleFlattenPreview => "Önizleme";
+
+    public string Ok => "Tamam";
+    public string SettingsTitle => "Ayarlar";
+    public string SettingsImagesGroup => "Kaydedilen PDF'deki görüntüler";
+    public string SettingsShrinkImages => "Görüntüleri &küçült";
+    public string SettingsResolution => "&Çözünürlük:";
+    public string SettingsJpegQuality => "K&alite:";
+    public string SettingsSampleFigure => "Şekil";
+    public string SettingsSamplePhoto => "Fotoğraf";
+    public string SettingsSampleText => "Deney raporu 3. çeyrek";
+    public string SettingsZoom => "&Büyütme:";
+
+    public string SettingsPreviewLossless(string name, string size) =>
+        $"{name} - {size}, kayıpsız saklanır. Kalite bunu değiştirmez.";
+
+    public string SettingsPreviewLossy(string name, string size) =>
+        $"{name} - bu kalitede {size}";
+
+    public string SettingsShrinkDescription =>
+        "Seçilen çözünürlükten büyük görüntüler daha küçük olarak yeniden çizilir. "
+        + "Sayfanın görünümü aynı kalır; yalnızca arkasındaki piksel sayısı değişir. "
+        + "Hiçbir şey büyütülmez.";
+
+    public string ResolutionScreen(int dpi) => $"Ekran - {dpi} dpi";
+
+    public string ResolutionRagLatin(int dpi) => $"RAG için (Latin ve Kiril) - {dpi} dpi";
+
+    public string ResolutionRagComplexScripts(int dpi) =>
+        $"RAG için (CJK ve diğer karmaşık yazılar) - {dpi} dpi";
+
+    public string ResolutionRagFinePrint(int dpi) =>
+        $"RAG için (küçük punto içeren belgeler) - {dpi} dpi";
+
+    public string ResolutionPrint(int dpi) => $"Yazdırma - {dpi} dpi";
+
+    public ImageSizeLimit DefaultImageSizeLimit => ImageSizeLimit.RagLatin;
 
     public string ErrorSameAsSource =>
         "Kaynak PDF'in üzerine kaydedilemez. Farklı bir ad seçin.";

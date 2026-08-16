@@ -10,15 +10,17 @@ namespace PdfImageRemoverForRag.App;
 
 /// <summary>One saved output file inside a <see cref="BatchSaveResult"/>.</summary>
 internal sealed record SavedFile(
-    string SourcePath, string DestinationPath, int DrawCallsRemoved, int RegionsFlattened);
+    string SourcePath, string DestinationPath, int DrawCallsRemoved, int RegionsFlattened,
+    int ImagesResized);
 
 /// <summary>
-/// Aggregate outcome of a multi-file save run. The two totals stay apart all
-/// the way to the status bar: one save run can delete, flatten, or both, and a
-/// single number could not say which of them happened.
+/// Aggregate outcome of a multi-file save run. The totals stay apart all
+/// the way to the status bar: one save run can delete, flatten, reduce, or all
+/// three, and a single number could not say which of them happened.
 /// </summary>
 internal sealed record BatchSaveResult(
-    IReadOnlyList<SavedFile> Files, int TotalDrawCallsRemoved, int TotalRegionsFlattened);
+    IReadOnlyList<SavedFile> Files, int TotalDrawCallsRemoved, int TotalRegionsFlattened,
+    int TotalImagesResized);
 
 /// <summary>
 /// UI-free orchestration of the multi-document workspace: open PDFs are
@@ -222,6 +224,13 @@ internal sealed class PdfCleaningWorkflow
     /// <summary>True when a save has hidden layers to write out.</summary>
     public bool HasHiddenPlacements => _hiddenPlacements.Values.Any(list => list.Count > 0);
 
+    /// <summary>
+    /// How large the images in a saved PDF may be. Set from the settings window
+    /// and read at the moment of each write, so a change takes effect on the
+    /// next save with nothing to rebuild or re-open.
+    /// </summary>
+    public ImageReduction ImageReduction { get; set; } = ImageReduction.Off;
+
     // A copy of a file with its hidden layers taken out, for the preview to
     // render — and the count of changes that produced it, so the copy is only
     // rebuilt when it is out of date.
@@ -256,7 +265,7 @@ internal sealed class PdfCleaningWorkflow
             await _cleaner.CleanAsync(
                     ReadPathOf(filePath), next, Array.Empty<ObjectRemovalSelection>(),
                     regionsToFlatten: null, regionsToClear: hidden,
-                    fitImagesToScreen: false, ct)
+                    imageReduction: ImageReduction, ct: ct)
                 .ConfigureAwait(false);
         }
         catch (Exception ex)
@@ -477,7 +486,8 @@ internal sealed class PdfCleaningWorkflow
             // encoding them again on the next rebuild.
             var result = await _cleaner.CleanAsync(
                     document.FilePath, nextCopy, Array.Empty<ObjectRemovalSelection>(), places,
-                    regionsToClear: null, fitImagesToScreen: false, ct)
+                    regionsToClear: null,
+                    imageReduction: ImageReduction, ct: ct)
                 .ConfigureAwait(false);
             _logger.LogInformation(
                 "flattened: placesAsked={Asked} placesFlattened={Flattened} pagesModified={Pages}",
@@ -581,6 +591,7 @@ internal sealed class PdfCleaningWorkflow
         var savedFiles = new List<SavedFile>();
         int totalRemoved = 0;
         int totalFlattened = 0;
+        int totalResized = 0;
         var stopwatch = Stopwatch.StartNew();
 
         foreach (var document in _documents)
@@ -615,6 +626,7 @@ internal sealed class PdfCleaningWorkflow
             savedFiles.Add(saved);
             totalRemoved += saved.DrawCallsRemoved;
             totalFlattened += flattenedAlready;
+            totalResized += saved.ImagesResized;
         }
 
         // The workspace now describes the files that were just written, not the
@@ -645,9 +657,10 @@ internal sealed class PdfCleaningWorkflow
 
         _logger.LogInformation(
             "saved: files={Files} drawCallsRemoved={Removed} regionsFlattened={Flattened} " +
-            "elapsedMs={ElapsedMs}",
-            savedFiles.Count, totalRemoved, totalFlattened, stopwatch.ElapsedMilliseconds);
-        return new BatchSaveResult(savedFiles, totalRemoved, totalFlattened);
+            "imagesResized={Resized} elapsedMs={ElapsedMs}",
+            savedFiles.Count, totalRemoved, totalFlattened, totalResized,
+            stopwatch.ElapsedMilliseconds);
+        return new BatchSaveResult(savedFiles, totalRemoved, totalFlattened, totalResized);
     }
 
     /// <summary>First few warnings, plus a count of the rest.</summary>
@@ -696,7 +709,7 @@ internal sealed class PdfCleaningWorkflow
             var result = await _cleaner
                 .CleanAsync(sourcePath, tempPath, selections,
                     regionsToFlatten: null, regionsToClear: hiddenPlacements,
-                    fitImagesToScreen: true, ct)
+                    imageReduction: ImageReduction, isFinalOutput: true, ct: ct)
                 .ConfigureAwait(false);
 
             // Logged before verification so a verification failure can be read
@@ -751,7 +764,8 @@ internal sealed class PdfCleaningWorkflow
 
             File.Move(tempPath, destinationPath, overwrite: true);
             return new SavedFile(document.FilePath, destinationPath,
-                result.DrawCallsRemoved, result.RegionsFlattened);
+                result.DrawCallsRemoved, result.RegionsFlattened,
+                result.ResizedImageHashes?.Count ?? 0);
         }
         catch (Exception ex)
         {

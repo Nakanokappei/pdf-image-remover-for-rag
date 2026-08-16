@@ -1,3 +1,5 @@
+using PdfImageRemoverForRag.Core.Models;
+
 namespace PdfImageRemoverForRag.App.Localization;
 
 /// <summary>
@@ -22,6 +24,8 @@ internal sealed class EnglishStrings : IStrings
     public string MenuShowDrawings => "Drawings";
     public string MenuShowShadows => "Shadows";
     public string MenuShowText => "Text";
+    public string MenuTools => "&Tools";
+    public string MenuSettings => "&Settings…";
     public string MenuHelp => "&Help";
     public string MenuManual => "Online &Manual…";
     public string MenuAbout => "&About…";
@@ -77,8 +81,9 @@ internal sealed class EnglishStrings : IStrings
     public string StatusSaving => "Saving…";
     public string StatusSaveFailed => "Save failed";
 
-    public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
-        $"Saved {fileCount} file(s) — {drawCallsRemoved} draw call(s) removed, {regionsFlattened} region(s) flattened, verification OK";
+    public string StatusSaved(
+        int fileCount, int drawCallsRemoved, int regionsFlattened, int imagesResized) =>
+        $"Saved {fileCount} file(s) — {drawCallsRemoved} draw call(s) removed, {regionsFlattened} region(s) flattened, {imagesResized} image(s) made smaller, verification OK";
 
     public string StatusFlattening => "Flattening…";
 
@@ -156,6 +161,41 @@ internal sealed class EnglishStrings : IStrings
     public string StatusFlattenSelection(int objectCount) =>
         $"{objectCount} graphics object(s) selected";
     public string AccessibleFlattenPreview => "Preview";
+
+    public string Ok => "OK";
+    public string SettingsTitle => "Settings";
+    public string SettingsImagesGroup => "Images in the saved PDF";
+    public string SettingsShrinkImages => "&Shrink images";
+    public string SettingsResolution => "&Resolution:";
+    public string SettingsJpegQuality => "&Quality:";
+    public string SettingsSampleFigure => "Figure";
+    public string SettingsSamplePhoto => "Photograph";
+    public string SettingsSampleText => "Inspection record Q3";
+    public string SettingsZoom => "&Magnify:";
+
+    public string SettingsPreviewLossless(string name, string size) =>
+        $"{name} - {size}, stored losslessly. The quality does not change it.";
+
+    public string SettingsPreviewLossy(string name, string size) =>
+        $"{name} - {size} at this quality";
+
+    public string SettingsShrinkDescription =>
+        "Images larger than the chosen resolution are redrawn smaller. The page looks the " +
+        "same; only the number of pixels behind it changes. Nothing is ever enlarged.";
+
+    public string ResolutionScreen(int dpi) => $"Screen - {dpi} dpi";
+
+    public string ResolutionRagLatin(int dpi) => $"For RAG (Latin and Cyrillic) - {dpi} dpi";
+
+    public string ResolutionRagComplexScripts(int dpi) =>
+        $"For RAG (CJK and other complex scripts) - {dpi} dpi";
+
+    public string ResolutionRagFinePrint(int dpi) =>
+        $"For RAG (documents with fine print) - {dpi} dpi";
+
+    public string ResolutionPrint(int dpi) => $"Print - {dpi} dpi";
+
+    public ImageSizeLimit DefaultImageSizeLimit => ImageSizeLimit.RagLatin;
 
     public string ErrorSameAsSource =>
         "Cannot save over the source PDF. Choose a different name.";

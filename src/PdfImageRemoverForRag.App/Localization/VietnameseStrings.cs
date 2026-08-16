@@ -1,3 +1,5 @@
+using PdfImageRemoverForRag.Core.Models;
+
 namespace PdfImageRemoverForRag.App.Localization;
 
 /// <summary>
@@ -23,6 +25,8 @@ internal sealed class VietnameseStrings : IStrings
     public string MenuShowDrawings => "Bản vẽ";
     public string MenuShowShadows => "Bóng đổ";
     public string MenuShowText => "Văn bản";
+    public string MenuTools => "&Công cụ";
+    public string MenuSettings => "&Cài đặt…";
     public string MenuHelp => "Trợ &giúp";
     public string MenuManual => "&Hướng dẫn trực tuyến…";
     public string MenuAbout => "&Giới thiệu…";
@@ -83,8 +87,9 @@ internal sealed class VietnameseStrings : IStrings
     public string StatusSaving => "Đang lưu…";
     public string StatusSaveFailed => "Lưu không thành công";
 
-    public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
-        $"Đã lưu {fileCount} tệp — đã xóa {drawCallsRemoved} lệnh vẽ, đã gộp {regionsFlattened} vùng, kiểm tra hợp lệ";
+    public string StatusSaved(
+        int fileCount, int drawCallsRemoved, int regionsFlattened, int imagesResized) =>
+        $"Đã lưu {fileCount} tệp — đã xóa {drawCallsRemoved} lệnh vẽ, đã gộp {regionsFlattened} vùng, đã thu nhỏ {imagesResized} hình ảnh, kiểm tra hợp lệ";
 
     public string StatusFlattening => "Đang gộp…";
 
@@ -162,6 +167,42 @@ internal sealed class VietnameseStrings : IStrings
     public string StatusFlattenSelection(int objectCount) =>
         $"Đã chọn {objectCount} đối tượng đồ họa";
     public string AccessibleFlattenPreview => "Xem trước";
+
+    public string Ok => "OK";
+    public string SettingsTitle => "Cài đặt";
+    public string SettingsImagesGroup => "Hình ảnh trong tệp PDF đã lưu";
+    public string SettingsShrinkImages => "Thu &nhỏ hình ảnh";
+    public string SettingsResolution => "Độ &phân giải:";
+    public string SettingsJpegQuality => "&Chất lượng:";
+    public string SettingsSampleFigure => "Biểu đồ";
+    public string SettingsSamplePhoto => "Ảnh chụp";
+    public string SettingsSampleText => "Báo cáo thử nghiệm Q3";
+    public string SettingsZoom => "&Phóng to:";
+
+    public string SettingsPreviewLossless(string name, string size) =>
+        $"{name} - {size}, lưu không mất dữ liệu. Chất lượng không ảnh hưởng.";
+
+    public string SettingsPreviewLossy(string name, string size) =>
+        $"{name} - {size} ở chất lượng này";
+
+    public string SettingsShrinkDescription =>
+        "Hình ảnh lớn hơn độ phân giải đã chọn sẽ được vẽ lại nhỏ hơn. "
+        + "Trang vẫn trông như cũ; chỉ số điểm ảnh phía sau thay đổi. "
+        + "Không có gì bị phóng to.";
+
+    public string ResolutionScreen(int dpi) => $"Màn hình - {dpi} dpi";
+
+    public string ResolutionRagLatin(int dpi) => $"Cho RAG (Latinh và Kirin) - {dpi} dpi";
+
+    public string ResolutionRagComplexScripts(int dpi) =>
+        $"Cho RAG (CJK và các chữ viết phức tạp khác) - {dpi} dpi";
+
+    public string ResolutionRagFinePrint(int dpi) =>
+        $"Cho RAG (tài liệu có chữ nhỏ) - {dpi} dpi";
+
+    public string ResolutionPrint(int dpi) => $"In - {dpi} dpi";
+
+    public ImageSizeLimit DefaultImageSizeLimit => ImageSizeLimit.RagComplexScripts;
 
     public string ErrorSameAsSource =>
         "Không thể lưu đè lên tệp PDF nguồn. Vui lòng chọn tên khác.";

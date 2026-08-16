@@ -12,6 +12,24 @@ internal sealed partial class MainForm
 
 
     // =======================================================================
+    // Tools
+    // =======================================================================
+
+    /// <summary>
+    /// Take the settings window's answer and both remember it and act on it.
+    /// Cancelling answers null, which is not the same as choosing the same
+    /// values again: only the latter is worth a write to disk.
+    /// </summary>
+    void OnSettingsClicked(object? sender, EventArgs e)
+    {
+        if (SettingsDialog.ShowFor(this, _workflow.ImageReduction) is not { } chosen) return;
+
+        _workflow.ImageReduction = chosen;
+        SettingsStore.Save(chosen);
+    }
+
+
+    // =======================================================================
     // Busy / status
     // =======================================================================
 

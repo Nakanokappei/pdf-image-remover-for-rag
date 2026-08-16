@@ -7,21 +7,28 @@ using PdfSharp.Pdf.Filters;
 namespace PdfImageRemoverForRag.Infrastructure.Internal;
 
 /// <summary>
-/// Redraws the document's images at the size they will actually be looked at.
+/// Redraws the document's images at the size the user asked them to be.
 ///
-/// A picture wider than the reader's screen costs file size and nothing else,
-/// and file size is what stops a document reaching a RAG pipeline at all — the
+/// Two things are at stake and they pull against each other. A picture with
+/// more pixels than anyone will read costs file size and nothing else, and file
+/// size is what stops a document reaching a RAG pipeline at all - the
 /// customer's upload limit is 15 MB and a manual full of screenshots passes it
-/// easily. So every image is fitted inside the screen: width against the width,
-/// height against the height, aspect ratio kept, and never enlarged.
+/// easily. But a page reduced too far stops being readable BY THE PIPELINE:
+/// its characters run together, and the retrieval reads the wrong word with no
+/// sign that it did. <see cref="ImageReduction"/> holds where the user put that
+/// line; this pass applies it.
 ///
 /// It changes no appearance. A PDF draws an image into a rectangle the page
 /// decides, scaling whatever resolution the image happens to have, so the same
 /// picture with fewer pixels lands in exactly the same place at the same size.
 ///
+/// Nothing here can make an image LARGER. The scale is clamped at 1, so an
+/// image already under the ceiling keeps every pixel it had; and a rewrite that
+/// would take more bytes than the stream it replaces is thrown away.
+///
 /// A JPEG that already fits is written again when it was saved ABOVE the
 /// quality ceiling, at the same size. A screenshot-heavy manual exported at
-/// quality 95 is under the screen size already, so nothing above would touch
+/// quality 95 is under the size ceiling already, so nothing above would touch
 /// it, and the quality alone is worth several megabytes.
 ///
 /// What is left alone: anything whose bytes this cannot read back (JPEG 2000,
@@ -29,10 +36,10 @@ namespace PdfImageRemoverForRag.Infrastructure.Internal;
 /// and anything already small enough. Leaving an image as it was is always safe;
 /// writing one back wrongly is not.
 /// </summary>
-internal static class ScreenFitPass
+internal static class ImageReductionPass
 {
     /// <summary>
-    /// Fit every image in the document, and answer with the stream hashes of
+    /// Reduce every image in the document, and answer with the stream hashes of
     /// those that changed. The caller needs them because a resized image is no
     /// longer the stream it was: anything checking that a retained image is
     /// still present has to look for the new bytes, not the old.
@@ -40,34 +47,55 @@ internal static class ScreenFitPass
     public static IReadOnlyList<string> Apply(
         PdfDocument document,
         IImageResampler resampler,
-        int maximumWidth,
-        int maximumHeight,
-        int jpegQuality,
+        ImageReduction reduction,
         CancellationToken ct)
     {
-        var resized = new List<string>();
-        // One image can be named by several pages; the object is the thing to
-        // visit once, not the name.
-        var visited = new HashSet<string>(StringComparer.Ordinal);
+        // The ceiling follows the page, so an image drawn on more than one page
+        // has to be measured against all of them and take the largest. Sizing it
+        // for the smallest page would leave it short on the biggest, and a
+        // picture cannot be un-blurred afterwards. One image can be named by
+        // several pages; the object is the thing to visit once, not the name.
+        var ceilings = new Dictionary<string, Ceiling>(StringComparer.Ordinal);
 
         // By index: the page collection's own enumerator does not answer
         // PdfPage, so a filtered foreach over it silently visits nothing.
         for (int i = 0; i < document.PageCount; i++)
         {
-            foreach (var entry in ImageXObjectCollector.EnumerateImageEntries(document.Pages[i].Resources))
+            var page = document.Pages[i];
+            var (width, height) = reduction.CeilingFor(page.Width.Point, page.Height.Point);
+
+            foreach (var entry in ImageXObjectCollector.EnumerateImageEntries(page.Resources))
             {
                 ct.ThrowIfCancellationRequested();
-                if (!visited.Add(entry.Dictionary.Internals.ObjectID.ToString())) continue;
+                var id = entry.Dictionary.Internals.ObjectID.ToString();
 
-                var hash = ImageXObjectCollector.ComputeStreamHash(entry.Dictionary);
-                if (Fit(entry.Dictionary, resampler, maximumWidth, maximumHeight, jpegQuality))
-                {
-                    resized.Add(hash);
-                }
+                ceilings[id] = ceilings.TryGetValue(id, out var seen)
+                    ? seen with
+                    {
+                        Width = Math.Max(seen.Width, width),
+                        Height = Math.Max(seen.Height, height),
+                    }
+                    : new Ceiling(entry.Dictionary, width, height);
+            }
+        }
+
+        var resized = new List<string>();
+        foreach (var ceiling in ceilings.Values)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            // Hashed before the fit, because the fit is what changes the bytes.
+            var hash = ImageXObjectCollector.ComputeStreamHash(ceiling.Image);
+            if (Fit(ceiling.Image, resampler, ceiling.Width, ceiling.Height, reduction.JpegQuality))
+            {
+                resized.Add(hash);
             }
         }
         return resized;
     }
+
+    /// <summary>One image and the largest ceiling any page put on it.</summary>
+    readonly record struct Ceiling(PdfDictionary Image, int Width, int Height);
 
     /// <summary>
     /// Fit one image, answering whether it was changed. Every reason to leave it
@@ -82,8 +110,10 @@ internal static class ScreenFitPass
         int height = image.Elements.GetInteger("/Height");
         if (width < 1 || height < 1) return false;
 
+        // Clamped at 1 LAST, so the clamp reads as what it is: this pass never
+        // enlarges an image, whatever ceiling it is given.
         double scale = Math.Min(
-            Math.Min(1.0, maximumWidth / (double)width), maximumHeight / (double)height);
+            1.0, Math.Min(maximumWidth / (double)width, maximumHeight / (double)height));
 
         // An image that already fits is left alone unless it is a JPEG written
         // above the ceiling, which is worth writing again at the ceiling — that

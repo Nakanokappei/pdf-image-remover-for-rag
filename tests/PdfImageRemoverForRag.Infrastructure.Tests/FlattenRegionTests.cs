@@ -1,3 +1,4 @@
+using PdfImageRemoverForRag.Core.Abstractions;
 using PdfImageRemoverForRag.Core.Errors;
 using PdfImageRemoverForRag.Core.Grouping;
 using PdfImageRemoverForRag.Core.Models;
@@ -259,5 +260,58 @@ public class FlattenRegionTests : IClassFixture<SamplePdfFixture>
             new PdfSharpDocumentCleaner(new FlatColorRasterizer()).CleanAsync(
                 _samples.ImageAndTextPath, Destination("never-written-2.pdf"),
                 NothingToRemove(), Array.Empty<OverlapRegion>()));
+    }
+
+    /// <summary>
+    /// Records what it was asked to store and hands the bytes straight back, so
+    /// a test can see whether the picture was offered for a form at all.
+    /// </summary>
+    sealed class FormRecordingResampler : IImageResampler
+    {
+        public List<int> AskedAtQuality { get; } = new();
+
+        public byte[] ChooseStorageForm(byte[] renderedPng, int jpegQuality)
+        {
+            AskedAtQuality.Add(jpegQuality);
+            return renderedPng;
+        }
+
+        public StoredImage? Resize(StoredImage image, int width, int height, int jpegQuality) =>
+            null;
+    }
+
+    [Fact]
+    public async Task ThePictureAFlattenDrawsIsOfferedAFormToBeStoredIn()
+    {
+        // A flattened region is a picture this app made, so it is the one kind
+        // it may choose a lossy form for. Stored as PDFsharp takes a PNG - all
+        // the way lossless - one flattened photograph page costs ten megabytes.
+        var info = await NewAnalyzer().AnalyzeAsync(_samples.ImageAndTextPath);
+        var region = Assert.Single(info.OverlapRegions);
+        var resampler = new FormRecordingResampler();
+
+        await new PdfSharpDocumentCleaner(new FlatColorRasterizer(), resampler).CleanAsync(
+            _samples.ImageAndTextPath, Destination("flatten-storage-form.pdf"),
+            NothingToRemove(), new[] { region },
+            imageReduction: new ImageReduction(true, ImageSizeLimit.RagComplexScripts, 70));
+
+        Assert.Equal(70, Assert.Single(resampler.AskedAtQuality));
+    }
+
+    [Fact]
+    public async Task ReductionSwitchedOffLeavesTheFlattenedPictureAsItWasRendered()
+    {
+        // "Leave my images alone" has to cover the ones this app draws too,
+        // and re-forming one is a compression like any other.
+        var info = await NewAnalyzer().AnalyzeAsync(_samples.ImageAndTextPath);
+        var region = Assert.Single(info.OverlapRegions);
+        var resampler = new FormRecordingResampler();
+
+        await new PdfSharpDocumentCleaner(new FlatColorRasterizer(), resampler).CleanAsync(
+            _samples.ImageAndTextPath, Destination("flatten-storage-form-off.pdf"),
+            NothingToRemove(), new[] { region },
+            imageReduction: ImageReduction.Off);
+
+        Assert.Empty(resampler.AskedAtQuality);
     }
 }

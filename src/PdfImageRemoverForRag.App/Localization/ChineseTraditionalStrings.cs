@@ -1,3 +1,5 @@
+using PdfImageRemoverForRag.Core.Models;
+
 namespace PdfImageRemoverForRag.App.Localization;
 
 /// <summary>
@@ -22,6 +24,8 @@ internal sealed class ChineseTraditionalStrings : IStrings
     public string MenuShowDrawings => "繪圖";
     public string MenuShowShadows => "陰影";
     public string MenuShowText => "文字";
+    public string MenuTools => "工具(&T)";
+    public string MenuSettings => "設定(&S)…";
     public string MenuHelp => "說明(&H)";
     public string MenuManual => "線上手冊(&M)…";
     public string MenuAbout => "關於(&A)…";
@@ -78,8 +82,9 @@ internal sealed class ChineseTraditionalStrings : IStrings
     public string StatusSaving => "正在儲存…";
     public string StatusSaveFailed => "儲存失敗";
 
-    public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
-        $"已儲存 {fileCount} 個檔案 — 移除 {drawCallsRemoved} 處繪製指令，影像化 {regionsFlattened} 處，儲存後驗證正常";
+    public string StatusSaved(
+        int fileCount, int drawCallsRemoved, int regionsFlattened, int imagesResized) =>
+        $"已儲存 {fileCount} 個檔案 — 移除 {drawCallsRemoved} 處繪製指令，影像化 {regionsFlattened} 處，縮小 {imagesResized} 張影像，儲存後驗證正常";
 
     public string StatusFlattening => "正在平面化…";
 
@@ -155,6 +160,41 @@ internal sealed class ChineseTraditionalStrings : IStrings
     public string StatusFlattenSelection(int objectCount) =>
         $"已選取 {objectCount} 個圖形物件";
     public string AccessibleFlattenPreview => "預覽";
+
+    public string Ok => "確定";
+    public string SettingsTitle => "設定";
+    public string SettingsImagesGroup => "儲存的 PDF 中的影像";
+    public string SettingsShrinkImages => "縮小影像(&S)";
+    public string SettingsResolution => "解析度(&R):";
+    public string SettingsJpegQuality => "影像品質(&Q):";
+    public string SettingsSampleFigure => "圖表";
+    public string SettingsSamplePhoto => "相片";
+    public string SettingsSampleText => "檢驗記錄 第三季";
+    public string SettingsZoom => "放大(&Z):";
+
+    public string SettingsPreviewLossless(string name, string size) =>
+        $"{name} - {size}，無損儲存。品質不會改變它。";
+
+    public string SettingsPreviewLossy(string name, string size) =>
+        $"{name} - 此品質下 {size}";
+
+    public string SettingsShrinkDescription =>
+        "大於所選解析度的影像會重新繪製得更小。頁面外觀維持不變，"
+        + "只有其背後的像素數改變。任何影像都不會被放大。";
+
+    public string ResolutionScreen(int dpi) => $"螢幕 - {dpi} dpi";
+
+    public string ResolutionRagLatin(int dpi) => $"用於 RAG（拉丁文與斯拉夫文）- {dpi} dpi";
+
+    public string ResolutionRagComplexScripts(int dpi) =>
+        $"用於 RAG（中日韓等複雜文字）- {dpi} dpi";
+
+    public string ResolutionRagFinePrint(int dpi) =>
+        $"用於 RAG（含細小文字的文件）- {dpi} dpi";
+
+    public string ResolutionPrint(int dpi) => $"列印 - {dpi} dpi";
+
+    public ImageSizeLimit DefaultImageSizeLimit => ImageSizeLimit.RagComplexScripts;
 
     public string ErrorSameAsSource =>
         "無法覆寫來源 PDF。請指定其他檔案名稱。";

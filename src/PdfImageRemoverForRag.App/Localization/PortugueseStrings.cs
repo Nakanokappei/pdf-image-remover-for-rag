@@ -1,3 +1,5 @@
+using PdfImageRemoverForRag.Core.Models;
+
 namespace PdfImageRemoverForRag.App.Localization;
 
 /// <summary>
@@ -24,6 +26,8 @@ internal sealed class PortugueseStrings : IStrings
     public string MenuShowDrawings => "Desenhos";
     public string MenuShowShadows => "Sombras";
     public string MenuShowText => "Texto";
+    public string MenuTools => "&Ferramentas";
+    public string MenuSettings => "&Configurações…";
     public string MenuHelp => "A&juda";
     public string MenuManual => "&Manual Online…";
     public string MenuAbout => "&Sobre…";
@@ -81,8 +85,9 @@ internal sealed class PortugueseStrings : IStrings
     public string StatusSaving => "Salvando…";
     public string StatusSaveFailed => "Falha ao salvar";
 
-    public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
-        $"{fileCount} arquivo(s) salvo(s) — {drawCallsRemoved} chamada(s) de desenho removida(s), {regionsFlattened} região(ões) convertida(s) em imagem, verificação OK";
+    public string StatusSaved(
+        int fileCount, int drawCallsRemoved, int regionsFlattened, int imagesResized) =>
+        $"{fileCount} arquivo(s) salvo(s) — {drawCallsRemoved} chamada(s) de desenho removida(s), {regionsFlattened} região(ões) convertida(s) em imagem, {imagesResized} imagem(ns) reduzida(s), verificação OK";
 
     public string StatusFlattening => "Achatando…";
 
@@ -160,6 +165,42 @@ internal sealed class PortugueseStrings : IStrings
     public string StatusFlattenSelection(int objectCount) =>
         $"{objectCount} objeto(s) gráfico(s) selecionado(s)";
     public string AccessibleFlattenPreview => "Pré-visualização";
+
+    public string Ok => "OK";
+    public string SettingsTitle => "Configurações";
+    public string SettingsImagesGroup => "Imagens no PDF salvo";
+    public string SettingsShrinkImages => "&Reduzir as imagens";
+    public string SettingsResolution => "Re&solução:";
+    public string SettingsJpegQuality => "&Qualidade:";
+    public string SettingsSampleFigure => "Figura";
+    public string SettingsSamplePhoto => "Fotografia";
+    public string SettingsSampleText => "Relatório de ensaio T3";
+    public string SettingsZoom => "A&mpliação:";
+
+    public string SettingsPreviewLossless(string name, string size) =>
+        $"{name} - {size}, sem perdas. A qualidade não altera isso.";
+
+    public string SettingsPreviewLossy(string name, string size) =>
+        $"{name} - {size} nesta qualidade";
+
+    public string SettingsShrinkDescription =>
+        "Imagens maiores que a resolução escolhida são redesenhadas menores. "
+        + "A página continua com a mesma aparência; muda apenas a quantidade de pixels "
+        + "por trás dela. Nada é ampliado.";
+
+    public string ResolutionScreen(int dpi) => $"Tela - {dpi} dpi";
+
+    public string ResolutionRagLatin(int dpi) => $"Para RAG (latino e cirílico) - {dpi} dpi";
+
+    public string ResolutionRagComplexScripts(int dpi) =>
+        $"Para RAG (CJK e outras escritas complexas) - {dpi} dpi";
+
+    public string ResolutionRagFinePrint(int dpi) =>
+        $"Para RAG (documentos com letras miúdas) - {dpi} dpi";
+
+    public string ResolutionPrint(int dpi) => $"Impressão - {dpi} dpi";
+
+    public ImageSizeLimit DefaultImageSizeLimit => ImageSizeLimit.RagLatin;
 
     public string ErrorSameAsSource =>
         "Não é possível salvar sobre o PDF de origem. Escolha outro nome.";

@@ -1,3 +1,5 @@
+using PdfImageRemoverForRag.Core.Models;
+
 namespace PdfImageRemoverForRag.App.Localization;
 
 /// <summary>
@@ -22,6 +24,8 @@ internal sealed class HindiStrings : IStrings
     public string MenuShowDrawings => "रेखाचित्र";
     public string MenuShowShadows => "छाया";
     public string MenuShowText => "टेक्स्ट";
+    public string MenuTools => "उपकरण(&T)";
+    public string MenuSettings => "सेटिंग्स(&S)…";
     public string MenuHelp => "सहायता(&H)";
     public string MenuManual => "ऑनलाइन मैनुअल(&M)…";
     public string MenuAbout => "इसके बारे में(&A)…";
@@ -80,8 +84,9 @@ internal sealed class HindiStrings : IStrings
     public string StatusSaving => "सहेजा जा रहा है…";
     public string StatusSaveFailed => "सहेजना विफल रहा";
 
-    public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
-        $"{fileCount} फ़ाइल सहेजी गईं — {drawCallsRemoved} ड्रॉ कॉल हटाए गए, {regionsFlattened} क्षेत्र चित्र में बदले गए, सत्यापन ठीक रहा";
+    public string StatusSaved(
+        int fileCount, int drawCallsRemoved, int regionsFlattened, int imagesResized) =>
+        $"{fileCount} फ़ाइल सहेजी गईं — {drawCallsRemoved} ड्रॉ कॉल हटाए गए, {regionsFlattened} क्षेत्र चित्र में बदले गए, {imagesResized} छवियाँ छोटी की गईं, सत्यापन ठीक रहा";
 
     public string StatusFlattening => "मिलाया जा रहा है…";
 
@@ -158,6 +163,42 @@ internal sealed class HindiStrings : IStrings
     public string StatusFlattenSelection(int objectCount) =>
         $"{objectCount} ग्राफ़िक ऑब्जेक्ट चयनित";
     public string AccessibleFlattenPreview => "पूर्वावलोकन";
+
+    public string Ok => "ठीक है";
+    public string SettingsTitle => "सेटिंग्स";
+    public string SettingsImagesGroup => "सहेजे गए PDF की छवियाँ";
+    public string SettingsShrinkImages => "छवियाँ छोटी करें(&S)";
+    public string SettingsResolution => "रिज़ॉल्यूशन(&R):";
+    public string SettingsJpegQuality => "गुणवत्ता(&Q):";
+    public string SettingsSampleFigure => "आरेख";
+    public string SettingsSamplePhoto => "तस्वीर";
+    public string SettingsSampleText => "परीक्षण रिपोर्ट Q3";
+    public string SettingsZoom => "आवर्धन(&Z):";
+
+    public string SettingsPreviewLossless(string name, string size) =>
+        $"{name} - {size}, बिना हानि संग्रहीत। गुणवत्ता इसे नहीं बदलती।";
+
+    public string SettingsPreviewLossy(string name, string size) =>
+        $"{name} - इस गुणवत्ता पर {size}";
+
+    public string SettingsShrinkDescription =>
+        "चुने गए रिज़ॉल्यूशन से बड़ी छवियाँ छोटी करके दोबारा बनाई जाती हैं। "
+        + "पृष्ठ वैसा ही दिखता है; केवल उसके पीछे के पिक्सेल की संख्या बदलती है। "
+        + "कुछ भी बड़ा नहीं किया जाता।";
+
+    public string ResolutionScreen(int dpi) => $"स्क्रीन - {dpi} dpi";
+
+    public string ResolutionRagLatin(int dpi) => $"RAG के लिए (लैटिन और सिरिलिक) - {dpi} dpi";
+
+    public string ResolutionRagComplexScripts(int dpi) =>
+        $"RAG के लिए (CJK और अन्य जटिल लिपियाँ) - {dpi} dpi";
+
+    public string ResolutionRagFinePrint(int dpi) =>
+        $"RAG के लिए (छोटे अक्षरों वाले दस्तावेज़) - {dpi} dpi";
+
+    public string ResolutionPrint(int dpi) => $"प्रिंट - {dpi} dpi";
+
+    public ImageSizeLimit DefaultImageSizeLimit => ImageSizeLimit.RagComplexScripts;
 
     public string ErrorSameAsSource =>
         "स्रोत PDF पर सहेजा नहीं जा सकता। कोई दूसरा नाम चुनें।";

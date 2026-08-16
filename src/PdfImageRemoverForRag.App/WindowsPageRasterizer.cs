@@ -26,26 +26,33 @@ internal sealed class WindowsPageRasterizer : IPageRasterizer
     const double DipsPerPoint = 96.0 / 72.0;
 
     /// <summary>
-    /// The screen a rendered region has to fit inside, in pixels. Not a limit on
-    /// the longest side: width is measured against the width and height against
-    /// the height, so a page-shaped region is bounded by its height and a
-    /// banner-shaped one by its width.
+    /// The most pixels one rendered region may hold.
     ///
-    /// Two reasons, and the smaller one decides it. A region can be a whole
-    /// page, and a whole page at a high DPI is a bitmap large enough for GDI+ to
-    /// fail the allocation — which is how the thumbnail pipeline once died at
-    /// object 229 of 1,255. And the picture ends up in a file that goes to a RAG
-    /// pipeline whose reader displays it: the customer's standard screen is
-    /// 1920x1080, so pixels past it are file size and nothing else (their upload
-    /// limit is 15 MB, which a few full-page pictures can reach).
+    /// This is a memory guard and nothing else now. It used to be a
+    /// screen-shaped box that served as the file-size ceiling as well; that job
+    /// belongs to <see cref="ImageReduction"/>, which passes over a flattened
+    /// picture like any other image once the page has been rewritten. Keeping
+    /// the box here too would have held every flattened picture to 1920x1080 no
+    /// matter what resolution the user asked for.
     ///
-    /// The size is decided HERE rather than by shrinking afterwards, because the
-    /// renderer can simply be asked for it. A whole A4 page comes out about 763
-    /// pixels wide — the resolution that fits, not a reduction of the 200 DPI
-    /// the caller asks for.
+    /// What remains is the reason a ceiling has to exist at all: a whole page at
+    /// a high resolution is a bitmap large enough for GDI+ to fail the
+    /// allocation — which is how the thumbnail pipeline once died at object 229
+    /// of 1,255. It holds even when reduction is switched off, because a failed
+    /// allocation is a crash rather than a bigger file.
+    ///
+    /// A TOTAL rather than a limit per edge, so a banner-shaped region is not
+    /// cut down for being wide. Set at a portrait A4 page rendered at the
+    /// largest resolution the app offers, which is the biggest picture anything
+    /// here has a reason to ask for.
     /// </summary>
-    const int MaxPixelWidth = 1920;
-    const int MaxPixelHeight = 1080;
+    static readonly long MaxPixels = LargestPictureWorthMaking();
+
+    static long LargestPictureWorthMaking()
+    {
+        int dpi = ImageReduction.DpiOf(ImageReduction.AbsoluteCeiling);
+        return (long)Math.Round(8.27 * dpi) * (long)Math.Round(11.69 * dpi);
+    }
 
     /// <summary>
     /// How far off the requested pixel size may land before a second attempt is
@@ -156,9 +163,9 @@ internal sealed class WindowsPageRasterizer : IPageRasterizer
             }
         }
 
-        // Last line of defense: the ceiling is about memory and file size, and
-        // it has to hold even if the renderer ignores the request entirely.
-        if (bitmap.Width > MaxPixelWidth || bitmap.Height > MaxPixelHeight)
+        // Last line of defense: the ceiling is about memory, and it has to hold
+        // even if the renderer ignores the request entirely.
+        if ((long)bitmap.Width * bitmap.Height > MaxPixels)
         {
             double scale = ScaleToFit(bitmap.Width, bitmap.Height);
             var reduced = new Bitmap(
@@ -274,12 +281,15 @@ internal sealed class WindowsPageRasterizer : IPageRasterizer
     }
 
     /// <summary>
-    /// How much a picture of this size has to shrink to fit the screen: the
-    /// tighter of the two ratios, and never an enlargement.
+    /// How much a picture of this size has to shrink to stay under the pixel
+    /// ceiling, and never an enlargement. Both edges move by the same factor,
+    /// so the region keeps its shape.
     /// </summary>
-    static double ScaleToFit(double width, double height) => Math.Min(
-        1.0,
-        Math.Min(MaxPixelWidth / Math.Max(1.0, width), MaxPixelHeight / Math.Max(1.0, height)));
+    static double ScaleToFit(double width, double height)
+    {
+        double pixels = Math.Max(1.0, width) * Math.Max(1.0, height);
+        return pixels <= MaxPixels ? 1.0 : Math.Sqrt(MaxPixels / pixels);
+    }
 
     async Task<PdfDocument?> LoadDocumentAsync(string filePath)
     {

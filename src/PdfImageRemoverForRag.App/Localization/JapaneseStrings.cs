@@ -1,3 +1,5 @@
+using PdfImageRemoverForRag.Core.Models;
+
 namespace PdfImageRemoverForRag.App.Localization;
 
 /// <summary>Japanese (ja) UI text. Selected for any ja-* display language.</summary>
@@ -19,6 +21,8 @@ internal sealed class JapaneseStrings : IStrings
     public string MenuShowDrawings => "図";
     public string MenuShowShadows => "影";
     public string MenuShowText => "テキスト";
+    public string MenuTools => "ツール(&T)";
+    public string MenuSettings => "設定(&S)…";
     public string MenuHelp => "ヘルプ(&H)";
     public string MenuManual => "オンラインマニュアル(&M)…";
     public string MenuAbout => "このアプリについて(&A)…";
@@ -74,8 +78,9 @@ internal sealed class JapaneseStrings : IStrings
     public string StatusSaving => "保存しています…";
     public string StatusSaveFailed => "保存に失敗しました";
 
-    public string StatusSaved(int fileCount, int drawCallsRemoved, int regionsFlattened) =>
-        $"{fileCount} ファイルを保存しました（削除 {drawCallsRemoved} 箇所 / 画像化 {regionsFlattened} 箇所、保存後検証 OK）";
+    public string StatusSaved(
+        int fileCount, int drawCallsRemoved, int regionsFlattened, int imagesResized) =>
+        $"{fileCount} ファイルを保存しました（削除 {drawCallsRemoved} 箇所 / 画像化 {regionsFlattened} 箇所 / 縮小 {imagesResized} 枚、保存後検証 OK）";
 
     public string StatusFlattening => "統合しています…";
 
@@ -152,6 +157,41 @@ internal sealed class JapaneseStrings : IStrings
     public string StatusFlattenSelection(int objectCount) =>
         $"描画オブジェクトを {objectCount} 個選択中";
     public string AccessibleFlattenPreview => "プレビュー";
+
+    public string Ok => "OK";
+    public string SettingsTitle => "設定";
+    public string SettingsImagesGroup => "保存する PDF の画像";
+    public string SettingsShrinkImages => "画像を縮小する(&S)";
+    public string SettingsResolution => "解像度(&R):";
+    public string SettingsJpegQuality => "画質(&Q):";
+    public string SettingsSampleFigure => "図版";
+    public string SettingsSamplePhoto => "写真";
+    public string SettingsSampleText => "検査記録 第3四半期";
+    public string SettingsZoom => "倍率(&Z):";
+
+    public string SettingsPreviewLossless(string name, string size) =>
+        $"{name} - 可逆で {size}。画質を変えても変わりません";
+
+    public string SettingsPreviewLossy(string name, string size) =>
+        $"{name} - この画質で {size}";
+
+    public string SettingsShrinkDescription =>
+        "選んだ解像度より大きい画像を、小さく描き直します。ページの見た目は変わらず、"
+        + "その裏にある画素数だけが変わります。拡大は行いません。";
+
+    public string ResolutionScreen(int dpi) => $"画面 - {dpi} dpi";
+
+    public string ResolutionRagLatin(int dpi) => $"RAG用（ラテン・キリル文字）- {dpi} dpi";
+
+    public string ResolutionRagComplexScripts(int dpi) =>
+        $"RAG用（CJK・その他の複雑な文字）- {dpi} dpi";
+
+    public string ResolutionRagFinePrint(int dpi) =>
+        $"RAG用（微細な文字を含む文書）- {dpi} dpi";
+
+    public string ResolutionPrint(int dpi) => $"印刷 - {dpi} dpi";
+
+    public ImageSizeLimit DefaultImageSizeLimit => ImageSizeLimit.RagComplexScripts;
 
     public string ErrorSameAsSource =>
         "元 PDF と同じパスへの保存はできません。別名を指定してください。";

@@ -26,13 +26,17 @@ internal sealed partial class MainForm
             _tableViewMenuItem, _tileViewMenuItem,
             new ToolStripSeparator(), _shownTypesMenuItem,
         });
+        var toolsMenu = new ToolStripMenuItem(L10n.MenuTools);
+        toolsMenu.DropDownItems.Add(_settingsMenuItem);
+
         var helpMenu = new ToolStripMenuItem(L10n.MenuHelp);
         helpMenu.DropDownItems.AddRange(new ToolStripItem[]
         {
             _manualMenuItem, new ToolStripSeparator(), _aboutMenuItem,
         });
 
-        _menuStrip.Items.AddRange(new ToolStripItem[] { fileMenu, viewMenu, helpMenu });
+        _menuStrip.Items.AddRange(
+            new ToolStripItem[] { fileMenu, viewMenu, toolsMenu, helpMenu });
         MainMenuStrip = _menuStrip;
     }
 

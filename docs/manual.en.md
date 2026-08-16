@@ -243,13 +243,68 @@ Only places where objects of *different* kinds overlap are listed. That gives fo
 ### Worth knowing
 
 - **Text in a flattened area can no longer be selected or copied.** That is the point of the feature. Your original PDF is untouched, so you can always open it again.
-- **A merged picture is made at the size it will be looked at** — fitted inside 1920 by 1080 pixels. That is enough to read, and pixels past it are file size and nothing else.
+- **A merged picture is made at the resolution you chose** in **Tools → Settings** (section 6). That is what keeps it as sharp as the images around it. There is an upper limit whatever you choose, because a whole page at a high resolution is a bitmap large enough to fail to allocate.
 - **A place that cannot be rendered is left exactly as it was.** Deleting the objects and then failing to draw their replacement would punch a hole in the page.
 - **When what you have selected covers nearly the whole page, the panel says so in red.** Merging it turns that whole page into one image, and none of its text stays text. It is not forbidden — a scan with a caption typed over it is exactly that case, done knowingly.
 
 ---
 
-## 6. Processing several PDFs at once
+## 6. Making the images smaller (Tools → Settings)
+
+**Every save can redraw the pictures in the output at a smaller size.** It is on by default, because a PDF on its way into a retrieval pipeline nearly always wants it: a manual full of screenshots reaches a 15 MB upload limit easily, and pixels past what anyone reads are file size and nothing else.
+
+**The page does not change.** A PDF draws an image into a rectangle the page decides, scaling whatever resolution the image happens to have, so the same picture with fewer pixels lands in exactly the same place at the same size.
+
+**Nothing is ever enlarged.** An image already under the chosen resolution keeps every pixel it had.
+
+### Choosing a resolution
+
+Open **Tools → Settings**. The list runs from the smallest file to the largest.
+
+| Choice | What it is for |
+| --- | --- |
+| **Screen** - 92 dpi | The smallest file. Enough to look at; **not** enough for a pipeline to read small print. |
+| **For RAG (Latin and Cyrillic)** - 140 dpi | Documents set in Latin or Cyrillic script. Keeps text down to 9 pt readable. |
+| **For RAG (CJK and other complex scripts)** - 200 dpi | Japanese, Chinese, Korean, Devanagari and Vietnamese, which pack more strokes or marks into a character. Also the choice to make when you are not sure. |
+| **For RAG (documents with fine print)** - 300 dpi | Footnotes, captions and table cells set smaller than the body text. Keeps text down to 6 pt readable. |
+| **Print** - 400 dpi | When the cleaned PDF will be printed as well as read. |
+
+Each value is a limit per inch of page. An image is redrawn so that it has no more pixels than the space it occupies is allowed.
+
+The resolutions were measured rather than guessed. Text was rendered at each size, put through this app's own resize step, and read back: 200 dpi is where 9 pt Japanese survives without a character error, and 300 dpi is where 6 pt does. Latin script needs roughly half as much, which is why it has an entry of its own.
+
+**This matters most for scanned pages.** A page that is one large photograph carries its text as pixels, and a pipeline can only read what those pixels show. A page whose text is real text is unaffected: the reduction touches images and never the text layer.
+
+### Seeing what a setting costs
+
+Two samples sit side by side in the window, and every control redraws them through the same code a save runs. Both stand for a picture three inches wide on the page, which is about a third of the width of A4.
+
+- The **figure** is a chart with a line of text set into it at 6, 8, 10 and 12 pt, in the language the app is running in. Text is what breaks first when pixels are taken away, and how small is too small depends on the writing system, so the specimen is in yours.
+- The **photograph** carries the detail and the smooth shading that JPEG artifacts show up in.
+
+The caption above each one reports what it would be stored as: the size in bytes, and the size in pixels. The pixel count is the resolution setting's whole effect.
+
+**Magnification** enlarges the view without changing anything that would be saved. The number beside the slider is the true scale on screen, not a step count: at 50% each picture is drawn at half the size it is stored at, which is why it starts below 100% and falls further as the resolution goes up. Above 100% you can drag inside a picture to move around it, or use the arrow keys.
+
+### Quality
+
+**Quality** is the JPEG setting, 50 to 100, and 85 by default.
+
+It reaches two things: pictures the PDF already stores as JPEG, which are written again at this quality when they are resized, and the regions you flatten. **A picture the PDF stores losslessly stays lossless** whatever the slider says, so diagrams, screenshots and line art never come back with rings around their edges. That is why the figure sample does not change as the slider moves and says so.
+
+A JPEG already saved below the setting is left alone rather than written again, because re-encoding costs detail and can cost bytes as well.
+
+### Switching it off
+
+Clear **Shrink images** and every picture is written out exactly as it came in. The resolution and quality stay on screen so you can still see what would have been applied.
+
+### What the status bar says
+
+After a save it reports how many images were made smaller, beside what was removed and what was flattened. A zero is a normal result for a document of vector drawings, where there is nothing to shrink.
+
+---
+
+## 7. Processing several PDFs at once
 
 When you open several PDFs, **identical objects across files collapse into a single row** (matched by content hash).
 
@@ -259,7 +314,7 @@ Saving produces one `_cleaned.pdf` per affected file. If a name already exists i
 
 ---
 
-## 7. What the warnings mean
+## 8. What the warnings mean
 
 ### Not removable
 
@@ -273,7 +328,7 @@ The object may be an image that **covers the whole page** — typical of scanned
 
 ---
 
-## 8. How saving stays safe
+## 9. How saving stays safe
 
 Every save runs this sequence, and **only a verified result becomes the final file:**
 
@@ -289,7 +344,7 @@ The app never writes into your source PDF. Choosing the source path as the desti
 
 ---
 
-## 9. What it does not do
+## 10. What it does not do
 
 - **Digital signatures are not preserved.** Changing content invalidates any existing signature.
 - **PDF/A conformance is not guaranteed.**
@@ -302,7 +357,7 @@ Details: [known-limitations.md](known-limitations.md)
 
 ---
 
-## 10. Troubleshooting
+## 11. Troubleshooting
 
 | Symptom | What to do |
 | --- | --- |
@@ -336,7 +391,7 @@ Check the version under **Help → About**.
 
 ---
 
-## 11. Privacy
+## 12. Privacy
 
 - The PDFs you open, their contents, and their file names and paths **never leave your PC.**
 - The app makes no network connections.
@@ -344,7 +399,7 @@ Check the version under **Help → About**.
 
 ---
 
-## 12. License
+## 13. License
 
 MIT License. Copyright (c) 2026 Nakano Kappei — [LICENSE](../LICENSE)
 

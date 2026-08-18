@@ -85,13 +85,21 @@ internal sealed class WindowsImageResampler : IImageResampler
             using var source = new MemoryStream(renderedPng);
             using var picture = new Bitmap(source);
 
-            // A transparent pixel is the end of the discussion: JPEG cannot
-            // carry it, and a flattened region is transparent wherever its
-            // objects draw nothing. Painting that white would cover the page.
-            if (HasTransparentPixel(picture)) return renderedPng;
-
-            // Redrawn onto white without an alpha channel, because the encoder
-            // will not take one even when every pixel in it is opaque.
+            // Composited onto white, and the transparency is simply spent.
+            //
+            // It used to be a reason to keep the whole picture lossless, since
+            // JPEG has no alpha channel and a flattened region is transparent
+            // wherever its objects draw nothing. Measured on a customer's file
+            // (2026-08-18), nine of twenty-seven flattened regions had a
+            // transparent pixel somewhere - an antialiased edge is enough - and
+            // those nine cost 2,402 KB against 534 KB for the fifteen that
+            // became JPEGs, for the same number of pixels. The output came out
+            // LARGER than the file it cleaned.
+            //
+            // What this spends is the ability to see through the rectangle to a
+            // colored page background or to something drawn under it. This is a
+            // tool for feeding a retrieval pipeline, and the user judged that
+            // not worth 4.5 times the bytes.
             //
             // The destination rectangle is spelled out, and that is not
             // decoration. DrawImageUnscaled draws at the picture's PHYSICAL
@@ -121,38 +129,6 @@ internal sealed class WindowsImageResampler : IImageResampler
             // caller has a working PNG either way, so there is nothing here
             // worth failing a save over.
             return renderedPng;
-        }
-    }
-
-    /// <summary>
-    /// Whether any pixel is less than fully opaque. Read through a 32-bit lock
-    /// so the answer does not depend on what format the PNG happened to use.
-    /// </summary>
-    static bool HasTransparentPixel(Bitmap picture)
-    {
-        if (!Image.IsAlphaPixelFormat(picture.PixelFormat)) return false;
-
-        var data = picture.LockBits(
-            new Rectangle(Point.Empty, picture.Size),
-            ImageLockMode.ReadOnly,
-            PixelFormat.Format32bppArgb);
-        try
-        {
-            var row = new byte[data.Stride];
-            for (int y = 0; y < picture.Height; y++)
-            {
-                Marshal.Copy(data.Scan0 + (y * data.Stride), row, 0, data.Stride);
-                // Alpha is the fourth byte of each pixel in this layout.
-                for (int at = 3; at < picture.Width * 4; at += 4)
-                {
-                    if (row[at] != 255) return true;
-                }
-            }
-            return false;
-        }
-        finally
-        {
-            picture.UnlockBits(data);
         }
     }
 

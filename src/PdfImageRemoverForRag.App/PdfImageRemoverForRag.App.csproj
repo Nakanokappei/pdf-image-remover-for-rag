@@ -31,7 +31,7 @@
          said 1.0.0 while the Store said 1.0.3.0, because a literal here does not
          follow a bump made two lines above. -->
     <Version>1.4.0</Version>
-    <BuildNumber>150</BuildNumber>
+    <BuildNumber>151</BuildNumber>
     <InformationalVersion>$(Version)+$(BuildNumber)</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>

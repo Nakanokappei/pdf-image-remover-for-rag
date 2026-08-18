@@ -15,22 +15,22 @@ public interface IImageResampler
 {
     /// <summary>
     /// The form a picture this app RENDERED should be stored in: a JPEG at the
-    /// given quality, or the PNG it was handed when a JPEG cannot carry it.
+    /// given quality, or the PNG it was handed if the encoder refuses it.
     ///
     /// Only pictures the app makes itself go through here — a flattened region.
     /// An image that arrived inside the user's PDF keeps whatever form it
     /// arrived in, because introducing loss the source never had is not this
     /// tool's decision to make.
     ///
-    /// One thing stops a JPEG, and it is not a question of size. JPEG has no
-    /// transparency, and a flattened region is transparent wherever its objects
-    /// draw nothing; flattening that alpha to white would paint over the page
-    /// underneath. Anything with a transparent pixel stays lossless.
-    ///
-    /// Everything else is written at the quality the user set, even where the
-    /// PNG would have been smaller. Choosing by size instead left the quality
-    /// setting doing nothing on a flattened diagram, which is not a saving the
-    /// user asked for.
+    /// Nothing else is weighed. Not the size — choosing whichever encoding came
+    /// out smaller left the quality setting doing nothing on a flattened
+    /// diagram. And not transparency: a flattened region is transparent
+    /// wherever its objects draw nothing, and keeping that meant keeping the
+    /// whole picture lossless, which on one customer's file cost four and a
+    /// half times the bytes and produced an output LARGER than the input. The
+    /// alpha is composited onto white and spent, which is a judgement about
+    /// what this tool is for — feeding a retrieval pipeline, not reproducing a
+    /// page over a colored background.
     /// </summary>
     byte[] ChooseStorageForm(byte[] renderedPng, int jpegQuality);
 

@@ -219,11 +219,17 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
     /// page can pass a pipeline's whole upload limit on its own.
     ///
     /// A flattened region therefore becomes a JPEG at the quality the user
-    /// chose, and the only thing that stops it is transparency. It is not
-    /// weighed against the lossless size: a diagram does come out larger this
-    /// way — 189 KB against 78 measured on a full-page figure — but a quality
-    /// setting that silently declines to apply itself is worse than a file
-    /// that is bigger than it had to be.
+    /// chose, always. It is not weighed against the lossless size — a diagram
+    /// does come out larger this way, 189 KB against 78 measured on a full-page
+    /// figure — and it is not stopped by transparency either: the alpha is
+    /// composited onto white. Keeping it meant keeping the picture lossless,
+    /// and on a customer's 39-page file nine such regions cost 2,402 KB where
+    /// fifteen JPEGs of the same total area cost 534 KB, which made the cleaned
+    /// file bigger than the one it cleaned.
+    ///
+    /// What that spends is seeing through the rectangle to a colored page
+    /// background. The user's call (2026-08-18), and the right one for a tool
+    /// whose output is read by a retrieval pipeline rather than by a person.
     ///
     /// Left as it came when reduction is switched off: that setting means
     /// "leave my images alone", and this is a compression like any other.

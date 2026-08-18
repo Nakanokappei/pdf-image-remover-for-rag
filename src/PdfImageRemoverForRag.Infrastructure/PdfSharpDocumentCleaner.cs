@@ -214,11 +214,16 @@ public sealed class PdfSharpDocumentCleaner : IPdfDocumentCleaner
     /// image that arrived inside their PDF keeps the form it arrived in.
     ///
     /// It matters more than it sounds. PDFsharp stores a rendered PNG under
-    /// FlateDecode, which is exactly right for a diagram — measured on a
-    /// full-page figure, lossless came to 78 KB where a JPEG came to 189 — and
-    /// ruinous for a photograph, where the same page costs 10 MB lossless and
-    /// 718 KB as a JPEG. One flattened photograph page can pass a pipeline's
-    /// whole upload limit on its own.
+    /// FlateDecode, and for a photograph that is ruinous: a full page costs
+    /// 10 MB lossless against 718 KB as a JPEG, so one flattened photograph
+    /// page can pass a pipeline's whole upload limit on its own.
+    ///
+    /// A flattened region therefore becomes a JPEG at the quality the user
+    /// chose, and the only thing that stops it is transparency. It is not
+    /// weighed against the lossless size: a diagram does come out larger this
+    /// way — 189 KB against 78 measured on a full-page figure — but a quality
+    /// setting that silently declines to apply itself is worse than a file
+    /// that is bigger than it had to be.
     ///
     /// Left as it came when reduction is switched off: that setting means
     /// "leave my images alone", and this is a compression like any other.

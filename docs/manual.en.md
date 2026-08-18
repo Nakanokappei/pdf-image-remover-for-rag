@@ -292,6 +292,8 @@ The caption above each one reports what it would be stored as: the size in bytes
 
 It reaches two things: pictures the PDF already stores as JPEG, which are written again at this quality when they are resized, and the regions you flatten. **A picture the PDF stores losslessly stays lossless** whatever the slider says, so diagrams, screenshots and line art never come back with rings around their edges. That is why the figure sample does not change as the slider moves and says so.
 
+A region you **flatten** is the exception, and it has to be: that picture is one this app draws rather than one your file gave it, so it is written at this quality whatever it contains. A flattened diagram is a JPEG too. If that matters for a document of line art, raise the quality, or leave the reduction switched off for that file.
+
 A JPEG already saved below the setting is left alone rather than written again, because re-encoding costs detail and can cost bytes as well.
 
 ### Switching it off

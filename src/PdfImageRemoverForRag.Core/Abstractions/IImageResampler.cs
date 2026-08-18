@@ -14,26 +14,23 @@ namespace PdfImageRemoverForRag.Core.Abstractions;
 public interface IImageResampler
 {
     /// <summary>
-    /// The form a picture this app RENDERED should be stored in: the PNG it was
-    /// given, or a JPEG when that is both smaller and safe.
+    /// The form a picture this app RENDERED should be stored in: a JPEG at the
+    /// given quality, or the PNG it was handed when a JPEG cannot carry it.
     ///
     /// Only pictures the app makes itself go through here — a flattened region.
     /// An image that arrived inside the user's PDF keeps whatever form it
     /// arrived in, because introducing loss the source never had is not this
     /// tool's decision to make.
     ///
-    /// Two things have to hold before a JPEG is used, and they are what make
-    /// this safe rather than a guess:
+    /// One thing stops a JPEG, and it is not a question of size. JPEG has no
+    /// transparency, and a flattened region is transparent wherever its objects
+    /// draw nothing; flattening that alpha to white would paint over the page
+    /// underneath. Anything with a transparent pixel stays lossless.
     ///
-    /// JPEG has no transparency. A flattened region is transparent wherever its
-    /// objects draw nothing, and flattening the alpha to white would paint over
-    /// the page underneath. Anything with a transparent pixel stays lossless.
-    ///
-    /// And the JPEG has to be smaller. Line art and flat fills compress far
-    /// better whole than as a JPEG — measured on a full-page figure, the JPEG
-    /// came to more than twice the lossless size — so this is what keeps a
-    /// flattened diagram lossless while a flattened photograph, which costs
-    /// fourteen times as much stored losslessly, becomes a JPEG.
+    /// Everything else is written at the quality the user set, even where the
+    /// PNG would have been smaller. Choosing by size instead left the quality
+    /// setting doing nothing on a flattened diagram, which is not a saving the
+    /// user asked for.
     /// </summary>
     byte[] ChooseStorageForm(byte[] renderedPng, int jpegQuality);
 

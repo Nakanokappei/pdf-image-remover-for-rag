@@ -97,8 +97,8 @@ internal sealed class WindowsImageResampler : IImageResampler
             // decoration. DrawImageUnscaled draws at the picture's PHYSICAL
             // size, so it scales by the ratio of the two resolutions - and GDI+
             // stamps a new bitmap with the display's dpi, which is 192 on a
-            // 200% screen against a rendered page's 96. That drew the top-left
-            // quarter of every flattened region at twice its size.
+            // 200% screen against a picture authored at 96. Only the top-left
+            // quarter of it would survive.
             using var opaque = new Bitmap(
                 picture.Width, picture.Height, PixelFormat.Format24bppRgb);
             using (var graphics = Graphics.FromImage(opaque))
@@ -108,8 +108,12 @@ internal sealed class WindowsImageResampler : IImageResampler
                     picture, new Rectangle(0, 0, picture.Width, picture.Height));
             }
 
-            var jpeg = EncodeJpeg(opaque, jpegQuality);
-            return jpeg is not null && jpeg.Length < renderedPng.Length ? jpeg : renderedPng;
+            // Whatever it comes to. This used to keep the PNG when it was the
+            // smaller of the two, which made a flattened diagram lossless and
+            // saved a few kilobytes - and made the quality setting a control
+            // that did nothing on the very pictures it was written for. The
+            // user asked for the setting to be obeyed (2026-08-18), so it is.
+            return EncodeJpeg(opaque, jpegQuality) ?? renderedPng;
         }
         catch (Exception)
         {

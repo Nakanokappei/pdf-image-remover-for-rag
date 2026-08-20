@@ -111,6 +111,14 @@ internal sealed partial class MainForm
             case ScreenshotViews.Usage:
                 return OpenUsageWindowForTheCamera(request);
 
+            case ScreenshotViews.Settings:
+                // Over the list rather than instead of it: the window is the
+                // subject, and what is behind it says where it is reached from.
+                // So the photograph is of this window, with that one on top.
+                TickAFewObjects();
+                ShowSettingsWindowForTheCamera();
+                return this;
+
             default:
                 return this;
         }
@@ -173,5 +181,30 @@ internal sealed partial class MainForm
         _ = ScreenshotCamera.SizeVisibleFrameAsync(window, request.Width, request.Height);
         window.Activate();
         return window;
+    }
+
+    /// <summary>
+    /// The settings window, over the middle of this one. Shown without waiting
+    /// for the same reason the usage window is: the menu command answers only
+    /// after the window is closed, and the shutter is before that.
+    /// </summary>
+    void ShowSettingsWindowForTheCamera()
+    {
+        // What a first run offers, rather than whatever this machine has saved
+        // in settings.json. Sixteen pictures have to show the same window, and
+        // the resolution a language starts at is part of what they show.
+        var shown = new ImageReduction(
+            Enabled: true, L10n.DefaultImageSizeLimit, ImageReduction.DefaultJpegQuality);
+
+        var window = SettingsDialog.ForTheCamera(shown);
+        window.StartPosition = FormStartPosition.Manual;
+        window.TopMost = true;
+        window.Show(this);
+        // Centred after it is shown, because a window that sizes itself to its
+        // contents does not know how big it is until then.
+        window.Location = new Point(
+            Left + ((Width - window.Width) / 2),
+            Top + ((Height - window.Height) / 2));
+        window.Activate();
     }
 }

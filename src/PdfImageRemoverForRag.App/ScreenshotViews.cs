@@ -16,6 +16,7 @@ internal static class ScreenshotViews
     public const string Objects = "objects";
     public const string ShownTypes = "shown-types";
     public const string Usage = "usage";
+    public const string Settings = "settings";
 
     /// <summary>Every pose, in the order a listing would show them.</summary>
     public static readonly IReadOnlyList<(string Name, string Shows)> All = new[]
@@ -25,6 +26,7 @@ internal static class ScreenshotViews
         (Objects, "the graphics-objects panel, with one object outlined on the page"),
         (ShownTypes, "the Shown Types menu open over the list"),
         (Usage, "the usage window: every page an object is drawn on"),
+        (Settings, "the settings window over the list: what a resolution costs"),
     };
 
     /// <summary>

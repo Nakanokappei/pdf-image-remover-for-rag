@@ -687,4 +687,11 @@ internal sealed class SettingsDialog : Form
         using var dialog = new SettingsDialog(current);
         return dialog.ShowDialog(owner) == DialogResult.OK ? dialog.Reduction : null;
     }
+
+    /// <summary>
+    /// The window itself, for the camera. <see cref="ShowFor"/> is how a person
+    /// opens it, and it does not answer until the window is gone — which is on
+    /// the far side of the shutter. The pose shows it without waiting instead.
+    /// </summary>
+    public static SettingsDialog ForTheCamera(ImageReduction shown) => new(shown);
 }

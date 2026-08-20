@@ -47,7 +47,7 @@ LOCALES = {
 }
 
 # The screenshots, in the order they appear in the listing.
-VIEWS = ["table", "tiles", "objects", "shown-types", "usage"]
+VIEWS = ["table", "tiles", "objects", "shown-types", "usage", "settings"]
 
 TRANSLATIONS = Path("docs/store-listing-i18n")
 SCREENSHOTS = Path("docs/images")
@@ -58,8 +58,14 @@ def main() -> int:
         print(__doc__)
         return 1
 
-    exported = Path(sys.argv[1])
-    output = Path(sys.argv[2] if len(sys.argv) > 2 else "artifacts/store-listing")
+    # --text-only writes the CSV and nothing else, leaving every picture field
+    # exactly as it was exported: URLs to what Partner Center already holds.
+    # That is the import that goes through when a folder import does not.
+    text_only = "--text-only" in sys.argv
+    arguments = [a for a in sys.argv[1:] if not a.startswith("--")]
+
+    exported = Path(arguments[0])
+    output = Path(arguments[1] if len(arguments) > 1 else "artifacts/store-listing")
     root = output.name                      # the path in the CSV starts with it
 
     rows = list(csv.reader(exported.open(encoding="utf-8-sig", newline="")))
@@ -74,7 +80,8 @@ def main() -> int:
             if not picture.exists():
                 print(f"missing screenshot: {picture}")
                 return 1
-            text[f"DesktopScreenshot{index}"] = f"{root}/images/{picture.name}"
+            if not text_only:
+                text[f"DesktopScreenshot{index}"] = f"{root}/images/{picture.name}"
         values[locale] = text
 
     # One column per locale, in the order above, keeping any the export already
@@ -94,11 +101,12 @@ def main() -> int:
         written.append(row)
 
     output.mkdir(parents=True, exist_ok=True)
-    (output / "images").mkdir(exist_ok=True)
-    for locale, language in LOCALES.items():
-        for view in VIEWS:
-            picture = SCREENSHOTS / f"store-{view}-{language}.png"
-            shutil.copy2(picture, output / "images" / picture.name)
+    if not text_only:
+        (output / "images").mkdir(exist_ok=True)
+        for locale, language in LOCALES.items():
+            for view in VIEWS:
+                picture = SCREENSHOTS / f"store-{view}-{language}.png"
+                shutil.copy2(picture, output / "images" / picture.name)
 
     # UTF-8 with a BOM and CRLF, which is what the export was and what the
     # importer reads without being told.
@@ -107,8 +115,12 @@ def main() -> int:
         writer.writerow(columns)
         writer.writerows(written)
 
-    pictures = len({f"{v}-{l}" for l in LOCALES.values() for v in VIEWS})
     print(f"{output}/listingData.csv: {len(columns)} columns, {len(written)} rows")
+    if text_only:
+        print("import this FILE in Partner Center (Import listings -> Import .csv)")
+        return 0
+
+    pictures = len({f"{v}-{l}" for l in LOCALES.values() for v in VIEWS})
     print(f"{output}/images: {pictures} pictures")
     print("import this FOLDER in Partner Center (Import listings -> Import folder)")
     return 0

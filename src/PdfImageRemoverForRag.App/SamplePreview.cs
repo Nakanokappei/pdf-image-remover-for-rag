@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Drawing.Drawing2D;
 
 namespace PdfImageRemoverForRag.App;
@@ -67,6 +68,7 @@ internal sealed class SamplePreview : Control
         Invalidate();
     }
 
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public int Magnification
     {
         get => _magnification;

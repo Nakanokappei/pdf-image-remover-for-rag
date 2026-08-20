@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Drawing.Drawing2D;
 
 namespace PdfImageRemoverForRag.App;
@@ -125,6 +126,7 @@ internal sealed class UnitListView : Panel
     public event EventHandler? ViewportChanged;
 
     /// <summary>Supplies a row's tooltip, or null for none.</summary>
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public Func<int, string?>? ToolTipFor { get; set; }
 
     readonly ToolTip _toolTip = new();

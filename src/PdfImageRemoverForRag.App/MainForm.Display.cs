@@ -414,7 +414,9 @@ internal sealed partial class MainForm
 
                 int rowIndex = _objectListGrid.Rows.Add(
                     _selectedHashes.Contains(group.Hash),
-                    thumbnailCell,
+                    // The row takes its values as a non-null array, so the empty
+                    // cell has to be handed over as one. It is read back as null.
+                    thumbnailCell!,
                     group.GroupId,
                     ObjectDisplay.TypeLabel(group),
                     ObjectDisplay.SizeLabel(group),

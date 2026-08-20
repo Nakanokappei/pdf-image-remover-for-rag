@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using PdfImageRemoverForRag.Core.Grouping;
 using PdfImageRemoverForRag.Core.Models;
 
@@ -255,6 +256,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
     /// One call rather than two, so the panel cannot pair a group with a
     /// bitmap decided under different rules.
     /// </summary>
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public Func<PlacedObject, ObjectThumbnail>? ThumbnailFor { get; set; }
 
     /// <summary>
@@ -262,6 +264,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
     /// actually taken out. Graying them on top of the page was tried first and
     /// was hard to read.
     /// </summary>
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public Func<string, Task<string>>? PreviewSourceFor { get; set; }
 
     /// <summary>
@@ -270,6 +273,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
     /// asked per PLACEMENT, because hiding an object here hides this one drawing
     /// of it, not every other showing of the same object.
     /// </summary>
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public Func<string, int, PlacedObject, bool>? IsHidden { get; set; }
 
     /// <summary>
@@ -282,6 +286,7 @@ internal sealed class GraphicsObjectsPanel : UserControl
     /// because a DPI change re-applies it: converting device pixels back at the
     /// NEW scale would move the splitter every time the window changed monitor.
     /// </summary>
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public int PreviewHeight
     {
         get => _previewHeight;

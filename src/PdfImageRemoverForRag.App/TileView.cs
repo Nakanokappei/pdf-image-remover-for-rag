@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using PdfImageRemoverForRag.Core.Models;
 
 namespace PdfImageRemoverForRag.App;
@@ -66,6 +67,7 @@ internal sealed class TileView : Panel
     public event EventHandler? FocusedGroupChanged;
 
     /// <summary>Supplies the tooltip for a group, or null for none.</summary>
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public Func<CrossFileObjectGroup, string?>? ToolTipFor { get; set; }
 
     /// <summary>
@@ -73,6 +75,7 @@ internal sealed class TileView : Panel
     /// string for text tiles). The checked / not-removable state is reported
     /// separately as UIA state flags, so it is not part of this text.
     /// </summary>
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public Func<CrossFileObjectGroup, string>? AccessibleNameFor { get; set; }
 
     readonly ToolTip _toolTip = new();

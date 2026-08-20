@@ -180,7 +180,9 @@ internal sealed class RussianStrings : IStrings
     public string SettingsResolution => "&Разрешение:";
     public string SettingsJpegQuality => "&Качество:";
     public string SettingsSampleFigure => "Схема";
-    public string SettingsSamplePhoto => "Фотография";
+    // Short, because the caption it names wraps inside one sample's width and
+    // the longer word pushed "качестве" past the end of the line.
+    public string SettingsSamplePhoto => "Фото";
     public string SettingsSampleText => "Протокол испытаний";
     public string SettingsZoom => "&Увеличение:";
 

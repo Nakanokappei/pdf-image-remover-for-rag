@@ -38,6 +38,8 @@ param(
     [int] $Build,
 
     # Where the staged folders and zips are written. Replaced if it exists.
+    # Defaults to artifacts/release-<Version>, beside everything else this
+    # repository produces (user decision, 2026-08-08).
     [string] $Output = ""
 )
 
@@ -46,7 +48,7 @@ Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 $repo = Split-Path $PSScriptRoot -Parent
-if ($Output -eq "") { $Output = "C:\work\release-$Version" }
+if ($Output -eq "") { $Output = Join-Path $repo "artifacts\release-$Version" }
 
 # Written as character codes so no literal backslash is needed in a string that
 # is itself about backslashes.

@@ -7,7 +7,7 @@
 | [PDFsharp](https://github.com/empira/PDFsharp) | 6.2.4 | [MIT](https://github.com/empira/PDFsharp/blob/master/LICENSE.md) | PDF parsing, content-stream editing, saving |
 | [PdfPig](https://github.com/UglyToad/PdfPig) | 0.1.15 | [Apache-2.0](https://github.com/UglyToad/PdfPig/blob/master/LICENSE.md) | Thumbnail decoding, independent post-save verification |
 | [Microsoft.Extensions.Logging](https://www.nuget.org/packages/Microsoft.Extensions.Logging) | 8.0.1 | MIT | Diagnostic logging |
-| .NET 8 runtime (bundled by self-contained publish) | 8.0.x | MIT | Runtime |
+| .NET 10 runtime (bundled by self-contained publish) | 10.0.x | MIT | Runtime |
 
 All of these are permissive licenses that place no restrictions on commercial
 use or redistribution, so they do not constrain how the app is distributed

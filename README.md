@@ -57,12 +57,12 @@ Requires Windows 11 (x64 or arm64). Either way the app is self-contained — no 
 
 ## Build from source
 
-The app is developed and built on Windows 11 with the **.NET 8 SDK**. The WinForms project needs the
+The app is developed and built on Windows 11 with the **.NET 10 SDK**. The WinForms project needs the
 Windows Desktop targets, which that SDK installs.
 
 ```powershell
 dotnet build PdfImageRemoverForRag.sln -c Release   # 0 warnings
-dotnet test PdfImageRemoverForRag.sln -c Release    # 270 tests (145 Core + 125 Infrastructure)
+dotnet test PdfImageRemoverForRag.sln -c Release    # 287 tests (156 Core + 131 Infrastructure)
 dotnet run --project scripts/GenerateSamples -c Release -- samples/   # regenerate the sample PDFs
 
 # Self-contained binaries, one architecture at a time:
@@ -75,9 +75,9 @@ broken checkout.
 Where things live:
 
 ```
-src/PdfImageRemoverForRag.Core/            net8.0          Models, grouping, formatting, validation, abstractions
-src/PdfImageRemoverForRag.Infrastructure/  net8.0          PDFsharp / PdfPig implementations (GDI-free)
-src/PdfImageRemoverForRag.App/             net8.0-windows  WinForms UI (all GDI+ drawing lives here)
+src/PdfImageRemoverForRag.Core/            net10.0         Models, grouping, formatting, validation, abstractions
+src/PdfImageRemoverForRag.Infrastructure/  net10.0         PDFsharp / PdfPig implementations (GDI-free)
+src/PdfImageRemoverForRag.App/             net10.0-windows WinForms UI (all GDI+ drawing lives here)
 tests/                                     xunit           unit + integration tests
 scripts/GenerateSamples/                   Sample-PDF generator, shared with the test fixture
 ```

@@ -162,9 +162,10 @@ including Narrator.
 - **The tile view is not readable by Narrator** (the Windows built-in screen
   reader). The tiles are painted onto a single control, and exposing each tile
   to UI Automation would require implementing UIA fragment providers — but in
-  .NET 8 WinForms the UIA fragment APIs (`FragmentNavigate`, `RuntimeId`,
+  .NET 10 WinForms the UIA fragment APIs (`FragmentNavigate`, `RuntimeId`,
   `Control.SupportsUiaProviders`, …) are all `internal` and cannot be
-  implemented from an external assembly (verified via reflection).
+  implemented from an external assembly (verified via reflection, and measured
+  again on 10.0.10 when the app moved off .NET 8).
   - **NVDA and JAWS (MSAA-based screen readers) can read the tiles** — a custom
     `AccessibleObject` exposes a List with one CheckButton per tile to the MSAA
     tree, verified on real hardware.
